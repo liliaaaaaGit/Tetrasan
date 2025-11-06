@@ -90,10 +90,7 @@ export function AdminCorrectionDialog({
   };
 
   const handleToBlur = () => {
-    // Validate time order only when user finishes editing
-    if (from && to && calculateHours(normalizeTime(from), normalizeTime(to), pause) === null) {
-      setErrors((prev) => ({ ...prev, to: "Ende muss nach Beginn liegen" }));
-    }
+    // No validation needed - invalid time ranges will result in 0 hours
   };
 
   const handlePauseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,12 +125,10 @@ export function AdminCorrectionDialog({
       newErrors.pause = "Pause darf nicht negativ sein";
     }
     
-    // Only validate time order if both fields have values
+    // Check if pause is too long (would result in negative hours)
     if (from && to && from.trim() !== '' && to.trim() !== '') {
       const hours = calculateHours(normalizeTime(from), normalizeTime(to), pause);
-      if (hours === null) {
-        newErrors.to = "Ende muss nach Beginn liegen";
-      } else if (hours < 0) {
+      if (hours !== null && hours < 0) {
         newErrors.pause = "Pause ist zu lang";
       }
     }
@@ -168,7 +163,7 @@ export function AdminCorrectionDialog({
       corrected_time_from: normalizeTime(from),
       corrected_time_to: normalizeTime(to),
       corrected_break_minutes: pause,
-      corrected_hours_decimal: calculatedHours || 0,
+      corrected_hours_decimal: calculatedHours ?? 0,
       note: note.trim() || undefined,
     };
 

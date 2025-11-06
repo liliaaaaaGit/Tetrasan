@@ -44,10 +44,6 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       if (pause < 0) newErrors.pause = "Pause darf nicht negativ sein";
       if (!taetigkeit.trim()) newErrors.taetigkeit = "Tätigkeitsbericht ist erforderlich";
       
-      if (from && to && calculateHours(from, to, pause) === null) {
-        newErrors.to = "Ende muss nach Beginn liegen";
-      }
-      
       if (calculatedHours !== null && calculatedHours < 0) {
         newErrors.pause = "Pause ist zu lang";
       }
@@ -75,7 +71,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         to,
         pause,
         taetigkeit,
-        hours: calculatedHours || 0,
+        hours: calculatedHours ?? 0,
       }),
       ...(status !== "arbeit" && {
         kommentar,
