@@ -152,13 +152,14 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Manual admin check
-    // Use admin client to bypass RLS for updates
-    const supabase = getAdminClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Read session with user-scoped client (cookies), do DB writes with admin client
+    const userClient = createClient();
+    const admin = getAdminClient();
+    const { data: { session } } = await userClient.auth.getSession();
     if (!session) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
-    const { data: me } = await supabase
+    const { data: me } = await admin
       .from('profiles')
       .select('id, role, active')
       .eq('id', session.user.id)
@@ -182,7 +183,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check which events exist in inbox_events
-    const { data: existingEvents, error: checkError } = await supabase
+    const { data: existingEvents, error: checkError } = await admin
       .from('inbox_events')
       .select('id')
       .in('id', eventIds);
@@ -207,7 +208,7 @@ export async function PUT(request: NextRequest) {
         updateData.read_at = null;
       }
       
-      const { error: updateError } = await supabase
+      const { error: updateError } = await admin
         .from('inbox_events')
         .update(updateData)
         .in('id', Array.from(existingIds));
@@ -223,7 +224,7 @@ export async function PUT(request: NextRequest) {
 
     // For synthetic events (missing from inbox_events), try to create them from leave_requests
     if (missingIds.length > 0) {
-      const { data: requests, error: reqError } = await supabase
+      const { data: requests, error: reqError } = await admin
         .from('leave_requests')
         .select('id, employee_id, type, status, period_start, period_end, comment, created_at')
         .in('id', missingIds);
@@ -239,7 +240,7 @@ export async function PUT(request: NextRequest) {
           read_at: isRead ? new Date().toISOString() : null,
         }));
 
-        const { error: insertError } = await supabase
+        const { error: insertError } = await admin
           .from('inbox_events')
           .insert(newEvents);
 
