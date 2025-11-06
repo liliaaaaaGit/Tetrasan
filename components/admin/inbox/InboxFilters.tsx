@@ -2,7 +2,10 @@
 
 import React from "react";
 import { Search } from "lucide-react";
-import { ReadFilter, TypeFilter, SortOrder } from "./useInboxState";
+// Inline the simple union types to avoid importing the removed useInboxState module
+export type ReadFilter = "alle" | "ungelesen" | "gelesen";
+export type TypeFilter = "alle" | "urlaub" | "tagesbefreiung";
+export type SortOrder = "neueste" | "aelteste";
 
 interface InboxFiltersProps {
   searchTerm: string;
