@@ -124,32 +124,88 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new timesheet entry
-    const { data, error } = await supabase
+    // Check if an entry already exists for this date and employee
+    // This prevents duplicate entries when editing (upsert behavior)
+    const { data: existingEntry, error: checkError } = await supabase
       .from('timesheet_entries')
-      .insert({
-        employee_id: targetEmployeeId,
-        date,
-        time_from,
-        time_to,
-        break_minutes: break_minutes || 0,
-        hours_decimal,
-        status,
-        activity_note,
-        comment,
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('employee_id', targetEmployeeId)
+      .eq('date', date)
+      .maybeSingle();
 
-    if (error) {
-      console.error("[TimesheetEntries] Error creating entry:", error);
+    if (checkError) {
+      console.error("[TimesheetEntries] Error checking for existing entry:", checkError);
       return NextResponse.json(
-        { error: "Fehler beim Speichern des Zeiteintrags.", details: error.message },
+        { error: "Fehler beim Prüfen des Zeiteintrags.", details: checkError.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    let data;
+    let error;
+
+    if (existingEntry) {
+      // Update existing entry instead of creating a duplicate
+      const { data: updatedData, error: updateError } = await supabase
+        .from('timesheet_entries')
+        .update({
+          time_from,
+          time_to,
+          break_minutes: break_minutes || 0,
+          hours_decimal,
+          status,
+          activity_note,
+          comment,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingEntry.id)
+        .eq('employee_id', targetEmployeeId)
+        .select()
+        .single();
+
+      data = updatedData;
+      error = updateError;
+
+      if (error) {
+        console.error("[TimesheetEntries] Error updating entry:", error);
+        return NextResponse.json(
+          { error: "Fehler beim Aktualisieren des Zeiteintrags.", details: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ data }, { status: 200 });
+    } else {
+      // Create new timesheet entry
+      const { data: insertedData, error: insertError } = await supabase
+        .from('timesheet_entries')
+        .insert({
+          employee_id: targetEmployeeId,
+          date,
+          time_from,
+          time_to,
+          break_minutes: break_minutes || 0,
+          hours_decimal,
+          status,
+          activity_note,
+          comment,
+        })
+        .select()
+        .single();
+
+      data = insertedData;
+      error = insertError;
+
+      if (error) {
+        console.error("[TimesheetEntries] Error creating entry:", error);
+        return NextResponse.json(
+          { error: "Fehler beim Speichern des Zeiteintrags.", details: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ data }, { status: 201 });
+    }
   } catch (error) {
     console.error("[TimesheetEntries] Unexpected error:", error);
     return NextResponse.json(

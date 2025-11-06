@@ -245,16 +245,12 @@ function HoursPageContent() {
 
       const { data } = await response.json();
       
-      // Update local state
-      setEntries((prev) => ({
-        ...prev,
-        [entry.date]: {
-          ...entry,
-          id: data.id,
-        },
-      }));
-      
       showToast("Gespeichert");
+      
+      // Reload entries from database to ensure state is in sync
+      // This ensures we have the correct entry ID and prevents duplicates
+      await loadTimesheetEntries();
+      
       // Reload summary after saving
       loadMonthlySummary();
     } catch (error) {
