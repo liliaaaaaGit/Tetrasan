@@ -400,24 +400,38 @@ function HoursPageContent() {
                       !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
                     )}
                   >
-                    <span className="text-sm">{day}</span>
-                    {isTodayDate && (
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
-                    )}
-                    {isHoliday && (
-                      <span className={cn(
-                        "absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-medium text-brand",
-                        !hasEntry && "block",
-                        hasEntry && "hidden" // Hide label if there's an entry (hours will show instead)
-                      )}>
-                        Feiertag
-                      </span>
-                    )}
-                    {hasEntry && entry.status === "arbeit" && entry.hours && (
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium">
-                        {formatHours(entry.hours)}h
-                      </span>
-                    )}
+                    {/* Mobile layout: stacked content to avoid overlap */}
+                    <div className="flex h-full w-full flex-col items-center justify-between md:hidden py-1">
+                      <div className="text-[11px] font-medium self-start pl-1 pt-0.5">{day}</div>
+                      {hasEntry && entry.status === "arbeit" && entry.hours && (
+                        <div className="text-[11px] font-medium">{formatHours(entry.hours)}h</div>
+                      )}
+                      {!hasEntry && isHoliday && (
+                        <div className="text-[10px] font-medium text-brand">Feiertag</div>
+                      )}
+                    </div>
+
+                    {/* Desktop layout: keep absolute positioning */}
+                    <div className="hidden md:block">
+                      <span className="text-sm">{day}</span>
+                      {isTodayDate && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
+                      )}
+                      {isHoliday && (
+                        <span className={cn(
+                          "absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-medium text-brand",
+                          !hasEntry && "block",
+                          hasEntry && "hidden"
+                        )}>
+                          Feiertag
+                        </span>
+                      )}
+                      {hasEntry && entry.status === "arbeit" && entry.hours && (
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium">
+                          {formatHours(entry.hours)}h
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}
@@ -445,7 +459,7 @@ function HoursPageContent() {
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-holiday-fill rounded" />
-            <span className="text-muted-foreground">Feiertag</span>
+            <span className="text-muted-foreground hidden md:inline">Feiertag</span>
           </div>
         </div>
       </div>

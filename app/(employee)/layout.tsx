@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, Plane, Calendar, LogOut } from "lucide-react";
+import { Clock, Plane, Calendar, LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
@@ -61,6 +61,22 @@ export default function EmployeeLayout({
     },
   ];
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Close on escape
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Desktop header with logo, navigation, and auth status */}
@@ -108,46 +124,57 @@ export default function EmployeeLayout({
         </header>
       )}
 
-      {/* Mobile header with logo and navigation */}
+      {/* Mobile header with hamburger menu */}
       <div className="md:hidden bg-white border-b border-border">
         <div className="px-4 py-4">
-          {/* Logo */}
-          <div className="mb-6">
+          <div className="flex items-center justify-between">
             <TetrasanLogo size="lg" />
-          </div>
-          
-          {/* Navigation tabs with logout */}
-          <nav className="flex gap-2 justify-end">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-muted text-brand"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-            
-            {/* Logout button */}
-            <Link
-              href="/logout"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            <button
+              aria-label="Menü öffnen"
+              aria-haspopup="menu"
+              aria-expanded={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen((v) => !v)}
+              className="p-2 rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-brand"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Abmelden</span>
-            </Link>
-          </nav>
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Mobile menu panel */}
+          {isMobileMenuOpen && (
+            <div
+              role="menu"
+              aria-label="Navigation"
+              className="mt-3 rounded-lg border border-border bg-white shadow-md divide-y"
+            >
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    role="menuitem"
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 transition-colors",
+                      isActive ? "bg-muted text-brand" : "hover:bg-muted/50"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+              <Link
+                href="/logout"
+                role="menuitem"
+                className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="font-medium">Abmelden</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
