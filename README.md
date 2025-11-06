@@ -110,3 +110,5 @@ Die App ist primär für mobile Nutzung optimiert:
 - Responsive Design
 - Akkordeon-Tabs auf kleinen Bildschirmen
 
+
+
