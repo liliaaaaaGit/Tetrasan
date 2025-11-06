@@ -3,9 +3,10 @@
 import React from "react";
 import { Search } from "lucide-react";
 // Inline the simple union types to avoid importing the removed useInboxState module
-export type ReadFilter = "alle" | "ungelesen" | "gelesen";
-export type TypeFilter = "alle" | "urlaub" | "tagesbefreiung";
-export type SortOrder = "neueste" | "aelteste";
+// Accept both German and English variants to match existing pages using either form
+export type ReadFilter = "alle" | "ungelesen" | "gelesen" | "all" | "unread" | "read";
+export type TypeFilter = "alle" | "urlaub" | "tagesbefreiung" | "all" | "vacation" | "dayoff";
+export type SortOrder = "neueste" | "aelteste" | "newest" | "oldest";
 
 interface InboxFiltersProps {
   searchTerm: string;
