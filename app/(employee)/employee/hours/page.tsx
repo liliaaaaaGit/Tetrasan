@@ -403,12 +403,11 @@ function HoursPageContent() {
                     {/* Mobile layout: stacked content to avoid overlap */}
                     <div className="flex h-full w-full flex-col items-center justify-between md:hidden py-1">
                       <div className="text-[11px] font-medium text-black self-start pl-1 pt-0.5">{day}</div>
+                      {/* Show hours if there's a work entry (holidays with work entries will show hours too) */}
                       {hasEntry && entry.status === "arbeit" && entry.hours && (
                         <div className="text-[11px] font-medium text-muted-foreground">{formatHours(entry.hours)}h</div>
                       )}
-                      {!hasEntry && isHoliday && (
-                        <div className="text-[10px] font-medium text-brand">Feiertag</div>
-                      )}
+                      {/* No "Feiertag" text in holiday cells - only day number and optional hours */}
                     </div>
 
                     {/* Desktop layout: keep absolute positioning */}
@@ -417,15 +416,7 @@ function HoursPageContent() {
                       {isTodayDate && (
                         <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                       )}
-                      {isHoliday && (
-                        <span className={cn(
-                          "absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-medium text-brand",
-                          !hasEntry && "block",
-                          hasEntry && "hidden"
-                        )}>
-                          Feiertag
-                        </span>
-                      )}
+                      {/* No "Feiertag" text in holiday cells - only show hours if present */}
                       {hasEntry && entry.status === "arbeit" && entry.hours && (
                         <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-muted-foreground">
                           {formatHours(entry.hours)}h
@@ -442,10 +433,6 @@ function HoursPageContent() {
         {/* Legend */}
         <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-3 text-xs">
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 border-2 border-brand bg-brand/5 rounded" />
-            <span className="text-muted-foreground">Heute</span>
-          </div>
-          <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-green-500 bg-green-100 rounded" />
             <span className="text-muted-foreground">Arbeit</span>
           </div>
@@ -459,7 +446,7 @@ function HoursPageContent() {
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-holiday-fill rounded" />
-            <span className="text-muted-foreground hidden md:inline">Feiertag</span>
+            <span className="text-muted-foreground">Feiertag</span>
           </div>
         </div>
       </div>
