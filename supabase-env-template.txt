@@ -1,0 +1,71 @@
+# Supabase Environment Variables Template
+# Copy this content to .env.local and fill in your actual values
+
+# ===========================================
+# SUPABASE CONFIGURATION
+# ===========================================
+
+# Public Supabase URL (safe for client-side use)
+# Get this from: Supabase Dashboard → Settings → API → Project URL
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+
+# Public anonymous key (safe for client-side use)
+# Get this from: Supabase Dashboard → Settings → API → anon public
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here
+
+# Service role key (SERVER-SIDE ONLY - NEVER expose to client)
+# Get this from: Supabase Dashboard → Settings → API → service_role
+# ⚠️  SECURITY WARNING: This key has full database access!
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-service-role-key-here
+
+# ===========================================
+# DEVELOPMENT SETTINGS
+# ===========================================
+
+# Use mock allow-list for local development
+# Set to 'true' to use in-memory allow-list (10 emails)
+# Set to 'false' to check profiles table in database
+ALLOWLIST_MOCK=true
+
+# ===========================================
+# INSTRUCTIONS
+# ===========================================
+
+# 1. Create a new file called .env.local in your project root
+# 2. Copy the content above (without these comments)
+# 3. Replace the placeholder values with your actual Supabase credentials
+# 4. Get your credentials from: https://app.supabase.com → Your Project → Settings → API
+# 5. Restart your development server: npm run dev
+
+# ===========================================
+# SECURITY NOTES
+# ===========================================
+
+# ✅ DO:
+# - Keep .env.local in .gitignore (already configured)
+# - Use different keys for development/production
+# - Rotate keys if accidentally exposed
+
+# ❌ DON'T:
+# - Commit .env.local to git
+# - Share service role key
+# - Put keys in client-side code
+# - Use production keys in development
+
+# ===========================================
+# ALLOWED EMAILS (when ALLOWLIST_MOCK=true)
+# ===========================================
+
+# These 10 emails can sign up during development:
+# max@tetrasan.de
+# anna@tetrasan.de
+# thomas@tetrasan.de
+# julia@tetrasan.de
+# michael@tetrasan.de
+# laura@tetrasan.de
+# daniel@tetrasan.de
+# sophie@tetrasan.de
+# lukas@tetrasan.de
+# emma@tetrasan.de
+
+# Any other email will show: "Registrierung nicht möglich. Bitte wende dich an die Verwaltung."
