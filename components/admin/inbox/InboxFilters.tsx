@@ -4,7 +4,7 @@ import React from "react";
 import { Search } from "lucide-react";
 // Local, narrow types to align with page.tsx usage
 type ReadFilter = "all" | "unread" | "read";
-type TypeFilter = string; // keep broad to accept page values
+type TypeFilter = "all" | "leave_request_submitted" | "day_off_request_submitted";
 type SortOrder = "newest" | "oldest";
 
 interface InboxFiltersProps {
@@ -13,7 +13,7 @@ interface InboxFiltersProps {
   readFilter: ReadFilter;
   onReadFilterChange: (value: ReadFilter) => void;
   typeFilter: TypeFilter;
-  onTypeFilterChange: (value: TypeFilter) => void;
+  onTypeFilterChange: React.Dispatch<React.SetStateAction<TypeFilter>>;
   sortOrder: SortOrder;
   onSortOrderChange: (value: SortOrder) => void;
 }
@@ -77,9 +77,9 @@ export function InboxFilters({
             onChange={(e) => onTypeFilterChange(e.target.value as TypeFilter)}
             className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
           >
-            <option value="alle">Alle</option>
-            <option value="urlaub">Urlaub</option>
-            <option value="tagesbefreiung">Tagesbefreiung</option>
+            <option value="all">Alle</option>
+            <option value="leave_request_submitted">Urlaub</option>
+            <option value="day_off_request_submitted">Tagesbefreiung</option>
           </select>
         </div>
 
