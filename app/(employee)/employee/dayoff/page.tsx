@@ -292,7 +292,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
             </div>
 
             {mode === 'partial' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                 <div>
                   <label htmlFor="timeFrom" className="block text-sm font-medium mb-1.5 text-foreground">
                     von
@@ -305,7 +305,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                       setTimeFrom(e.target.value);
                       if (errors.timeFrom) setErrors(prev => ({ ...prev, timeFrom: undefined }));
                     }}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                    className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                       errors.timeFrom ? 'border-red-500' : 'border-border'
                     }`}
                   />
@@ -325,7 +325,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                       setTimeTo(e.target.value);
                       if (errors.timeTo) setErrors(prev => ({ ...prev, timeTo: undefined }));
                     }}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                    className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                       errors.timeTo ? 'border-red-500' : 'border-border'
                     }`}
                   />
