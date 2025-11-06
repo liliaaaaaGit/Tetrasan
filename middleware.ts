@@ -76,7 +76,11 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDev = process.env.NODE_ENV !== "production";
 
-  const isAuthRoute = path === "/login" || path === "/signup";
+  const isAuthRoute = path === "/login" || path === "/signup" || 
+                      path === "/forgot-password" || 
+                      path.startsWith("/auth/reset-password") ||
+                      path === "/datenschutz" || 
+                      path === "/impressum";
   const isEmployeeRoute = path.startsWith("/employee");
   const isAdminRoute = path.startsWith("/admin");
 

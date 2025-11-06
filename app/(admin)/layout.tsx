@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Inbox } from "lucide-react";
+import { Users, Inbox, Key } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -47,6 +47,11 @@ export default function AdminLayout({
       href: "/admin/inbox",
       icon: Inbox,
       label: "Postfach",
+    },
+    {
+      href: "/admin/password-resets",
+      icon: Key,
+      label: "Passwort-Reset",
     },
   ];
 
