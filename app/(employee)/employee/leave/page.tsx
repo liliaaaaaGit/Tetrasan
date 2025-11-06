@@ -248,7 +248,7 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                     setErrors(prev => ({ ...prev, dateRange: undefined }));
                   }
                 }}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                className={`max-w-[200px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.startDate || errors.dateRange ? 'border-red-500' : 'border-border'
                 }`}
                 placeholder="tt.mm.jjjj"
@@ -275,7 +275,7 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                     setErrors(prev => ({ ...prev, dateRange: undefined }));
                   }
                 }}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                className={`max-w-[200px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.endDate || errors.dateRange ? 'border-red-500' : 'border-border'
                 }`}
                 placeholder="tt.mm.jjjj"
