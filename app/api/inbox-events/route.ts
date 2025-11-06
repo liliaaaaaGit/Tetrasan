@@ -35,8 +35,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Fehler beim Laden der Benachrichtigungen.' }, { status: 500 });
     }
 
-    const reqIds = (events || []).map(e => (e as any).payload?.reqId).filter(Boolean);
-    const empIdsFromEvents = (events || []).map(e => (e as any).payload?.employeeId).filter(Boolean);
+    // Collect request IDs and employee IDs from various possible payload shapes
+    const reqIds = (events || []).map((e: any) => {
+      const p = e.payload || {};
+      return p.reqId || p.requestId || p.leaveRequestId || null;
+    }).filter(Boolean);
+    const empIdsFromEvents = (events || []).map((e: any) => {
+      const p = e.payload || {};
+      return p.employeeId || p.employee_id || null;
+    }).filter(Boolean);
 
     // Load related leave requests with full details
     let requestsById: Record<string, any> = {};
@@ -44,7 +51,7 @@ export async function GET(request: NextRequest) {
       const { data: requests, error: reqError } = await supabase
         .from('leave_requests')
         .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
-        .in('id', reqIds);
+        .in('id', reqIds as string[]);
       if (reqError) {
         console.error('[InboxEvents] Error fetching requests:', reqError.message);
       } else {
@@ -52,7 +59,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Load related employee profiles
+    // Load related employee profiles (from events and from requests)
     let employeesById: Record<string, any> = {};
     let empIds = Array.from(new Set(empIdsFromEvents));
     // also include employee ids from related requests (covers events missing employeeId)
