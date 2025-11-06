@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 /**
  * DELETE /api/inbox-events/[id]
@@ -10,7 +11,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    // Use admin client to bypass RLS for admin operation
+    const supabase = getAdminClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });

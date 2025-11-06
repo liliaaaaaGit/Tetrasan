@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 /**
  * API Routes for Admin Inbox Events
@@ -11,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   try {
     // Manual admin check (avoid redirect() in API routes)
+    // Use admin client for write ops (later below), read here is fine with user client
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -150,7 +152,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Manual admin check
-    const supabase = createClient();
+    // Use admin client to bypass RLS for updates
+    const supabase = getAdminClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
