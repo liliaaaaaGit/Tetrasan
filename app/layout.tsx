@@ -4,7 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Tetrasan Zeiterfassung",
   description: "Zeiterfassung für Tetrasan Mitarbeiter",
-  lang: "de-DE",
 };
 
 export default function RootLayout({
