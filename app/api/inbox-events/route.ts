@@ -103,17 +103,17 @@ export async function GET(request: NextRequest) {
 
     // Backfill: include submitted leave requests that have no inbox event (e.g., legacy rows)
     const existingReqSet = new Set(reqIds);
-    const { data: submittedRequests, error: subReqError } = await supabase
+    const { data: allRequests, error: subReqError } = await supabase
       .from('leave_requests')
       .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
-      .eq('status', 'submitted')
       .order('created_at', { ascending: false });
-    if (!subReqError && submittedRequests) {
-      for (const r of submittedRequests) {
+    if (!subReqError && allRequests) {
+      for (const r of allRequests) {
         if (!existingReqSet.has(r.id)) {
           const emp = employeesById[r.employee_id];
           data.push({
             id: r.id, // synthetic id
+            // keep kind consistent with UI label logic
             kind: r.type === 'vacation' ? 'leave_request_submitted' : 'day_off_request_submitted',
             is_read: false,
             created_at: r.created_at,
