@@ -37,7 +37,7 @@ interface Holiday {
   name: string;
 }
 
-export default function EmployeeHoursPage() {
+function HoursPageContent() {
   const { year, month, goToPreviousMonth, goToNextMonth } = useMonthState();
   const [entries, setEntries] = useState<Record<string, DayEntry>>({});
   const [holidays, setHolidays] = useState<Record<string, Holiday>>({});
@@ -316,7 +316,6 @@ export default function EmployeeHoursPage() {
   };
 
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Lädt…</div>}>
     <div>
       <PageHeader title="Stunden" />
 
@@ -483,6 +482,13 @@ export default function EmployeeHoursPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function EmployeeHoursPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Lädt…</div>}>
+      <HoursPageContent />
     </Suspense>
   );
 }
