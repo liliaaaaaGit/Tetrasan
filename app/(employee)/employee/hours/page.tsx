@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { DayEntryDialog } from "@/components/employee/hours/DayEntryDialog";
@@ -316,6 +316,7 @@ export default function EmployeeHoursPage() {
   };
 
   return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Lädt…</div>}>
     <div>
       <PageHeader title="Stunden" />
 
@@ -482,5 +483,6 @@ export default function EmployeeHoursPage() {
         </div>
       )}
     </div>
+    </Suspense>
   );
 }
