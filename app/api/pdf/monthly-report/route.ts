@@ -8,6 +8,7 @@ import { computeMonthlySummary } from "@/lib/logic/monthlySummary";
 
 // Ensure Node.js runtime for PDFKit
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * PDF Export API Route (Admin only)

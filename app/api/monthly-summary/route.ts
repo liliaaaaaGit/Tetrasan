@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { getSession } from '@/lib/auth/session';
 import { requireRole } from '@/lib/auth/session';
 import { loadMonthlyData } from '@/lib/data/monthlyData';

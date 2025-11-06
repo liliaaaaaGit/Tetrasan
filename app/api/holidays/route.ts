@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { getHolidaysForMonth, FALLBACK_HOLIDAYS_2026, FALLBACK_HOLIDAYS_2025 } from '@/lib/data/holidays';
 
 export async function GET(request: NextRequest) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 
 // Downloads the latest contract PDF for an employee from the 'forms-uploads' bucket
