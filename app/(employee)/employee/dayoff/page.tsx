@@ -208,6 +208,9 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
     if (mode === 'partial') {
       if (!timeFrom) newErrors.timeFrom = 'Bitte Zeit (von) angeben.';
       if (!timeTo) newErrors.timeTo = 'Bitte Zeit (bis) angeben.';
+      if (timeFrom && timeTo && timeFrom >= timeTo) {
+        newErrors.timeTo = 'Zeit (bis) muss nach Zeit (von) liegen.';
+      }
     }
 
     setErrors(newErrors);
