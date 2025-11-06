@@ -254,7 +254,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                     setErrors(prev => ({ ...prev, date: undefined }));
                   }
                 }}
-                className={`max-w-[200px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.date ? 'border-red-500' : 'border-border'
                 }`}
                 placeholder="tt.mm.jjjj"
