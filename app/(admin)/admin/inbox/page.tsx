@@ -143,8 +143,8 @@ export default function AdminInboxPage() {
         throw new Error('Failed to update read status');
       }
 
-      // Best-effort refresh to sync synthetic events that just got created
-      loadInboxEvents();
+      // Don't reload - optimistic update is sufficient and reload causes issues with synthetic events
+      // The state will be correct on next page load or manual refresh
     } catch (error) {
       // Revert on failure
       console.error('Error updating read status:', error);
