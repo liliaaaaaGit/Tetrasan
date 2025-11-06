@@ -93,7 +93,7 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
               <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
                 Gelesen
               </th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
+              <th className="text-right px-4 py-3 text-sm font-medium text-muted-foreground w-[280px]">
                 Aktionen
               </th>
             </tr>
@@ -117,13 +117,11 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                 <td className="px-4 py-3">
                   <Badge variant="outline">{event.status}</Badge>
                 </td>
-                <td className="px-4 py-3">
-                  <Badge variant={event.isRead ? "secondary" : "primary"}>
-                    {event.isRead ? "Gelesen" : "Ungelesen"}
-                  </Badge>
+                <td className="px-4 py-3 text-sm">
+                  <span className={cn("text-sm", event.isRead ? "text-muted-foreground" : "text-foreground")}>{event.isRead ? "Gelesen" : "Ungelesen"}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
+                  <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => handleOpen(event)}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
@@ -181,9 +179,7 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                 <p className="font-medium text-sm mb-1">{event.employeeName}</p>
                 <p className="text-xs text-muted-foreground">{formatDate(event.createdAt)}</p>
               </div>
-              <Badge variant={event.isRead ? "secondary" : "primary"}>
-                {event.isRead ? "Gelesen" : "Ungelesen"}
-              </Badge>
+              <span className={cn("text-xs", event.isRead ? "text-muted-foreground" : "text-foreground")}>{event.isRead ? "Gelesen" : "Ungelesen"}</span>
             </div>
             
             <div className="flex gap-2 mb-3">
@@ -193,7 +189,7 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
               <Badge variant="outline">{event.status}</Badge>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-end">
               <button
                 onClick={() => handleOpen(event)}
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
