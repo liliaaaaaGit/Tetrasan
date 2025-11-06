@@ -115,9 +115,9 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       {/* Work fields */}
       {status === "arbeit" && (
         <>
-          {/* Time fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          {/* Time fields (compact) */}
+          <div className="flex items-end gap-4 flex-wrap">
+            <div className="w-28 flex-1 min-w-[6.5rem] max-w-[9rem]">
               <label htmlFor="from" className="block text-sm font-medium mb-1">
                 Von
               </label>
@@ -139,7 +139,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               )}
             </div>
 
-            <div>
+            <div className="w-28 flex-1 min-w-[6.5rem] max-w-[9rem]">
               <label htmlFor="to" className="block text-sm font-medium mb-1">
                 Bis
               </label>

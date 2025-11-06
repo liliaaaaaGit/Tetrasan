@@ -97,15 +97,16 @@ export function DayEntryDialog({
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-50"
-        onClick={handleCancel}
-      />
+      {/* Backdrop + Centering Container */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={handleCancel}
+        />
 
-      {/* Dialog */}
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        {/* Dialog Content */}
+        <div className="relative w-full max-w-md sm:max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
@@ -244,6 +245,7 @@ export function DayEntryDialog({
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </>
