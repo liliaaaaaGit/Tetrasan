@@ -68,11 +68,14 @@ export function AdminCorrectionDialog({
   const normalizeTime = (time: string): string => {
     if (!time) return '';
     // If time has seconds (HH:MM:SS), remove them
-    return time.length === 8 ? time.substring(0, 5) : time;
+    return time.length >= 5 ? time.substring(0, 5) : time;
   };
 
-  // Calculate corrected hours only if both times are valid
-  const calculatedHours = from && to ? calculateHours(normalizeTime(from), normalizeTime(to), pause) : null;
+  // Normalize pause to ensure it's a number
+  const pauseMinutes = Number(pause) || 0;
+
+  // Calculate corrected hours - use calculateHours as single source of truth
+  const calculatedHours = from && to ? calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes) : null;
 
   // Handle input changes with validation clearing
   const handleFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +93,10 @@ export function AdminCorrectionDialog({
   };
 
   const handleToBlur = () => {
-    // No validation needed - invalid time ranges will result in 0 hours
+    // Validate time order only when user finishes editing
+    if (from && to && calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes) === null) {
+      setErrors((prev) => ({ ...prev, to: "Ende muss nach Beginn liegen oder Zeitangaben sind ungültig" }));
+    }
   };
 
   const handlePauseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,9 +110,9 @@ export function AdminCorrectionDialog({
   const handlePauseBlur = () => {
     // Validate pause doesn't exceed work time only when user finishes editing
     if (from && to) {
-      const hours = calculateHours(normalizeTime(from), normalizeTime(to), pause);
-      if (hours !== null && hours < 0) {
-        setErrors((prev) => ({ ...prev, pause: "Pause ist zu lang" }));
+      const hours = calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes);
+      if (hours === null) {
+        setErrors((prev) => ({ ...prev, pause: "Pause ist zu lang oder Zeitangaben sind ungültig" }));
       }
     }
   };
@@ -121,15 +127,16 @@ export function AdminCorrectionDialog({
     if (!to || to.trim() === '') {
       newErrors.to = "Bis ist erforderlich";
     }
-    if (pause < 0) {
+    if (pauseMinutes < 0) {
       newErrors.pause = "Pause darf nicht negativ sein";
     }
     
-    // Check if pause is too long (would result in negative hours)
+    // Use calculateHours as single source of truth for time validation
     if (from && to && from.trim() !== '' && to.trim() !== '') {
-      const hours = calculateHours(normalizeTime(from), normalizeTime(to), pause);
-      if (hours !== null && hours < 0) {
-        newErrors.pause = "Pause ist zu lang";
+      const hours = calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes);
+      if (hours === null) {
+        // calculateHours returns null for: invalid format, to <= from, or pause > duration
+        newErrors.to = "Ende muss nach Beginn liegen oder Zeitangaben sind ungültig";
       }
     }
 
@@ -145,6 +152,7 @@ export function AdminCorrectionDialog({
       from,
       to,
       pause,
+      pauseMinutes,
       calculatedHours,
       entryId,
       normalizedFrom: normalizeTime(from),
@@ -158,12 +166,18 @@ export function AdminCorrectionDialog({
       return;
     }
 
+    // calculatedHours must be a valid number (not null) after validation
+    if (calculatedHours === null) {
+      setErrors((prev) => ({ ...prev, to: "Ungültige Zeitangaben" }));
+      return;
+    }
+
     const correction = {
       entry_id: entryId,
       corrected_time_from: normalizeTime(from),
       corrected_time_to: normalizeTime(to),
-      corrected_break_minutes: pause,
-      corrected_hours_decimal: calculatedHours ?? 0,
+      corrected_break_minutes: pauseMinutes,
+      corrected_hours_decimal: calculatedHours, // Store actual calculated hours, not default to 0
       note: note.trim() || undefined,
     };
 

@@ -28,9 +28,19 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const [kommentar, setKommentar] = useState(initialData?.kommentar || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Calculate hours preview
+  // Normalize time strings (handle HH:MM:SS format from HTML time inputs)
+  const normalizeTime = (time: string): string => {
+    if (!time) return '';
+    // If time has seconds (HH:MM:SS), remove them
+    return time.length >= 5 ? time.substring(0, 5) : time;
+  };
+
+  // Normalize pause to ensure it's a number
+  const pauseMinutes = Number(pause) || 0;
+
+  // Calculate hours preview - use calculateHours as single source of truth
   const calculatedHours = status === "arbeit" 
-    ? calculateHours(from, to, pause) 
+    ? calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes) 
     : null;
 
   // Validate form
@@ -39,13 +49,18 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
     if (status === "arbeit") {
       // Work entry validation
-      if (!from) newErrors.from = "Von ist erforderlich";
-      if (!to) newErrors.to = "Bis ist erforderlich";
-      if (pause < 0) newErrors.pause = "Pause darf nicht negativ sein";
+      if (!from || !from.trim()) newErrors.from = "Von ist erforderlich";
+      if (!to || !to.trim()) newErrors.to = "Bis ist erforderlich";
+      if (pauseMinutes < 0) newErrors.pause = "Pause darf nicht negativ sein";
       if (!taetigkeit.trim()) newErrors.taetigkeit = "Tätigkeitsbericht ist erforderlich";
       
-      if (calculatedHours !== null && calculatedHours < 0) {
-        newErrors.pause = "Pause ist zu lang";
+      // Use calculateHours as single source of truth for time validation
+      if (from && to && from.trim() && to.trim()) {
+        const hours = calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes);
+        if (hours === null) {
+          // calculateHours returns null for: invalid format, to <= from, or pause > duration
+          newErrors.to = "Ende muss nach Beginn liegen oder Zeitangaben sind ungültig";
+        }
       }
     } else {
       // Vacation or sick day
@@ -63,15 +78,21 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
     
     if (!validate()) return;
 
+    // For work entries, calculatedHours must be a valid number (not null)
+    if (status === "arbeit" && calculatedHours === null) {
+      setErrors((prev) => ({ ...prev, to: "Ungültige Zeitangaben" }));
+      return;
+    }
+
     const entry: DayEntry = {
       date,
       status,
       ...(status === "arbeit" && {
-        from,
-        to,
-        pause,
+        from: normalizeTime(from),
+        to: normalizeTime(to),
+        pause: pauseMinutes,
         taetigkeit,
-        hours: calculatedHours ?? 0,
+        hours: calculatedHours!, // Safe to use ! here because we validated above
       }),
       ...(status !== "arbeit" && {
         kommentar,

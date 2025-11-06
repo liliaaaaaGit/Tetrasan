@@ -115,32 +115,53 @@ export function parseDate(dateStr: string): { year: number; month: number; day: 
 
 /**
  * Calculate hours from time range
- * @param from - Start time (HH:MM)
- * @param to - End time (HH:MM)
- * @param pause - Pause in minutes
- * @returns Hours as decimal, or null if invalid
+ * 
+ * Accepts time formats:
+ * - "HH:MM" (e.g., "08:00")
+ * - "HH:MM:SS" (e.g., "08:00:00") - seconds are ignored
+ * 
+ * @param from - Start time (HH:MM or HH:MM:SS)
+ * @param to - End time (HH:MM or HH:MM:SS)
+ * @param pause - Pause in minutes (must be a number >= 0)
+ * @returns Hours as decimal, or null if invalid (invalid format, to <= from, or pause > duration)
  */
 export function calculateHours(from: string, to: string, pause: number): number | null {
-  const fromMatch = from.match(/^(\d{1,2}):(\d{2})$/);
-  const toMatch = to.match(/^(\d{1,2}):(\d{2})$/);
+  // Normalize inputs: trim and handle HH:MM:SS format
+  const normalizedFrom = from.trim();
+  const normalizedTo = to.trim();
+  
+  // Extract HH:MM from HH:MM:SS if present (take first 5 chars)
+  const fromTime = normalizedFrom.length >= 5 ? normalizedFrom.substring(0, 5) : normalizedFrom;
+  const toTime = normalizedTo.length >= 5 ? normalizedTo.substring(0, 5) : normalizedTo;
+  
+  // Match HH:MM format (1-2 digits, colon, 2 digits)
+  const fromMatch = fromTime.match(/^(\d{1,2}):(\d{2})$/);
+  const toMatch = toTime.match(/^(\d{1,2}):(\d{2})$/);
   
   if (!fromMatch || !toMatch) return null;
+  
+  // Ensure pause is a valid number
+  const pauseMinutes = Number(pause);
+  if (isNaN(pauseMinutes) || pauseMinutes < 0) return null;
   
   const fromHours = parseInt(fromMatch[1], 10);
   const fromMinutes = parseInt(fromMatch[2], 10);
   const toHours = parseInt(toMatch[1], 10);
   const toMinutes = parseInt(toMatch[2], 10);
   
+  // Validate time ranges
   if (fromHours < 0 || fromHours > 23 || fromMinutes < 0 || fromMinutes > 59) return null;
   if (toHours < 0 || toHours > 23 || toMinutes < 0 || toMinutes > 59) return null;
   
   const fromTotal = fromHours * 60 + fromMinutes;
   const toTotal = toHours * 60 + toMinutes;
   
+  // End must be after start
   if (toTotal <= fromTotal) return null;
   
-  const workMinutes = toTotal - fromTotal - pause;
+  const workMinutes = toTotal - fromTotal - pauseMinutes;
   
+  // Pause cannot exceed work duration
   if (workMinutes < 0) return null;
   
   return workMinutes / 60;
