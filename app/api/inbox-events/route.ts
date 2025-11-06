@@ -83,6 +83,10 @@ export async function GET(request: NextRequest) {
       const request = reqId ? requestsById[reqId] : undefined;
       const empId = e.payload?.employeeId || request?.employee_id;
       const employee = empId ? employeesById[empId] : undefined;
+      // Skip soft-deleted events
+      if (e.payload && e.payload.deleted === true) {
+        return null;
+      }
       return {
         id: e.id,
         kind: e.kind,
@@ -99,7 +103,7 @@ export async function GET(request: NextRequest) {
         } : null,
         employee: employee ? { id: employee.id, full_name: employee.full_name, email: employee.email } : null,
       };
-    });
+    }).filter(Boolean);
 
     // Backfill: include submitted leave requests that have no inbox event (e.g., legacy rows)
     const existingReqSet = new Set(reqIds);

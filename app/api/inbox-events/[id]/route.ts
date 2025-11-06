@@ -24,13 +24,24 @@ export async function DELETE(
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
 
+    // Soft-delete: fetch payload, set deleted flag, update
+    const { data: row, error: fetchErr } = await supabase
+      .from('inbox_events')
+      .select('payload')
+      .eq('id', params.id)
+      .single();
+    if (fetchErr) {
+      console.error('[InboxEvents] Error loading event for delete:', fetchErr);
+      return NextResponse.json({ error: 'Fehler beim Löschen.' }, { status: 500 });
+    }
+    const currentPayload = (row as any)?.payload || {};
+    const newPayload = { ...currentPayload, deleted: true } as any;
     const { error } = await supabase
       .from('inbox_events')
-      .delete()
+      .update({ payload: newPayload })
       .eq('id', params.id);
-
     if (error) {
-      console.error('[InboxEvents] Error deleting event:', error.message);
+      console.error('[InboxEvents] Error soft-deleting event:', error.message);
       return NextResponse.json({ error: 'Fehler beim Löschen.' }, { status: 500 });
     }
 
