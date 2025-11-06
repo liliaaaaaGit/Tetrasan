@@ -174,25 +174,73 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Mark events as read/unread
-    const updateData: any = { is_read: isRead };
-    if (isRead) {
-      updateData.read_at = new Date().toISOString();
-    } else {
-      updateData.read_at = null;
-    }
-    
-    const { error } = await supabase
+    // Check which events exist in inbox_events
+    const { data: existingEvents, error: checkError } = await supabase
       .from('inbox_events')
-      .update(updateData)
+      .select('id')
       .in('id', eventIds);
 
-    if (error) {
-      console.error("[InboxEvents] Error updating events:", error.message);
+    if (checkError) {
+      console.error("[InboxEvents] Error checking events:", checkError.message);
       return NextResponse.json(
-        { error: "Fehler beim Aktualisieren der Benachrichtigungen." },
+        { error: "Fehler beim Prüfen der Benachrichtigungen." },
         { status: 500 }
       );
+    }
+
+    const existingIds = new Set((existingEvents || []).map((e: any) => e.id));
+    const missingIds = eventIds.filter((id: string) => !existingIds.has(id));
+
+    // Update existing events
+    if (existingIds.size > 0) {
+      const updateData: any = { is_read: isRead };
+      if (isRead) {
+        updateData.read_at = new Date().toISOString();
+      } else {
+        updateData.read_at = null;
+      }
+      
+      const { error: updateError } = await supabase
+        .from('inbox_events')
+        .update(updateData)
+        .in('id', Array.from(existingIds));
+
+      if (updateError) {
+        console.error("[InboxEvents] Error updating events:", updateError.message);
+        return NextResponse.json(
+          { error: "Fehler beim Aktualisieren der Benachrichtigungen." },
+          { status: 500 }
+        );
+      }
+    }
+
+    // For synthetic events (missing from inbox_events), try to create them from leave_requests
+    if (missingIds.length > 0) {
+      const { data: requests, error: reqError } = await supabase
+        .from('leave_requests')
+        .select('id, employee_id, type, status, period_start, period_end, comment, created_at')
+        .in('id', missingIds);
+
+      if (!reqError && requests && requests.length > 0) {
+        const newEvents = requests.map((req: any) => ({
+          kind: req.type === 'vacation' ? 'leave_request_submitted' : 'day_off_request_submitted',
+          payload: {
+            reqId: req.id,
+            employeeId: req.employee_id,
+          },
+          is_read: isRead,
+          read_at: isRead ? new Date().toISOString() : null,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('inbox_events')
+          .insert(newEvents);
+
+        if (insertError) {
+          console.error("[InboxEvents] Error creating synthetic events:", insertError.message);
+          // Don't fail the whole request if some events can't be created
+        }
+      }
     }
 
     return NextResponse.json({ success: true });

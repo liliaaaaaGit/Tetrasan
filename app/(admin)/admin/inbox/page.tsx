@@ -138,26 +138,15 @@ export default function AdminInboxPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update read status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update read status');
       }
 
-      let wasRead = false;
-      setEvents(prev => {
-        const event = prev.find(e => e.id === eventId);
-        wasRead = event?.isRead || false;
-        return prev.map(e => 
-          e.id === eventId ? { ...e, isRead: !e.isRead } : e
-        );
-      });
-      
-      // Update unread count based on the toggle
-      setUnreadCount(prev => {
-        // If was read and now unread, increment
-        // If was unread and now read, decrement
-        return wasRead ? prev + 1 : Math.max(0, prev - 1);
-      });
+      // Reload events to get updated state (especially for synthetic events that were just created)
+      await loadInboxEvents();
     } catch (error) {
       console.error('Error updating read status:', error);
+      alert('Fehler beim Aktualisieren des Gelesen-Status.');
     }
   };
 
