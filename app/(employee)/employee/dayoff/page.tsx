@@ -60,7 +60,10 @@ export default function EmployeeDayOffPage() {
           type: 'day_off',
           period_start: formData.date,
           period_end: formData.date, // Same day for day-off
-          comment: formData.comment,
+          comment:
+            formData.mode === 'partial' && formData.timeFrom && formData.timeTo
+              ? `${formData.comment} (Zeit: ${formData.timeFrom} - ${formData.timeTo})`
+              : formData.comment,
         }),
       });
 
@@ -187,7 +190,10 @@ export default function EmployeeDayOffPage() {
 function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => void; onSubmit: (data: any) => void; isLoading: boolean }) {
   const [date, setDate] = useState('');
   const [comment, setComment] = useState('');
-  const [errors, setErrors] = useState<{ date?: string; comment?: string }>({});
+  const [mode, setMode] = useState<'full' | 'partial'>('full');
+  const [timeFrom, setTimeFrom] = useState('');
+  const [timeTo, setTimeTo] = useState('');
+  const [errors, setErrors] = useState<{ date?: string; comment?: string; timeFrom?: string; timeTo?: string }>({});
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -198,6 +204,13 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
 
     if (!comment.trim()) {
       newErrors.comment = "Grund ist erforderlich.";
+    }
+    if (mode === 'partial') {
+      if (!timeFrom) newErrors.timeFrom = 'Bitte Zeit (von) angeben.';
+      if (!timeTo) newErrors.timeTo = 'Bitte Zeit (bis) angeben.';
+      if (timeFrom && timeTo && timeFrom >= timeTo) {
+        newErrors.timeTo = 'Zeit (bis) muss nach Zeit (von) liegen.';
+      }
     }
 
     setErrors(newErrors);
@@ -211,7 +224,13 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
       return;
     }
 
-    onSubmit({ date, comment });
+    onSubmit({
+      date,
+      comment,
+      mode,
+      timeFrom: mode === 'partial' ? timeFrom : undefined,
+      timeTo: mode === 'partial' ? timeTo : undefined,
+    });
   };
 
   return (
@@ -244,6 +263,78 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                 <p className="mt-1 text-sm text-red-600" role="alert">{errors.date}</p>
               )}
             </div>
+
+            {/* Ganztags vs Zeitfenster */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-foreground">Art</label>
+              <div className="flex items-center gap-4">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="dayoff-mode"
+                    value="full"
+                    checked={mode === 'full'}
+                    onChange={() => setMode('full')}
+                  />
+                  <span>Ganztags</span>
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="dayoff-mode"
+                    value="partial"
+                    checked={mode === 'partial'}
+                    onChange={() => setMode('partial')}
+                  />
+                  <span>Zeit (von/bis)</span>
+                </label>
+              </div>
+            </div>
+
+            {mode === 'partial' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="timeFrom" className="block text-sm font-medium mb-1.5 text-foreground">
+                    von
+                  </label>
+                  <input
+                    id="timeFrom"
+                    type="time"
+                    value={timeFrom}
+                    onChange={(e) => {
+                      setTimeFrom(e.target.value);
+                      if (errors.timeFrom) setErrors(prev => ({ ...prev, timeFrom: undefined }));
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                      errors.timeFrom ? 'border-red-500' : 'border-border'
+                    }`}
+                  />
+                  {errors.timeFrom && (
+                    <p className="mt-1 text-sm text-red-600" role="alert">{errors.timeFrom}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="timeTo" className="block text-sm font-medium mb-1.5 text-foreground">
+                    bis
+                  </label>
+                  <input
+                    id="timeTo"
+                    type="time"
+                    value={timeTo}
+                    onChange={(e) => {
+                      setTimeTo(e.target.value);
+                      if (errors.timeTo) setErrors(prev => ({ ...prev, timeTo: undefined }));
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                      errors.timeTo ? 'border-red-500' : 'border-border'
+                    }`}
+                  />
+                  {errors.timeTo && (
+                    <p className="mt-1 text-sm text-red-600" role="alert">{errors.timeTo}</p>
+                  )}
+                </div>
+              </div>
+            )}
             
             <div>
               <label htmlFor="comment" className="block text-sm font-medium mb-1.5 text-foreground">
