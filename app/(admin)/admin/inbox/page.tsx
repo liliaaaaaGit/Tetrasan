@@ -124,28 +124,32 @@ export default function AdminInboxPage() {
   };
 
   const toggleReadStatus = async (eventId: string) => {
-    try {
-      const event = events.find(e => e.id === eventId);
-      if (!event) return;
+    const target = events.find(e => e.id === eventId);
+    if (!target) return;
 
+    // Optimistic UI update
+    const nextIsRead = !target.isRead;
+    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, isRead: nextIsRead } : e));
+    setUnreadCount(prev => nextIsRead ? Math.max(0, prev - 1) : prev + 1);
+
+    try {
       const response = await fetch('/api/inbox-events', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventIds: [eventId],
-          isRead: !event.isRead,
-        }),
+        body: JSON.stringify({ eventIds: [eventId], isRead: nextIsRead }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update read status');
+        throw new Error('Failed to update read status');
       }
 
-      // Reload events to get updated state (especially for synthetic events that were just created)
-      await loadInboxEvents();
+      // Best-effort refresh to sync synthetic events that just got created
+      loadInboxEvents();
     } catch (error) {
+      // Revert on failure
       console.error('Error updating read status:', error);
+      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, isRead: !nextIsRead } : e));
+      setUnreadCount(prev => nextIsRead ? prev + 1 : Math.max(0, prev - 1));
       alert('Fehler beim Aktualisieren des Gelesen-Status.');
     }
   };

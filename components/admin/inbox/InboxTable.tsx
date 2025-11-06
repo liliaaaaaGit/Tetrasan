@@ -116,7 +116,7 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
-                    <button
+                    <button type="button"
                       onClick={() => handleOpen(event)}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
                     >
@@ -124,7 +124,7 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                       <span>Öffnen</span>
                     </button>
                     {onDelete && (
-                      <button
+                      <button type="button"
                         onClick={() => onDelete(event.id)}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                         title="Nachricht löschen"
@@ -132,7 +132,7 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
-                    <button
+                    <button type="button"
                       onClick={() => onToggleRead(event.id)}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition-colors"
                       aria-label={event.isRead ? "Als ungelesen markieren" : "Als gelesen markieren"}
@@ -177,14 +177,14 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
             </div>
 
             <div className="flex gap-2 justify-end">
-              <button
+              <button type="button"
                 onClick={() => handleOpen(event)}
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span>Öffnen</span>
               </button>
-              <button
+              <button type="button"
                 onClick={() => onToggleRead(event.id)}
                 className="flex items-center justify-center px-3 py-2 text-sm bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition-colors"
                 aria-label={event.isRead ? "Als ungelesen markieren" : "Als gelesen markieren"}
