@@ -402,9 +402,9 @@ function HoursPageContent() {
                   >
                     {/* Mobile layout: stacked content to avoid overlap */}
                     <div className="flex h-full w-full flex-col items-center justify-between md:hidden py-1">
-                      <div className="text-[11px] font-medium self-start pl-1 pt-0.5">{day}</div>
+                      <div className="text-[11px] font-medium text-black self-start pl-1 pt-0.5">{day}</div>
                       {hasEntry && entry.status === "arbeit" && entry.hours && (
-                        <div className="text-[11px] font-medium">{formatHours(entry.hours)}h</div>
+                        <div className="text-[11px] font-medium text-muted-foreground">{formatHours(entry.hours)}h</div>
                       )}
                       {!hasEntry && isHoliday && (
                         <div className="text-[10px] font-medium text-brand">Feiertag</div>
@@ -413,7 +413,7 @@ function HoursPageContent() {
 
                     {/* Desktop layout: keep absolute positioning */}
                     <div className="hidden md:block">
-                      <span className="text-sm">{day}</span>
+                      <span className="text-sm font-medium text-black">{day}</span>
                       {isTodayDate && (
                         <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                       )}
@@ -427,7 +427,7 @@ function HoursPageContent() {
                         </span>
                       )}
                       {hasEntry && entry.status === "arbeit" && entry.hours && (
-                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium">
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-muted-foreground">
                           {formatHours(entry.hours)}h
                         </span>
                       )}
