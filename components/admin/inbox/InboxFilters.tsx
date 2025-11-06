@@ -2,11 +2,10 @@
 
 import React from "react";
 import { Search } from "lucide-react";
-// Inline the simple union types to avoid importing the removed useInboxState module
-// Accept both German and English variants to match existing pages using either form
-export type ReadFilter = "alle" | "ungelesen" | "gelesen" | "all" | "unread" | "read";
-export type TypeFilter = "alle" | "urlaub" | "tagesbefreiung" | "all" | "vacation" | "dayoff";
-export type SortOrder = "neueste" | "aelteste" | "newest" | "oldest";
+// Local, narrow types to align with page.tsx usage
+type ReadFilter = "all" | "unread" | "read";
+type TypeFilter = string; // keep broad to accept page values
+type SortOrder = "newest" | "oldest";
 
 interface InboxFiltersProps {
   searchTerm: string;
@@ -61,9 +60,9 @@ export function InboxFilters({
             onChange={(e) => onReadFilterChange(e.target.value as ReadFilter)}
             className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
           >
-            <option value="alle">Alle</option>
-            <option value="ungelesen">Ungelesen</option>
-            <option value="gelesen">Gelesen</option>
+            <option value="all">Alle</option>
+            <option value="unread">Ungelesen</option>
+            <option value="read">Gelesen</option>
           </select>
         </div>
 
