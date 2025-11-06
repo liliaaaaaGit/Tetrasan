@@ -11,13 +11,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Use admin client to bypass RLS for admin operation
-    const supabase = getAdminClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Use user-scoped client to read session; use admin client for writes
+    const userClient = createClient();
+    const admin = getAdminClient();
+    const { data: { session } } = await userClient.auth.getSession();
     if (!session) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
-    const { data: me } = await supabase
+    const { data: me } = await admin
       .from('profiles')
       .select('id, role, active')
       .eq('id', session.user.id)
@@ -27,7 +28,7 @@ export async function DELETE(
     }
 
     // Soft-delete: fetch payload, set deleted flag, update
-    const { data: row, error: fetchErr } = await supabase
+    const { data: row, error: fetchErr } = await admin
       .from('inbox_events')
       .select('payload')
       .eq('id', params.id)
@@ -38,7 +39,7 @@ export async function DELETE(
     }
     const currentPayload = (row as any)?.payload || {};
     const newPayload = { ...currentPayload, deleted: true } as any;
-    const { error } = await supabase
+    const { error } = await admin
       .from('inbox_events')
       .update({ payload: newPayload })
       .eq('id', params.id);
