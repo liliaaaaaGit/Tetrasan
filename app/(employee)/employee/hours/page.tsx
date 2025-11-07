@@ -117,6 +117,7 @@ function HoursPageContent() {
           status: entry.status === 'work' ? 'arbeit' : entry.status === 'vacation' ? 'urlaub' : 'krank',
           note: entry.activity_note,
           comment: entry.comment,
+          bauvorhaben: entry.project_name || '',
           taetigkeit: entry.activity_note, // Keep both for compatibility
           kommentar: entry.comment, // Keep both for compatibility
         };
@@ -197,6 +198,7 @@ function HoursPageContent() {
       
       // Convert DayEntry to database format
       const status = entry.status === 'arbeit' ? 'work' : entry.status === 'urlaub' ? 'vacation' : 'sick';
+      const projectName = (entry.bauvorhaben || '').trim();
       
       const dbEntry = {
         date: entry.date,
@@ -208,6 +210,7 @@ function HoursPageContent() {
           break_minutes: entry.pause || 0,
           hours_decimal: entry.hours,
           activity_note: entry.note || entry.taetigkeit || '',
+          project_name: projectName,
         }),
         // For vacation/sick status, include comment
         ...((status === 'vacation' || status === 'sick') && {
@@ -217,6 +220,7 @@ function HoursPageContent() {
           time_to: '00:01',
           break_minutes: 0,
           hours_decimal: 0,
+          project_name: null,
         }),
       };
 

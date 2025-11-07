@@ -158,6 +158,7 @@ export function MonthlyOverviewList({
           const holidayDate = isHoliday(entry.date);
           const statusInfo = getStatusInfo(entry, holidayDate);
           const correction = entry.id ? corrections[entry.id] : undefined;
+          const projectName = entry.bauvorhaben || "";
           const entryNote = entry.note || entry.taetigkeit || entry.comment || entry.kommentar || "";
           
           // Compute diffs if correction exists
@@ -241,11 +242,17 @@ export function MonthlyOverviewList({
                   )}
                 </div>
 
-                {/* Middle-right side: Tätigkeitsbericht (only for Arbeit) */}
+                {/* Middle-right side: Bauvorhaben & Tätigkeitsbericht (only for Arbeit) */}
                 {entry.status === "arbeit" && (
-                  <div className="flex-1 text-right">
-                    {entryNote && (
-                      <div className="text-sm text-gray-600 mb-1" id={`note-${entry.id}`}>
+                  <div className="flex-1 text-right space-y-2">
+                    {projectName && (
+                      <div className="text-sm text-gray-600" id={`project-${entry.id}`}>
+                        <div className="text-xs text-gray-500 mb-0.5">Bauvorhaben</div>
+                        {projectName}
+                      </div>
+                    )}
+                    {entryNote ? (
+                      <div className="text-sm text-gray-600" id={`note-${entry.id}`}>
                         <div className="text-xs text-gray-500 mb-0.5">Tätigkeitsbericht (Mitarbeiter)</div>
                         {entryNote}
                         {diffs?.note.changed && diffs.note.corrected && (
@@ -255,8 +262,7 @@ export function MonthlyOverviewList({
                           </div>
                         )}
                       </div>
-                    )}
-                    {!entryNote && (
+                    ) : (
                       <div className="text-sm text-gray-400 italic">
                         Kein Tätigkeitsbericht
                       </div>

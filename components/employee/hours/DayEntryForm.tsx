@@ -24,6 +24,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const [from, setFrom] = useState(initialData?.from || "08:00");
   const [to, setTo] = useState(initialData?.to || "17:00");
   const [pause, setPause] = useState(initialData?.pause || 30);
+  const [bauvorhaben, setBauvorhaben] = useState(initialData?.bauvorhaben || "");
   const [taetigkeit, setTaetigkeit] = useState(initialData?.taetigkeit || "");
   const [kommentar, setKommentar] = useState(initialData?.kommentar || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -49,6 +50,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
     if (status === "arbeit") {
       // Work entry validation
+      if (!bauvorhaben.trim()) newErrors.bauvorhaben = "Bauvorhaben ist erforderlich";
       if (!from || !from.trim()) newErrors.from = "Von ist erforderlich";
       if (!to || !to.trim()) newErrors.to = "Bis ist erforderlich";
       if (pauseMinutes < 0) newErrors.pause = "Pause darf nicht negativ sein";
@@ -91,6 +93,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         from: normalizeTime(from),
         to: normalizeTime(to),
         pause: pauseMinutes,
+        bauvorhaben: bauvorhaben.trim(),
         taetigkeit,
         hours: calculatedHours!, // Safe to use ! here because we validated above
       }),
@@ -132,6 +135,30 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       {/* Work fields */}
       {status === "arbeit" && (
         <>
+          {/* Project name */}
+          <div>
+            <label htmlFor="bauvorhaben" className="block text-sm font-medium mb-1">
+              Bauvorhaben
+            </label>
+            <textarea
+              id="bauvorhaben"
+              value={bauvorhaben}
+              onChange={(e) => {
+                setBauvorhaben(e.target.value);
+                setErrors((prev) => ({ ...prev, bauvorhaben: "" }));
+              }}
+              disabled={isAdmin}
+              rows={2}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
+                errors.bauvorhaben ? "border-red-500" : "border-border"
+              } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              placeholder="Z. B. Neubau Musterstraße 12"
+            />
+            {errors.bauvorhaben && (
+              <p className="text-xs text-red-600 mt-1">{errors.bauvorhaben}</p>
+            )}
+          </div>
+
           {/* Time fields (compact) */}
           <div className="flex flex-col sm:flex-row sm:items-end gap-3">
             <div className="flex-1 sm:max-w-[150px]">

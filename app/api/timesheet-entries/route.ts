@@ -76,7 +76,9 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json();
 
-    const { date, time_from, time_to, break_minutes, hours_decimal, status, activity_note, comment, employee_id } = body;
+    const { date, time_from, time_to, break_minutes, hours_decimal, status, activity_note, comment, project_name, employee_id } = body;
+    const trimmedActivityNote = typeof activity_note === 'string' ? activity_note.trim() : '';
+    const trimmedProjectName = typeof project_name === 'string' ? project_name.trim() : '';
 
     // Determine target employee_id (admin can create for others)
     let targetEmployeeId = session.user.id;
@@ -117,9 +119,16 @@ export async function POST(request: NextRequest) {
     }
 
     // For work status, activity note is required
-    if (status === 'work' && !activity_note) {
+    if (status === 'work' && !trimmedActivityNote) {
       return NextResponse.json(
         { error: "Für Arbeit ist ein Tätigkeitsbericht erforderlich." },
+        { status: 400 }
+      );
+    }
+
+    if (status === 'work' && !trimmedProjectName) {
+      return NextResponse.json(
+        { error: "Für Arbeit ist ein Bauvorhaben erforderlich." },
         { status: 400 }
       );
     }
@@ -154,8 +163,9 @@ export async function POST(request: NextRequest) {
           break_minutes: break_minutes || 0,
           hours_decimal,
           status,
-          activity_note,
+          activity_note: trimmedActivityNote,
           comment,
+          project_name: status === 'work' ? trimmedProjectName : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingEntry.id)
@@ -187,8 +197,9 @@ export async function POST(request: NextRequest) {
           break_minutes: break_minutes || 0,
           hours_decimal,
           status,
-          activity_note,
+          activity_note: trimmedActivityNote,
           comment,
+          project_name: status === 'work' ? trimmedProjectName : null,
         })
         .select()
         .single();

@@ -12,6 +12,7 @@ export interface DayEntry {
   to?: string; // HH:MM
   pause?: number; // minutes
   taetigkeit?: string; // Activity report
+  bauvorhaben?: string; // Project name / site
   kommentar?: string; // Comment
   note?: string; // Activity note (alias for taetigkeit)
   comment?: string; // Comment (alias for kommentar)

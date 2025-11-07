@@ -88,7 +88,11 @@ export function diffCorrections(
   const hoursChanged = originalHours !== correctedHours;
 
   // Compare note
-  const originalNote = original.note || original.taetigkeit || original.comment || original.kommentar || "";
+  const originalNoteParts = [
+    original.bauvorhaben ? `Bauvorhaben: ${original.bauvorhaben}` : "",
+    original.note || original.taetigkeit || original.comment || original.kommentar || "",
+  ].filter(Boolean);
+  const originalNote = originalNoteParts.join("\n");
   const correctedNote = correction.note || "";
   const noteChanged = correctedNote !== "" && originalNote !== correctedNote;
 

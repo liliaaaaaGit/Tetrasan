@@ -142,6 +142,7 @@ export function CalendarView({
           status: entry.status === 'work' ? 'arbeit' : entry.status === 'vacation' ? 'urlaub' : 'krank',
           note: entry.activity_note,
           comment: entry.comment,
+          bauvorhaben: entry.project_name || '',
           taetigkeit: entry.activity_note,
           kommentar: entry.comment,
         };
@@ -256,6 +257,7 @@ export function CalendarView({
       
       // Convert DayEntry to database format
       const status = entry.status === 'arbeit' ? 'work' : entry.status === 'urlaub' ? 'vacation' : 'sick';
+      const projectName = (entry.bauvorhaben || '').trim();
       
       const dbEntry = {
         date: entry.date,
@@ -266,6 +268,7 @@ export function CalendarView({
           break_minutes: entry.pause || 0,
           hours_decimal: entry.hours,
           activity_note: entry.note || entry.taetigkeit || '',
+          project_name: projectName,
         }),
         ...((status === 'vacation' || status === 'sick') && {
           comment: entry.comment || entry.kommentar || '',
@@ -273,6 +276,7 @@ export function CalendarView({
           time_to: '00:01',
           break_minutes: 0,
           hours_decimal: 0,
+          project_name: null,
         }),
       };
 

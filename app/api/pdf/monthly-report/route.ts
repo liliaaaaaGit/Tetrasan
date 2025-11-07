@@ -25,6 +25,7 @@ interface TimesheetEntry {
   hours_decimal?: number;
   activity_note?: string;
   comment?: string;
+  project_name?: string;
 }
 
 interface Correction {
@@ -205,7 +206,10 @@ export async function GET(request: NextRequest) {
       const status = (entry?.status as any) || 'none';
       const correctedHours = correction?.corrected_hours_decimal ?? undefined;
       const hoursDecimal = status === 'work' ? (correctedHours ?? entry?.hours_decimal ?? 0) : 0;
-      const note = correction?.note || entry?.activity_note || entry?.comment || '';
+      const project = entry?.project_name ? `Bauvorhaben: ${entry.project_name}` : '';
+      const baseNote = correction?.note || entry?.activity_note || entry?.comment || '';
+      const noteParts = [project, baseNote].filter((part) => part && part.trim().length > 0);
+      const note = noteParts.join('\n');
 
       const isHoliday = holidaysSet.has(dateISO);
       const isHolidayWork = isHoliday && status === 'work' && (hoursDecimal || 0) > 0;
