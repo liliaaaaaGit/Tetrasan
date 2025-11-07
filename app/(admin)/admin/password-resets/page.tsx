@@ -1,218 +1,151 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Loader2, Key, CheckCircle2, XCircle } from "lucide-react";
-import { formatDateTimeDe } from "@/lib/date-utils";
+import { Loader2, KeyRound, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 
-interface PasswordResetRequest {
-  id: string;
-  user_id: string;
-  personal_number: string;
-  status: "open" | "done" | "cancelled";
-  created_at: string;
-  processed_at: string | null;
-  employee_name?: string;
-}
-
-/**
- * Admin Password Reset Requests Page
- * Allows admins to view and process employee password reset requests
- */
 export default function PasswordResetsPage() {
-  const [requests, setRequests] = useState<PasswordResetRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [tempPassword, setTempPassword] = useState("");
-  const [employeeName, setEmployeeName] = useState("");
+  const [personalNumber, setPersonalNumber] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [infoMessage] = useState(
+    "Geben Sie die Personalnummer des Mitarbeiters ein, um ein temporäres Passwort zu erzeugen."
+  );
+  const [modalState, setModalState] = useState<{ open: boolean; password: string | null }>({
+    open: false,
+    password: null,
+  });
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
-  useEffect(() => {
-    loadResetRequests();
-  }, []);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setPasswordCopied(false);
 
-  const loadResetRequests = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/admin/password-resets");
-      
-      if (!response.ok) {
-        throw new Error("Fehler beim Laden der Reset-Anfragen");
-      }
-
-      const payload = await response.json();
-      if (payload?.info === "table_missing") {
-        setInfoMessage("Noch keine Daten vorhanden. Bitte Migration 'create_password_reset_requests.sql' in Supabase ausführen.");
-        setError("");
-      } else {
-        setInfoMessage("");
-        if (payload?.error) {
-          setError(payload.error);
-        } else {
-          setError("");
-        }
-      }
-      setRequests(payload?.data || []);
-    } catch (err) {
-      console.error("[PasswordResets] Error loading requests:", err);
-      setInfoMessage("");
-      setError("Fehler beim Laden der Reset-Anfragen");
-    } finally {
-      setIsLoading(false);
+    const trimmed = personalNumber.trim();
+    if (!/^\d{5}$/.test(trimmed)) {
+      setError("Bitte eine gültige Personalnummer (5 Ziffern) eingeben.");
+      return;
     }
-  };
 
-  const handleResetPassword = async (request: PasswordResetRequest) => {
+    setIsSubmitting(true);
+
     try {
-      setProcessingId(request.id);
-
-      const response = await fetch(`/api/admin/password-resets/${request.id}/process`, {
+      const response = await fetch("/api/admin/reset-password", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personalNumber: trimmed }),
       });
 
+      const payload = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Fehler beim Zurücksetzen des Passworts");
+        throw new Error(payload?.error || "Passwort konnte nicht erstellt werden.");
       }
 
-      const { data } = await response.json();
-      
-      // Show modal with temporary password
-      setTempPassword(data.tempPassword);
-      setEmployeeName(request.employee_name || request.personal_number);
-      setShowPasswordModal(true);
+      if (!payload?.tempPassword) {
+        throw new Error("Server hat kein temporäres Passwort zurückgegeben.");
+      }
 
-      // Reload requests
-      await loadResetRequests();
+      setModalState({ open: true, password: payload.tempPassword });
+      setPersonalNumber("");
     } catch (err) {
-      console.error("[PasswordResets] Error processing request:", err);
-      setInfoMessage("");
-      setError(err instanceof Error ? err.message : "Fehler beim Zurücksetzen des Passworts");
+      console.error("[AdminPasswordReset] Error:", err);
+      setError(err instanceof Error ? err.message : "Passwort konnte nicht erstellt werden.");
     } finally {
-      setProcessingId(null);
+      setIsSubmitting(false);
     }
   };
 
-  // Filter only open requests
-  const openRequests = requests.filter((r) => r.status === "open");
+  const handleCopy = async () => {
+    if (!modalState.password) return;
+    try {
+      await navigator.clipboard.writeText(modalState.password);
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 2000);
+    } catch (err) {
+      console.error("[AdminPasswordReset] Clipboard error:", err);
+      setError("Konnte Passwort nicht in die Zwischenablage kopieren.");
+    }
+  };
 
   return (
     <div>
-      <PageHeader title="Passwort-Reset-Anfragen" />
+      <PageHeader title="Passwort-Reset" />
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">{error}</p>
+      {infoMessage && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          {infoMessage}
         </div>
       )}
 
-      {!error && infoMessage && (
-        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <p className="text-sm text-blue-900">{infoMessage}</p>
+      <form onSubmit={handleSubmit} className="max-w-md space-y-5">
+        <div>
+          <label htmlFor="personalNumber" className="mb-1 block text-sm font-medium text-foreground">
+            Personalnummer
+          </label>
+          <input
+            id="personalNumber"
+            type="text"
+            inputMode="numeric"
+            pattern="\d{5}"
+            maxLength={5}
+            value={personalNumber}
+            onChange={(event) => setPersonalNumber(event.target.value.replace(/\D/g, ""))}
+            className="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="z. B. 01234"
+            disabled={isSubmitting}
+            required
+          />
         </div>
-      )}
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Lade Anfragen...</span>
-        </div>
-      ) : openRequests.length === 0 ? (
-        <div className="border border-border rounded-lg p-8 text-center">
-          <p className="text-muted-foreground">Keine offenen Reset-Anfragen</p>
-        </div>
-      ) : (
-        <div className="bg-white border border-border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium">Personalnummer</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Mitarbeiter</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Angefordert am</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                <th className="px-4 py-3 text-right text-sm font-medium">Aktion</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {openRequests.map((request) => (
-                <tr key={request.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 text-sm">{request.personal_number}</td>
-                  <td className="px-4 py-3 text-sm">
-                    {request.employee_name || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {formatDateTimeDe(request.created_at)}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      <XCircle className="h-3 w-3" />
-                      Offen
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleResetPassword(request)}
-                      disabled={processingId === request.id}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-brand text-white rounded-md hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {processingId === request.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Wird verarbeitet...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Key className="h-4 w-4" />
-                          <span>Passwort zurücksetzen</span>
-                        </>
-                      )}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {error && (
+          <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4" />
+            {error}
+          </div>
+        )}
 
-      {/* Password Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Temporäres Passwort erstellt</h3>
-            
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-900 mb-2">
-                <strong>Mitarbeiter:</strong> {employeeName}
-              </p>
-              <p className="text-sm text-blue-900 mb-2">
-                <strong>Temporäres Passwort:</strong>
-              </p>
-              <div className="bg-white border border-blue-300 rounded p-3 font-mono text-lg font-bold text-center">
-                {tempPassword}
-              </div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+          <span>{isSubmitting ? "Erstellt…" : "Temporäres Passwort setzen"}</span>
+        </button>
+      </form>
+
+      {modalState.open && modalState.password && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 shadow-xl">
+            <div className="mb-3 flex items-center gap-2 text-brand">
+              <KeyRound className="h-5 w-5" />
+              <h3 className="text-lg font-semibold text-foreground">Temporäres Passwort erzeugt</h3>
             </div>
-
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-900">
-                <strong>⚠️ Wichtig:</strong> Bitte dieses Passwort sicher an den Mitarbeiter übermitteln
-                (z. B. persönlich oder telefonisch). Der Mitarbeiter sollte das Passwort beim ersten
-                Login ändern.
-              </p>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Bitte dieses Passwort einmalig sicher an den Mitarbeiter weitergeben. Beim nächsten Login muss es geändert werden.
+            </p>
+            <div className="mb-4 rounded-md border border-dashed border-brand bg-brand/5 p-4 text-center">
+              <span className="break-all font-mono text-lg font-semibold text-brand">
+                {modalState.password}
+              </span>
             </div>
-
-            <button
-              onClick={() => {
-                setShowPasswordModal(false);
-                setTempPassword("");
-                setEmployeeName("");
-              }}
-              className="w-full px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
-            >
-              Schließen
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60"
+              >
+                {passwordCopied ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {passwordCopied ? "Kopiert" : "In Zwischenablage kopieren"}
+              </button>
+              <button
+                onClick={() => setModalState({ open: false, password: null })}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
+              >
+                Schließen
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 interface ResetPasswordBody {
   userId?: string;
   profileId?: string;
+  personalNumber?: string;
 }
 
 function generateTempPassword(length = 12): string {
@@ -52,24 +53,41 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as ResetPasswordBody;
 
-    const targetId = body?.userId || body?.profileId;
-    if (!targetId) {
-      return NextResponse.json({ error: "userId ist erforderlich." }, { status: 400 });
-    }
-
     const adminClient = getAdminClient();
 
-    const { data: targetProfile, error: targetProfileError } = await adminClient
-      .from("profiles")
-      .select("id, personal_number, role")
-      .eq("id", targetId)
-      .single();
+    let targetProfile: { id: string; personal_number: string | null; role: string } | null = null;
 
-    if (targetProfileError && targetProfileError.code !== "PGRST116") {
-      console.error("[ResetPassword] Fehler beim Laden des Profils:", targetProfileError.message);
+    if (body?.userId || body?.profileId) {
+      const targetId = body.userId || body.profileId;
+      const { data, error } = await adminClient
+        .from("profiles")
+        .select("id, personal_number, role")
+        .eq("id", targetId)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("[ResetPassword] Fehler beim Laden des Profils (id):", error.message);
+      }
+      targetProfile = data ?? null;
+    } else if (body?.personalNumber) {
+      const { data, error } = await adminClient
+        .from("profiles")
+        .select("id, personal_number, role")
+        .eq("personal_number", body.personalNumber)
+        .eq("role", "employee")
+        .eq("active", true)
+        .maybeSingle();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("[ResetPassword] Fehler beim Laden des Profils (personal_number):", error.message);
+      }
+      targetProfile = data ?? null;
     }
 
     if (!targetProfile) {
+      if (!body?.userId && !body?.profileId && !body?.personalNumber) {
+        return NextResponse.json({ error: "Es muss eine Personalnummer oder User-ID angegeben werden." }, { status: 400 });
+      }
       return NextResponse.json({ error: "Mitarbeiter nicht gefunden." }, { status: 404 });
     }
 
@@ -83,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     const tempPassword = generateTempPassword();
 
-    const { error: updateError } = await adminClient.auth.admin.updateUserById(targetId, {
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(targetProfile.id, {
       password: tempPassword,
     });
 
@@ -97,7 +115,7 @@ export async function POST(request: NextRequest) {
     const { error: profileUpdateError } = await adminClient
       .from("profiles")
       .update({ must_change_password: true, updated_at: nowIso })
-      .eq("id", targetId);
+      .eq("id", targetProfile.id);
 
     if (profileUpdateError) {
       console.error("[ResetPassword] Fehler beim Aktualisieren des Profils:", profileUpdateError.message);
@@ -111,7 +129,7 @@ export async function POST(request: NextRequest) {
         processed_at: nowIso,
         processed_by: session.user.id,
       })
-      .eq("user_id", targetId)
+      .eq("user_id", targetProfile.id)
       .eq("status", "open");
 
     if (closeOpenError) {
@@ -121,7 +139,7 @@ export async function POST(request: NextRequest) {
     const { error: insertAuditError } = await adminClient
       .from("password_reset_requests")
       .insert({
-        user_id: targetId,
+        user_id: targetProfile.id,
         personal_number: targetProfile.personal_number,
         status: "done",
         processed_at: nowIso,
