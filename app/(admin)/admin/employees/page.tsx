@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { AddEmployeeDialog } from "@/components/admin/employees/AddEmployeeDialog";
+import { EditEmployeeDialog } from "@/components/admin/employees/EditEmployeeDialog";
 import { EmployeesTable } from "@/components/admin/employees/EmployeesTable";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { UserPlus, Search, Loader2 } from "lucide-react";
@@ -33,6 +34,7 @@ export default function AdminEmployeesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
+  const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
 
   // Load employees from database
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function AdminEmployeesPage() {
 
   // Handle editing an employee
   const handleEdit = (employee: Employee) => {
-    router.push(`/admin/employees/${employee.id}`);
+    setEditEmployee(employee);
   };
 
   // Handle deleting an employee
@@ -153,6 +155,47 @@ export default function AdminEmployeesPage() {
     }
   };
 
+  const handleUpdateEmployee = async (updatedEmployee: { id: string; name: string; phone: string; active: boolean }) => {
+    try {
+      setIsSaving(true);
+
+      const response = await fetch(`/api/employees/${updatedEmployee.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: updatedEmployee.name,
+          phone: updatedEmployee.phone,
+          active: updatedEmployee.active,
+        }),
+      });
+
+      if (!response.ok) {
+        let errMsg = 'Fehler beim Aktualisieren des Mitarbeiters';
+        try { const j = await response.json(); if (j?.error) errMsg = j.error; } catch {}
+        alert(errMsg);
+        throw new Error(errMsg);
+      }
+
+      const { data } = await response.json();
+
+      setEmployees((prev) => prev.map((emp) => {
+        if (emp.id !== updatedEmployee.id) return emp;
+        return {
+          ...emp,
+          name: data?.full_name ?? updatedEmployee.name,
+          phone: data?.phone ?? updatedEmployee.phone ?? '',
+          status: data?.active ? 'aktiv' : 'inaktiv',
+        };
+      }));
+
+      setEditEmployee(null);
+    } catch (error) {
+      console.error('Error updating employee:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -213,6 +256,18 @@ export default function AdminEmployeesPage() {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSave={handleAddEmployee as any}
+        isLoading={isSaving}
+      />
+
+      <EditEmployeeDialog
+        open={!!editEmployee}
+        employee={editEmployee}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditEmployee(null);
+          }
+        }}
+        onSave={handleUpdateEmployee}
         isLoading={isSaving}
       />
 
