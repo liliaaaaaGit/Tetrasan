@@ -57,10 +57,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ data: [] });
       }
       console.error("[PasswordResets] Error fetching requests:", error);
-      return NextResponse.json(
-        { error: "Fehler beim Laden der Reset-Anfragen." },
-        { status: 500 }
-      );
+      return NextResponse.json({ data: [], error: "Fehler beim Laden der Reset-Anfragen." });
     }
 
     // Fetch employee names for each request
@@ -94,10 +91,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: transformedRequests });
   } catch (error) {
     console.error("[PasswordResets] Unexpected error:", error);
-    return NextResponse.json(
-      { error: "Ein Fehler ist aufgetreten." },
-      { status: 500 }
-    );
+    return NextResponse.json({ data: [], error: "Fehler beim Laden der Reset-Anfragen." });
   }
 }
 

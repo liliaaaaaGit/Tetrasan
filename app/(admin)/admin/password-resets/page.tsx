@@ -41,8 +41,13 @@ export default function PasswordResetsPage() {
         throw new Error("Fehler beim Laden der Reset-Anfragen");
       }
 
-      const { data } = await response.json();
-      setRequests(data || []);
+      const payload = await response.json();
+      if (payload?.error) {
+        setError(payload.error);
+      } else {
+        setError("");
+      }
+      setRequests(payload?.data || []);
     } catch (err) {
       console.error("[PasswordResets] Error loading requests:", err);
       setError("Fehler beim Laden der Reset-Anfragen");
