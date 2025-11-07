@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { requireRole } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /**
  * GET /api/admin/password-resets
@@ -10,9 +11,22 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin role
-    const { session } = await requireRole("admin");
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
+      return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+    }
+
+    const { data: adminProfile, error: adminError } = await supabase
+      .from("profiles")
+      .select("role, active")
+      .eq("id", session.user.id)
+      .single();
+
+    if (adminError || !adminProfile || adminProfile.role !== "admin" || !adminProfile.active) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
 
@@ -33,8 +47,13 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      // If table doesn't exist yet, return empty array
-      if (error.code === "42P01" || error.message?.includes("does not exist")) {
+      // Table might not exist yet (migration not run)
+      if (
+        error.code === "42P01" ||
+        error.code === "PGRST116" ||
+        error.message?.toLowerCase().includes("does not exist") ||
+        error.message?.toLowerCase().includes("not exist")
+      ) {
         return NextResponse.json({ data: [] });
       }
       console.error("[PasswordResets] Error fetching requests:", error);
