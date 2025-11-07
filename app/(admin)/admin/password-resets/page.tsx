@@ -23,6 +23,7 @@ export default function PasswordResetsPage() {
   const [requests, setRequests] = useState<PasswordResetRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
@@ -42,14 +43,21 @@ export default function PasswordResetsPage() {
       }
 
       const payload = await response.json();
-      if (payload?.error) {
-        setError(payload.error);
-      } else {
+      if (payload?.info === "table_missing") {
+        setInfoMessage("Noch keine Daten vorhanden. Bitte Migration 'create_password_reset_requests.sql' in Supabase ausführen.");
         setError("");
+      } else {
+        setInfoMessage("");
+        if (payload?.error) {
+          setError(payload.error);
+        } else {
+          setError("");
+        }
       }
       setRequests(payload?.data || []);
     } catch (err) {
       console.error("[PasswordResets] Error loading requests:", err);
+      setInfoMessage("");
       setError("Fehler beim Laden der Reset-Anfragen");
     } finally {
       setIsLoading(false);
@@ -80,6 +88,7 @@ export default function PasswordResetsPage() {
       await loadResetRequests();
     } catch (err) {
       console.error("[PasswordResets] Error processing request:", err);
+      setInfoMessage("");
       setError(err instanceof Error ? err.message : "Fehler beim Zurücksetzen des Passworts");
     } finally {
       setProcessingId(null);
@@ -96,6 +105,12 @@ export default function PasswordResetsPage() {
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {!error && infoMessage && (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <p className="text-sm text-blue-900">{infoMessage}</p>
         </div>
       )}
 

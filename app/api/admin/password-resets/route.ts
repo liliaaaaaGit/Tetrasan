@@ -54,10 +54,13 @@ export async function GET(request: NextRequest) {
         error.message?.toLowerCase().includes("does not exist") ||
         error.message?.toLowerCase().includes("not exist")
       ) {
-        return NextResponse.json({ data: [] });
+        return NextResponse.json({ data: [], info: "table_missing" });
       }
       console.error("[PasswordResets] Error fetching requests:", error);
-      return NextResponse.json({ data: [], error: "Fehler beim Laden der Reset-Anfragen." });
+      return NextResponse.json(
+        { error: "Fehler beim Laden der Reset-Anfragen." },
+        { status: 500 }
+      );
     }
 
     // Fetch employee names for each request
@@ -91,7 +94,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: transformedRequests });
   } catch (error) {
     console.error("[PasswordResets] Unexpected error:", error);
-    return NextResponse.json({ data: [], error: "Fehler beim Laden der Reset-Anfragen." });
+    return NextResponse.json({ error: "Fehler beim Laden der Reset-Anfragen." }, { status: 500 });
   }
 }
 
