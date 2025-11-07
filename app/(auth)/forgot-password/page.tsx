@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
             autoComplete="username"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Admins: E-Mail-Adresse eingeben. Mitarbeiter: Personalnummer eingeben.
+            Admins: E-Mail-Adresse eingeben. Mitarbeiter:innen: Personalnummer eingeben.
           </p>
         </div>
 

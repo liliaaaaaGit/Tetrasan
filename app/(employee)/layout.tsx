@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Clock, Plane, Calendar, LogOut, Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Clock, Plane, Calendar, LogOut, Menu, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
@@ -22,7 +22,9 @@ export default function EmployeeLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -41,6 +43,37 @@ export default function EmployeeLayout({
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    const supabase = createClient();
+
+    supabase
+      .from('profiles')
+      .select('must_change_password')
+      .eq('id', user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          console.error('[EmployeeLayout] Fehler beim Laden von must_change_password:', error.message);
+          return;
+        }
+
+        const shouldForce = !!data?.must_change_password;
+        setMustChangePassword(shouldForce);
+
+        if (shouldForce && pathname !== '/employee/change-password') {
+          router.replace('/employee/change-password');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, pathname, router]);
 
   // Navigation items for the bottom tab bar
   const navItems = [
@@ -113,6 +146,18 @@ export default function EmployeeLayout({
               
               {/* Logout button */}
               <Link
+                href="/employee/change-password"
+                className={cn(
+                  "flex items-center gap-2 py-3 px-4 transition-colors",
+                  pathname === '/employee/change-password'
+                    ? "bg-muted text-brand rounded-lg"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
+                )}
+              >
+                <Lock className="h-5 w-5" />
+                <span className="text-sm font-medium">Passwort ändern</span>
+              </Link>
+              <Link
                 href="/logout"
                 className="flex items-center gap-2 py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
               >
@@ -165,6 +210,17 @@ export default function EmployeeLayout({
                   </Link>
                 );
               })}
+              <Link
+                href="/employee/change-password"
+                role="menuitem"
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 text-sm transition-colors",
+                  pathname === '/employee/change-password' ? "bg-muted text-brand" : "hover:bg-muted/50"
+                )}
+              >
+                <Lock className="h-5 w-5" />
+                <span className="font-medium">Passwort ändern</span>
+              </Link>
               <Link
                 href="/logout"
                 role="menuitem"

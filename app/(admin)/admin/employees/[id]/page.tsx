@@ -5,7 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CalendarView } from "@/components/shared/CalendarView";
-import { Info, Trash2, RefreshCw, Loader2, Check, X, Download, Pencil } from "lucide-react";
+import {
+  Info,
+  Trash2,
+  RefreshCw,
+  Loader2,
+  Check,
+  X,
+  Download,
+  Pencil,
+  KeyRound,
+  Copy,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getInitialTab, scrollToHash, TabValue } from "@/lib/deeplink";
@@ -71,6 +84,13 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
     request: LeaveRequest | null;
     values: { period_start: string; period_end: string; comment: string };
   }>({ open: false, request: null, values: { period_start: '', period_end: '', comment: '' } });
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [tempPasswordModal, setTempPasswordModal] = useState<{ open: boolean; password: string | null }>({
+    open: false,
+    password: null,
+  });
+  const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
 
   useEffect(() => {
     loadEmployeeData();
@@ -119,6 +139,53 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
       router.push('/admin/employees');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateTempPassword = async () => {
+    if (!employeeData?.profile?.id) return;
+    try {
+      setResetError(null);
+      setTempPasswordCopied(false);
+      setIsResettingPassword(true);
+
+      const response = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: employeeData.profile.id }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Temporäres Passwort konnte nicht erstellt werden.');
+      }
+
+      if (!payload?.tempPassword) {
+        throw new Error('Server hat kein temporäres Passwort zurückgegeben.');
+      }
+
+      setTempPasswordModal({ open: true, password: payload.tempPassword });
+      showToast('Temporäres Passwort erstellt.', 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Fehler beim Erstellen des temporären Passworts.';
+      console.error('[AdminEmployeeDetail] Reset password error:', error);
+      setResetError(message);
+      showToast(message, 'error');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleCopyTempPassword = async () => {
+    if (!tempPasswordModal.password) return;
+    try {
+      await navigator.clipboard.writeText(tempPasswordModal.password);
+      setTempPasswordCopied(true);
+      setTimeout(() => setTempPasswordCopied(false), 2000);
+    } catch (error) {
+      console.error('[AdminEmployeeDetail] Clipboard error:', error);
+      setResetError('Konnte Passwort nicht in die Zwischenablage kopieren.');
     }
   };
 
@@ -281,8 +348,31 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
       {/* Tabs with employee name above */}
       <div className="mb-4">
         {/* Employee name above tabs */}
-        <div className="mb-3">
+        <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <h2 className="text-lg font-semibold text-foreground">{profile.name}</h2>
+          <div className="flex flex-col md:items-end gap-1">
+            <button
+              onClick={handleGenerateTempPassword}
+              disabled={isResettingPassword}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isResettingPassword ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <KeyRound className="h-4 w-4" />
+              )}
+              <span>Temporäres Passwort setzen</span>
+            </button>
+            <p className="text-xs text-muted-foreground">
+              Passwort wird einmalig angezeigt und muss weitergegeben werden.
+            </p>
+            {resetError && (
+              <div className="flex items-center gap-1 text-xs text-red-600">
+                <AlertCircle className="h-3 w-3" />
+                <span>{resetError}</span>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Tab bar */}
@@ -516,6 +606,44 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
           toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
         }`}>
           {toast.message}
+        </div>
+      )}
+
+      {tempPasswordModal.open && tempPasswordModal.password && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-2 text-brand mb-3">
+              <KeyRound className="h-5 w-5" />
+              <h3 className="text-lg font-semibold text-foreground">Temporäres Passwort</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Dieses Passwort einmalig sicher an den Mitarbeiter weitergeben. Beim nächsten Login sollte es sofort geändert werden.
+            </p>
+            <div className="mb-4 rounded-md border border-dashed border-brand bg-brand/5 p-4 text-center">
+              <span className="font-mono text-lg font-semibold text-brand break-all">
+                {tempPasswordModal.password}
+              </span>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={handleCopyTempPassword}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60"
+              >
+                {tempPasswordCopied ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                {tempPasswordCopied ? 'Kopiert' : 'In Zwischenablage kopieren'}
+              </button>
+              <button
+                onClick={() => setTempPasswordModal({ open: false, password: null })}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
