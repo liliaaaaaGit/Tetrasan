@@ -6,7 +6,7 @@ import { AddEmployeeDialog } from "@/components/admin/employees/AddEmployeeDialo
 import { EditEmployeeDialog } from "@/components/admin/employees/EditEmployeeDialog";
 import { EmployeesTable } from "@/components/admin/employees/EmployeesTable";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { UserPlus, Search, Loader2 } from "lucide-react";
+import { UserPlus, Search, Loader2, KeyRound, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -35,6 +35,14 @@ export default function AdminEmployeesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
+  const [resettingEmployeeId, setResettingEmployeeId] = useState<string | null>(null);
+  const [tempPasswordModal, setTempPasswordModal] = useState<{ open: boolean; password: string | null; employee?: Employee | null }>({
+    open: false,
+    password: null,
+    employee: null,
+  });
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   // Load employees from database
   useEffect(() => {
@@ -155,6 +163,48 @@ export default function AdminEmployeesPage() {
     }
   };
 
+  const handleResetPassword = async (employee: Employee) => {
+    setResetError(null);
+    setPasswordCopied(false);
+    setResettingEmployeeId(employee.id);
+    try {
+      const response = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: employee.id }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Temporäres Passwort konnte nicht erstellt werden.');
+      }
+
+      if (!payload?.tempPassword) {
+        throw new Error('Server hat kein temporäres Passwort zurückgegeben.');
+      }
+
+      setTempPasswordModal({ open: true, password: payload.tempPassword, employee });
+    } catch (error) {
+      console.error('[AdminEmployees] reset password error:', error);
+      setResetError(error instanceof Error ? error.message : 'Fehler beim Erstellen des temporären Passworts.');
+    } finally {
+      setResettingEmployeeId(null);
+    }
+  };
+
+  const handleCopyTempPassword = async () => {
+    if (!tempPasswordModal.password) return;
+    try {
+      await navigator.clipboard.writeText(tempPasswordModal.password);
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 2000);
+    } catch (error) {
+      console.error('[AdminEmployees] clipboard error:', error);
+      setResetError('Konnte Passwort nicht in die Zwischenablage kopieren.');
+    }
+  };
+
   const handleUpdateEmployee = async (updatedEmployee: { id: string; name: string; phone: string; active: boolean }) => {
     try {
       setIsSaving(true);
@@ -244,10 +294,19 @@ export default function AdminEmployeesPage() {
           onRowClick={(employee) => router.push(`/admin/employees/${employee.id}`)}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onResetPassword={handleResetPassword}
+          resettingEmployeeId={resettingEmployeeId}
         />
       ) : (
         <div className="border border-border rounded-lg">
           <EmptyState message="Keine Mitarbeiter gefunden" />
+        </div>
+      )}
+
+      {resetError && (
+        <div className="mt-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4" />
+          {resetError}
         </div>
       )}
 
@@ -280,6 +339,42 @@ export default function AdminEmployeesPage() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteEmployee(null)}
       />
+
+      {tempPasswordModal.open && tempPasswordModal.password && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 shadow-xl">
+            <div className="mb-3 flex items-center gap-2 text-brand">
+              <KeyRound className="h-5 w-5" />
+              <h3 className="text-lg font-semibold text-foreground">
+                Temporäres Passwort für {tempPasswordModal.employee?.name ?? 'Mitarbeiter'}
+              </h3>
+            </div>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Dieses Passwort einmalig sicher an den Mitarbeiter weitergeben. Beim nächsten Login sollte es sofort geändert werden.
+            </p>
+            <div className="mb-4 rounded-md border border-dashed border-brand bg-brand/5 p-4 text-center">
+              <span className="break-all font-mono text-lg font-semibold text-brand">
+                {tempPasswordModal.password}
+              </span>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={handleCopyTempPassword}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/60"
+              >
+                {passwordCopied ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {passwordCopied ? 'Kopiert' : 'In Zwischenablage kopieren'}
+              </button>
+              <button
+                onClick={() => setTempPasswordModal({ open: false, password: null, employee: null })}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

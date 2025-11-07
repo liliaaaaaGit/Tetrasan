@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { MoreVertical, Edit, Trash2 } from "lucide-react";
+import { MoreVertical, Edit, Trash2, KeyRound, Loader2 } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -18,6 +18,8 @@ interface EmployeesTableProps {
   onRowClick: (employee: Employee) => void;
   onEdit?: (employee: Employee) => void;
   onDelete?: (employee: Employee) => void;
+  onResetPassword?: (employee: Employee) => void;
+  resettingEmployeeId?: string | null;
 }
 
 /**
@@ -25,7 +27,14 @@ interface EmployeesTableProps {
  * Displays a table of employees with status badges
  * Mobile-friendly with horizontal scrolling
  */
-export function EmployeesTable({ employees, onRowClick, onEdit, onDelete }: EmployeesTableProps) {
+export function EmployeesTable({
+  employees,
+  onRowClick,
+  onEdit,
+  onDelete,
+  onResetPassword,
+  resettingEmployeeId,
+}: EmployeesTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -61,6 +70,12 @@ export function EmployeesTable({ employees, onRowClick, onEdit, onDelete }: Empl
     e.stopPropagation();
     setOpenMenuId(null);
     onDelete?.(employee);
+  };
+
+  const handleReset = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    onResetPassword?.(employee);
   };
 
   return (
@@ -126,6 +141,20 @@ export function EmployeesTable({ employees, onRowClick, onEdit, onDelete }: Empl
                       }}
                       className="absolute right-0 mt-1 w-48 bg-white border border-border rounded-lg shadow-lg z-10 py-1"
                     >
+                      {onResetPassword && (
+                        <button
+                          onClick={(e) => handleReset(e, employee)}
+                          disabled={resettingEmployeeId === employee.id}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-black hover:bg-muted transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {resettingEmployeeId === employee.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <KeyRound className="h-4 w-4" />
+                          )}
+                          <span>Temporäres Passwort</span>
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           onClick={(e) => handleEdit(e, employee)}
