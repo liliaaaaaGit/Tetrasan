@@ -237,6 +237,30 @@
       "saving": "Speichern..."
     }
   },
+  "changePassword": {
+    "title": "Passwort ändern",
+    "currentLabel": "Aktuelles Passwort",
+    "optional": "optional",
+    "currentPlaceholder": "Nur ausfüllen, wenn Passwort bekannt",
+    "newLabel": "Neues Passwort",
+    "newPlaceholder": "Mindestens 8 Zeichen",
+    "confirmLabel": "Passwort bestätigen",
+    "confirmPlaceholder": "Passwort wiederholen",
+    "tip": "Tipp: Verwenden Sie ein starkes Passwort mit Buchstaben, Zahlen und Sonderzeichen.",
+    "button": "Passwort speichern",
+    "saving": "Speichert...",
+    "success": "Passwort erfolgreich geändert.",
+    "errors": {
+      "missingNew": "Bitte neues Passwort eingeben und bestätigen.",
+      "mismatch": "Passwörter stimmen nicht überein.",
+      "minLength": "Passwort muss mindestens 8 Zeichen lang sein.",
+      "requirements": "Passwort muss Buchstaben und Zahlen enthalten.",
+      "verifyMissingEmail": "Aktuelles Passwort kann nicht überprüft werden. Bitte ohne Überprüfung fortfahren.",
+      "verifyFailed": "Aktuelles Passwort ist falsch.",
+      "updateFailed": "Passwort konnte nicht geändert werden.",
+      "unexpected": "Ein unerwarteter Fehler ist aufgetreten. Bitte später erneut versuchen."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "Fehler beim Laden der Zeiteinträge",

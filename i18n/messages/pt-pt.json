@@ -237,6 +237,30 @@
       "saving": "A guardar..."
     }
   },
+  "changePassword": {
+    "title": "Alterar palavra-passe",
+    "currentLabel": "Palavra-passe atual",
+    "optional": "opcional",
+    "currentPlaceholder": "Preenche apenas se souberes a palavra-passe atual",
+    "newLabel": "Nova palavra-passe",
+    "newPlaceholder": "Pelo menos 8 caracteres",
+    "confirmLabel": "Confirmar palavra-passe",
+    "confirmPlaceholder": "Repete a palavra-passe",
+    "tip": "Sugestão: usa uma palavra-passe forte com letras, números e símbolos.",
+    "button": "Guardar palavra-passe",
+    "saving": "A guardar...",
+    "success": "Palavra-passe alterada com sucesso.",
+    "errors": {
+      "missingNew": "Introduz a nova palavra-passe e a confirmação.",
+      "mismatch": "As palavras-passe não coincidem.",
+      "minLength": "A palavra-passe deve ter pelo menos 8 caracteres.",
+      "requirements": "A palavra-passe deve conter letras e números.",
+      "verifyMissingEmail": "Não é possível verificar a palavra-passe atual. Continua sem verificação.",
+      "verifyFailed": "A palavra-passe atual está incorreta.",
+      "updateFailed": "Não foi possível alterar a palavra-passe.",
+      "unexpected": "Ocorreu um erro. Tenta novamente mais tarde."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "Não foi possível carregar os registos",

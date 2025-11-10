@@ -237,6 +237,30 @@
       "saving": "Se salvează..."
     }
   },
+  "changePassword": {
+    "title": "Schimbă parola",
+    "currentLabel": "Parola actuală",
+    "optional": "opțional",
+    "currentPlaceholder": "Completează doar dacă știi parola actuală",
+    "newLabel": "Parolă nouă",
+    "newPlaceholder": "Cel puțin 8 caractere",
+    "confirmLabel": "Confirmă parola",
+    "confirmPlaceholder": "Repetă parola",
+    "tip": "Sugestie: folosește o parolă puternică cu litere, cifre și simboluri.",
+    "button": "Salvează parola",
+    "saving": "Se salvează...",
+    "success": "Parola a fost schimbată.",
+    "errors": {
+      "missingNew": "Introdu parola nouă și confirmarea.",
+      "mismatch": "Parolele nu coincid.",
+      "minLength": "Parola trebuie să aibă cel puțin 8 caractere.",
+      "requirements": "Parola trebuie să conțină litere și cifre.",
+      "verifyMissingEmail": "Parola actuală nu poate fi verificată. Continuă fără verificare.",
+      "verifyFailed": "Parola actuală este greșită.",
+      "updateFailed": "Parola nu a putut fi schimbată.",
+      "unexpected": "A apărut o eroare. Încearcă din nou mai târziu."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "Nu s-au putut încărca înregistrările",

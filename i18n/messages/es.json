@@ -237,6 +237,30 @@
       "saving": "Guardando..."
     }
   },
+  "changePassword": {
+    "title": "Cambiar contraseña",
+    "currentLabel": "Contraseña actual",
+    "optional": "opcional",
+    "currentPlaceholder": "Solo rellena si conoces tu contraseña actual",
+    "newLabel": "Nueva contraseña",
+    "newPlaceholder": "Al menos 8 caracteres",
+    "confirmLabel": "Confirmar contraseña",
+    "confirmPlaceholder": "Repite la contraseña",
+    "tip": "Consejo: usa una contraseña segura con letras, números y símbolos.",
+    "button": "Guardar contraseña",
+    "saving": "Guardando…",
+    "success": "Contraseña cambiada correctamente.",
+    "errors": {
+      "missingNew": "Introduce la nueva contraseña y confírmala.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "minLength": "La contraseña debe tener al menos 8 caracteres.",
+      "requirements": "La contraseña debe contener letras y números.",
+      "verifyMissingEmail": "No se puede verificar la contraseña actual. Continúa sin verificación.",
+      "verifyFailed": "La contraseña actual es incorrecta.",
+      "updateFailed": "No se pudo cambiar la contraseña.",
+      "unexpected": "Algo salió mal. Inténtalo de nuevo más tarde."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "No se pudieron cargar las horas",

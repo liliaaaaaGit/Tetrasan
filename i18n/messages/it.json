@@ -237,6 +237,30 @@
       "saving": "Salvataggio..."
     }
   },
+  "changePassword": {
+    "title": "Cambia password",
+    "currentLabel": "Password attuale",
+    "optional": "opzionale",
+    "currentPlaceholder": "Compila solo se conosci la password attuale",
+    "newLabel": "Nuova password",
+    "newPlaceholder": "Almeno 8 caratteri",
+    "confirmLabel": "Conferma password",
+    "confirmPlaceholder": "Ripeti la password",
+    "tip": "Suggerimento: usa una password sicura con lettere, numeri e simboli.",
+    "button": "Salva password",
+    "saving": "Salvataggio...",
+    "success": "Password cambiata correttamente.",
+    "errors": {
+      "missingNew": "Inserisci la nuova password e la conferma.",
+      "mismatch": "Le password non coincidono.",
+      "minLength": "La password deve essere lunga almeno 8 caratteri.",
+      "requirements": "La password deve contenere lettere e numeri.",
+      "verifyMissingEmail": "Impossibile verificare la password attuale. Continua senza verifica.",
+      "verifyFailed": "La password attuale non è corretta.",
+      "updateFailed": "Non è stato possibile cambiare la password.",
+      "unexpected": "Si è verificato un errore. Riprova più tardi."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "Impossibile caricare le timbrature",

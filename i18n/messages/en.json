@@ -237,6 +237,30 @@
       "saving": "Saving..."
     }
   },
+  "changePassword": {
+    "title": "Change password",
+    "currentLabel": "Current password",
+    "optional": "optional",
+    "currentPlaceholder": "Only fill in if you know your current password",
+    "newLabel": "New password",
+    "newPlaceholder": "At least 8 characters",
+    "confirmLabel": "Confirm password",
+    "confirmPlaceholder": "Repeat password",
+    "tip": "Tip: Use a strong password with letters, numbers and special characters.",
+    "button": "Save password",
+    "saving": "Saving…",
+    "success": "Password changed successfully.",
+    "errors": {
+      "missingNew": "Please enter the new password and confirm it.",
+      "mismatch": "Passwords do not match.",
+      "minLength": "Password must be at least 8 characters long.",
+      "requirements": "Password must contain letters and numbers.",
+      "verifyMissingEmail": "Current password cannot be verified. Continue without verification.",
+      "verifyFailed": "Current password is incorrect.",
+      "updateFailed": "Password could not be changed.",
+      "unexpected": "Something went wrong. Please try again later."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "Could not load work entries",

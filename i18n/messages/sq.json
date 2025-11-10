@@ -237,6 +237,30 @@
       "saving": "Duke ruajtur..."
     }
   },
+  "changePassword": {
+    "title": "Ndrysho fjalëkalimin",
+    "currentLabel": "Fjalëkalimi aktual",
+    "optional": "opsionale",
+    "currentPlaceholder": "Plotëso vetëm nëse njeh fjalëkalimin aktual",
+    "newLabel": "Fjalëkalim i ri",
+    "newPlaceholder": "Të paktën 8 shenja",
+    "confirmLabel": "Përsërit fjalëkalimin",
+    "confirmPlaceholder": "Përsërit fjalëkalimin",
+    "tip": "Këshillë: përdor një fjalëkalim të fortë me shkronja, numra dhe simbole.",
+    "button": "Ruaj fjalëkalimin",
+    "saving": "Duke ruajtur...",
+    "success": "Fjalëkalimi u ndryshua me sukses.",
+    "errors": {
+      "missingNew": "Shkruaj fjalëkalimin e ri dhe konfirmimin.",
+      "mismatch": "Fjalëkalimet nuk përputhen.",
+      "minLength": "Fjalëkalimi duhet të ketë të paktën 8 shenja.",
+      "requirements": "Fjalëkalimi duhet të përmbajë shkronja dhe numra.",
+      "verifyMissingEmail": "Fjalëkalimi aktual nuk mund të verifikohet. Vazhdo pa verifikim.",
+      "verifyFailed": "Fjalëkalimi aktual është i pasaktë.",
+      "updateFailed": "Fjalëkalimi nuk mund të ndryshohej.",
+      "unexpected": "Ndodhi një gabim. Provo përsëri më vonë."
+    }
+  },
   "notifications": {
     "timesheet": {
       "loadError": "Nuk u ngarkuan regjistrimet",

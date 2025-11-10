@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Lock, CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
+  const t = useTranslations("changePassword");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,21 +18,21 @@ export default function ChangePasswordPage() {
 
   const validatePasswords = () => {
     if (!newPassword || !confirmPassword) {
-      return "Bitte neues Passwort eingeben und bestätigen.";
+      return t("errors.missingNew");
     }
 
     if (newPassword !== confirmPassword) {
-      return "Passwörter stimmen nicht überein.";
+      return t("errors.mismatch");
     }
 
     if (newPassword.length < 8) {
-      return "Passwort muss mindestens 8 Zeichen lang sein.";
+      return t("errors.minLength");
     }
 
     const hasLetter = /[a-zA-Z]/.test(newPassword);
     const hasNumber = /\d/.test(newPassword);
     if (!hasLetter || !hasNumber) {
-      return "Passwort muss Buchstaben und Zahlen enthalten.";
+      return t("errors.requirements");
     }
 
     return null;
@@ -58,7 +60,7 @@ export default function ChangePasswordPage() {
         const loginEmail = userData.user?.email;
 
         if (!loginEmail) {
-          setError("Aktuelles Passwort kann nicht überprüft werden. Bitte ohne Überprüfung fortfahren.");
+          setError(t("errors.verifyMissingEmail"));
           setIsSubmitting(false);
           return;
         }
@@ -69,7 +71,7 @@ export default function ChangePasswordPage() {
         });
 
         if (verifyError || !verifyData.session) {
-          setError("Aktuelles Passwort ist falsch.");
+          setError(t("errors.verifyFailed"));
           setIsSubmitting(false);
           return;
         }
@@ -78,22 +80,22 @@ export default function ChangePasswordPage() {
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
 
       if (updateError) {
-        setError(updateError.message || "Passwort konnte nicht geändert werden.");
+        setError(updateError.message || t("errors.updateFailed"));
         return;
       }
 
       const apiResponse = await fetch("/api/employee/change-password", { method: "POST" });
       if (!apiResponse.ok) {
-        console.warn("[ChangePassword] Konnte must_change_password nicht zurücksetzen.");
+        console.warn("[ChangePassword] Failed to reset must_change_password flag.");
       }
 
-      setSuccess("Passwort erfolgreich geändert.");
+      setSuccess(t("success"));
       setTimeout(() => {
         router.push("/employee/hours");
       }, 1200);
     } catch (error) {
       console.error("[ChangePassword] Fehler:", error);
-      setError("Ein unerwarteter Fehler ist aufgetreten. Bitte später erneut versuchen.");
+      setError(t("errors.unexpected"));
     } finally {
       setIsSubmitting(false);
     }
@@ -103,14 +105,14 @@ export default function ChangePasswordPage() {
     <div className="mx-auto max-w-md">
       <div className="mb-6 flex items-center gap-2">
         <Lock className="h-5 w-5 text-brand" />
-        <h1 className="text-xl font-semibold text-foreground">Passwort ändern</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("title")}</h1>
       </div>
 
       <div className="rounded-lg border border-border bg-white p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label htmlFor="currentPassword" className="mb-1 block text-sm font-medium">
-              Aktuelles Passwort <span className="text-xs text-muted-foreground">(optional)</span>
+              {t("currentLabel")} <span className="text-xs text-muted-foreground">({t("optional")})</span>
             </label>
             <input
               id="currentPassword"
@@ -118,13 +120,13 @@ export default function ChangePasswordPage() {
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               className="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Nur ausfüllen, wenn Passwort bekannt"
+              placeholder={t("currentPlaceholder")}
             />
           </div>
 
           <div>
             <label htmlFor="newPassword" className="mb-1 block text-sm font-medium">
-              Neues Passwort
+              {t("newLabel")}
             </label>
             <input
               id="newPassword"
@@ -132,14 +134,14 @@ export default function ChangePasswordPage() {
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               className="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Mindestens 8 Zeichen"
+              placeholder={t("newPlaceholder")}
               required
             />
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium">
-              Passwort bestätigen
+              {t("confirmLabel")}
             </label>
             <input
               id="confirmPassword"
@@ -147,13 +149,13 @@ export default function ChangePasswordPage() {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               className="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Passwort wiederholen"
+              placeholder={t("confirmPlaceholder")}
               required
             />
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Tipp: Verwenden Sie ein starkes Passwort mit Buchstaben, Zahlen und Sonderzeichen.
+            {t("tip")}
           </p>
 
           {error && (
@@ -177,10 +179,10 @@ export default function ChangePasswordPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Speichert...</span>
+                <span>{t("saving")}</span>
               </>
             ) : (
-              <>Passwort speichern</>
+              <>{t("button")}</>
             )}
           </button>
         </form>
