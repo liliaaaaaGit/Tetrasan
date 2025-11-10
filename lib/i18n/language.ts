@@ -30,16 +30,16 @@ type ProfileLike = {
   language?: string | null;
 } | null | undefined;
 
-type ProfileWithLanguage = {
-  language?: string | null;
-};
-
-export function resolveLanguage(profile?: ProfileWithLanguage | null): SupportedLanguage {
+export function resolveLanguage(profile: unknown): SupportedLanguage {
   const candidate =
-    profile && typeof profile === "object"
-      ? profile.language ?? DEFAULT_LANGUAGE
-      : DEFAULT_LANGUAGE;
-  return isSupportedLanguage(candidate) ? candidate : DEFAULT_LANGUAGE;
+    profile &&
+    typeof profile === "object" &&
+    "language" in profile &&
+    typeof (profile as { language?: unknown }).language === "string"
+      ? (profile as { language?: string | null }).language
+      : null;
+
+  return candidate && isSupportedLanguage(candidate) ? candidate : DEFAULT_LANGUAGE;
 }
 
 export function languageToLocale(language: SupportedLanguage): string {
