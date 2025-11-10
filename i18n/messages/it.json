@@ -106,6 +106,12 @@
       "errors": {
         "missingIdentifier": "Inserisci email o numero personale."
       }
+    },
+    "logout": {
+      "loading": "Disconnessione in corso...",
+      "heading": "Ti sei disconnesso",
+      "body": "Logout completato con successo.",
+      "cta": "Torna al login"
     }
   },
   "hoursPage": {

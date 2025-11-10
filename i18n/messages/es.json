@@ -106,6 +106,12 @@
       "errors": {
         "missingIdentifier": "Introduce el correo o el número."
       }
+    },
+    "logout": {
+      "loading": "Cerrando sesión...",
+      "heading": "Has cerrado sesión",
+      "body": "Has salido correctamente.",
+      "cta": "Volver a iniciar sesión"
     }
   },
   "hoursPage": {

@@ -106,6 +106,12 @@
       "errors": {
         "missingIdentifier": "Bitte E-Mail oder Personalnummer eingeben."
       }
+    },
+    "logout": {
+      "loading": "Abmelden...",
+      "heading": "Du bist abgemeldet",
+      "body": "Du hast dich erfolgreich abgemeldet.",
+      "cta": "Zur Anmeldung"
     }
   },
   "hoursPage": {

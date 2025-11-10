@@ -106,6 +106,12 @@
       "errors": {
         "missingIdentifier": "Introdu emailul sau numărul personal."
       }
+    },
+    "logout": {
+      "loading": "Se deloghează...",
+      "heading": "Te-ai delogat",
+      "body": "Te-ai delogat cu succes.",
+      "cta": "Înapoi la autentificare"
     }
   },
   "hoursPage": {

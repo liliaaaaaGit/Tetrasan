@@ -106,6 +106,12 @@
       "errors": {
         "missingIdentifier": "Please enter an email or staff number."
       }
+    },
+    "logout": {
+      "loading": "Signing out...",
+      "heading": "You are signed out",
+      "body": "You have signed out successfully.",
+      "cta": "Back to sign in"
     }
   },
   "hoursPage": {

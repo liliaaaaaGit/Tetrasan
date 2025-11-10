@@ -106,6 +106,12 @@
       "errors": {
         "missingIdentifier": "Shkruaj emailin ose numrin personal."
       }
+    },
+    "logout": {
+      "loading": "Po çkyçet...",
+      "heading": "Je çkyçur",
+      "body": "U çkyçe me sukses.",
+      "cta": "Kthehu te hyrja"
     }
   },
   "hoursPage": {
