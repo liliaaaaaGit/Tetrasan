@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let computedHours: number | null = null;
+    let computedHours = 0;
     if (status === "work" && hasEndTime) {
       const hoursResult = calculateHours(normalizedFrom, normalizedTo, breakMinutesValue);
       if (hoursResult === null) {
