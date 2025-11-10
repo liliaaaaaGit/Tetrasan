@@ -206,11 +206,11 @@ function HoursPageContent() {
         // For work status, include time fields
         ...(status === 'work' && {
           time_from: entry.from,
-          time_to: entry.to,
-          break_minutes: entry.pause || 0,
-          hours_decimal: entry.hours,
-          activity_note: entry.note || entry.taetigkeit || '',
-          project_name: projectName,
+          time_to: entry.to ?? null,
+          break_minutes: entry.pause ?? 0,
+          hours_decimal: entry.hours ?? null,
+          activity_note: entry.note ?? entry.taetigkeit ?? null,
+          project_name: projectName || null,
         }),
         // For vacation/sick status, include comment
         ...((status === 'vacation' || status === 'sick') && {

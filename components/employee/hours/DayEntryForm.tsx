@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { DayEntry, DayStatus } from "./types";
 import { calculateHours, formatHours } from "@/lib/date-utils";
 import { Info } from "lucide-react";
@@ -22,11 +22,11 @@ interface DayEntryFormProps {
 export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = false, isAdmin = false }: DayEntryFormProps) {
   const [status, setStatus] = useState<DayStatus>(initialData?.status || "arbeit");
   const [from, setFrom] = useState(initialData?.from || "08:00");
-  const [to, setTo] = useState(initialData?.to || "17:00");
-  const [pause, setPause] = useState(initialData?.pause || 30);
-  const [bauvorhaben, setBauvorhaben] = useState(initialData?.bauvorhaben || "");
-  const [taetigkeit, setTaetigkeit] = useState(initialData?.taetigkeit || "");
-  const [kommentar, setKommentar] = useState(initialData?.kommentar || "");
+  const [to, setTo] = useState(initialData?.to || "");
+  const [pause, setPause] = useState(initialData?.pause ?? 30);
+  const [bauvorhaben, setBauvorhaben] = useState(initialData?.bauvorhaben ?? "");
+  const [taetigkeit, setTaetigkeit] = useState(initialData?.taetigkeit ?? "");
+  const [kommentar, setKommentar] = useState(initialData?.kommentar ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Normalize time strings (handle HH:MM:SS format from HTML time inputs)
@@ -36,32 +36,45 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
     return time.length >= 5 ? time.substring(0, 5) : time;
   };
 
+  const normalizedFrom = normalizeTime(from);
+  const normalizedTo = normalizeTime(to);
+  const hasEndTime = Boolean(normalizedTo);
+  const trimmedBauvorhaben = bauvorhaben.trim();
+  const trimmedTaetigkeit = taetigkeit.trim();
+
   // Normalize pause to ensure it's a number
   const pauseMinutes = Number(pause) || 0;
 
   // Calculate hours preview - use calculateHours as single source of truth
-  const calculatedHours = status === "arbeit" 
-    ? calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes) 
-    : null;
+  const calculatedHours =
+    status === "arbeit" && hasEndTime
+      ? calculateHours(normalizedFrom, normalizedTo, pauseMinutes)
+      : null;
 
   // Validate form
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (status === "arbeit") {
-      // Work entry validation
-      if (!bauvorhaben.trim()) newErrors.bauvorhaben = "Bauvorhaben ist erforderlich";
-      if (!from || !from.trim()) newErrors.from = "Von ist erforderlich";
-      if (!to || !to.trim()) newErrors.to = "Bis ist erforderlich";
+      if (!normalizedFrom) {
+        newErrors.from = "Please enter a start time.";
+      }
+
       if (pauseMinutes < 0) newErrors.pause = "Pause darf nicht negativ sein";
-      if (!taetigkeit.trim()) newErrors.taetigkeit = "Tätigkeitsbericht ist erforderlich";
-      
-      // Use calculateHours as single source of truth for time validation
-      if (from && to && from.trim() && to.trim()) {
-        const hours = calculateHours(normalizeTime(from), normalizeTime(to), pauseMinutes);
-        if (hours === null) {
-          // calculateHours returns null for: invalid format, to <= from, or pause > duration
-          newErrors.to = "Ende muss nach Beginn liegen oder Zeitangaben sind ungültig";
+
+      if (hasEndTime) {
+        if (!trimmedBauvorhaben) {
+          newErrors.bauvorhaben = "Please enter a project name.";
+        }
+        if (!trimmedTaetigkeit) {
+          newErrors.taetigkeit = "Please enter a work report.";
+        }
+
+        if (normalizedFrom) {
+          const hours = calculateHours(normalizedFrom, normalizedTo, pauseMinutes);
+          if (hours === null) {
+            newErrors.to = "End time must be after start time.";
+          }
         }
       }
     } else {
@@ -81,8 +94,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
     if (!validate()) return;
 
     // For work entries, calculatedHours must be a valid number (not null)
-    if (status === "arbeit" && calculatedHours === null) {
-      setErrors((prev) => ({ ...prev, to: "Ungültige Zeitangaben" }));
+    if (status === "arbeit" && hasEndTime && calculatedHours === null) {
+      setErrors((prev) => ({ ...prev, to: "End time must be after start time." }));
       return;
     }
 
@@ -90,12 +103,14 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       date,
       status,
       ...(status === "arbeit" && {
-        from: normalizeTime(from),
-        to: normalizeTime(to),
+        from: normalizedFrom,
         pause: pauseMinutes,
-        bauvorhaben: bauvorhaben.trim(),
-        taetigkeit,
-        hours: calculatedHours!, // Safe to use ! here because we validated above
+        bauvorhaben: trimmedBauvorhaben,
+        taetigkeit: trimmedTaetigkeit,
+        ...(hasEndTime && {
+          to: normalizedTo,
+          hours: calculatedHours ?? undefined,
+        }),
       }),
       ...(status !== "arbeit" && {
         kommentar,
@@ -139,6 +154,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           <div>
             <label htmlFor="bauvorhaben" className="block text-sm font-medium mb-1">
               Bauvorhaben
+              {hasEndTime && <span className="text-red-500"> *</span>}
             </label>
             <textarea
               id="bauvorhaben"
@@ -192,8 +208,13 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                 type="time"
                 value={to}
                 onChange={(e) => {
-                  setTo(e.target.value);
-                  setErrors((prev) => ({ ...prev, to: "" }));
+                  const value = e.target.value;
+                  setTo(value);
+                  setErrors((prev) =>
+                    !value
+                      ? { ...prev, to: "", bauvorhaben: "", taetigkeit: "" }
+                      : { ...prev, to: "" }
+                  );
                 }}
                 disabled={isAdmin}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
@@ -205,6 +226,9 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               )}
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            You can save your start time first. Project and report are only required when you log your end time.
+          </p>
 
           {/* Pause */}
           <div>
@@ -246,7 +270,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           {/* Activity Report */}
           <div>
             <label htmlFor="taetigkeit" className="block text-sm font-medium mb-1">
-              Tätigkeitsbericht *
+              Tätigkeitsbericht
+              {hasEndTime && <span className="text-red-500"> *</span>}
             </label>
             <textarea
               id="taetigkeit"
