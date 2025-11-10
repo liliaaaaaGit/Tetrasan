@@ -90,72 +90,6 @@ function HoursPageContent() {
     }
   }, []);
 
-  const MAX_SECONDS_IN_DAY = 23 * 3600 + 59 * 60 + 59;
-
-  const parseTimeToSeconds = (time: string | null | undefined): number | null => {
-    if (!time) return null;
-    const parts = time.split(":").map((part) => part.trim());
-    if (parts.length < 2 || parts.length > 3) return null;
-
-    const hours = Number(parts[0]);
-    const minutes = Number(parts[1]);
-    const seconds = parts.length === 3 ? Number(parts[2]) : 0;
-
-    if (
-      Number.isNaN(hours) ||
-      Number.isNaN(minutes) ||
-      Number.isNaN(seconds) ||
-      hours < 0 ||
-      hours > 23 ||
-      minutes < 0 ||
-      minutes > 59 ||
-      seconds < 0 ||
-      seconds > 59
-    ) {
-      return null;
-    }
-
-    return hours * 3600 + minutes * 60 + seconds;
-  };
-
-  const formatSecondsToTime = (totalSeconds: number): string => {
-    const clamped = Math.max(0, Math.min(totalSeconds, MAX_SECONDS_IN_DAY));
-    const hours = Math.floor(clamped / 3600)
-      .toString()
-      .padStart(2, "0");
-    const minutes = Math.floor((clamped % 3600) / 60)
-      .toString()
-      .padStart(2, "0");
-    const seconds = clamped % 60;
-    if (seconds === 0) {
-      return `${hours}:${minutes}`;
-    }
-    return `${hours}:${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const getPlaceholderEndTime = (startTime: string | null | undefined): string | null => {
-    if (!startTime) return null;
-    const startSeconds = parseTimeToSeconds(startTime);
-    if (startSeconds === null) return null;
-    const placeholderSeconds = Math.min(startSeconds + 60, MAX_SECONDS_IN_DAY);
-    const adjustedSeconds =
-      placeholderSeconds <= startSeconds
-        ? Math.min(startSeconds + 1, MAX_SECONDS_IN_DAY)
-        : placeholderSeconds;
-    return formatSecondsToTime(adjustedSeconds);
-  };
-
-  const isPlaceholderEntry = (entry: any): boolean => {
-    if (entry.status !== "work") return false;
-    const parsedHours = typeof entry.hours_decimal === "number" ? entry.hours_decimal : null;
-    if (parsedHours && parsedHours > 0) return false;
-    if (entry.project_name) return false;
-    if (entry.activity_note && entry.activity_note.trim().length > 0) return false;
-    const placeholder = getPlaceholderEndTime(entry.time_from);
-    if (!placeholder) return false;
-    return entry.time_to === placeholder;
-  };
-
   // Load timesheet entries from database
   const loadTimesheetEntries = async () => {
     try {
@@ -173,12 +107,11 @@ function HoursPageContent() {
       const entriesMap: Record<string, DayEntry> = {};
       data.forEach((entry: any) => {
         const dateStr = entry.date;
-        const placeholder = isPlaceholderEntry(entry);
-        const sanitizedTimeTo = placeholder ? undefined : entry.time_to || undefined;
+        const sanitizedTimeTo = entry.time_to || undefined;
         const sanitizedHours =
-          placeholder || typeof entry.hours_decimal !== "number"
-            ? undefined
-            : entry.hours_decimal;
+          typeof entry.hours_decimal === "number" && entry.hours_decimal > 0
+            ? entry.hours_decimal
+            : undefined;
         entriesMap[dateStr] = {
           id: entry.id,
           date: dateStr,
