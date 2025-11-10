@@ -39,11 +39,6 @@ function parseAcceptLanguage(): Locale | null {
 
 export async function getRequestLocale(): Promise<Locale> {
   const cookieStore = cookies();
-  const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
-  if (isLocale(cookieLocale)) {
-    return cookieLocale;
-  }
-
   try {
     const supabase = createClient();
     const {
@@ -60,6 +55,7 @@ export async function getRequestLocale(): Promise<Locale> {
       if (!error) {
         const preferred = data?.preferred_language;
         if (isLocale(preferred)) {
+          // Always honour the user-specific preference.
           return preferred;
         }
       } else {
@@ -68,6 +64,11 @@ export async function getRequestLocale(): Promise<Locale> {
     }
   } catch (error) {
     console.warn("[i18n] Falling back to default locale:", error);
+  }
+
+  const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+  if (isLocale(cookieLocale)) {
+    return cookieLocale;
   }
 
   const browserLocale = parseAcceptLanguage();
