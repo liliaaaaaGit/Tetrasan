@@ -30,8 +30,11 @@ type ProfileLike = {
   language?: string | null;
 } | null | undefined;
 
-export function resolveLanguage(profile?: ProfileLike): SupportedLanguage {
-  const candidate = profile?.language ?? DEFAULT_LANGUAGE;
+export function resolveLanguage(
+  profile?: { language?: string | null } | null | undefined
+): SupportedLanguage {
+  const candidate =
+    profile && typeof profile === "object" ? profile.language ?? DEFAULT_LANGUAGE : DEFAULT_LANGUAGE;
   return isSupportedLanguage(candidate) ? candidate : DEFAULT_LANGUAGE;
 }
 
