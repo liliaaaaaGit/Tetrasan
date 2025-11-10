@@ -76,13 +76,6 @@ export async function GET(
       });
     };
 
-    const formatTime = (dateString: string) => {
-      return new Date(dateString).toLocaleTimeString('de-DE', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    };
-
     // Generate PDF based on request type
     let pdfDocument: React.ReactElement;
     let fileName: string;
@@ -98,22 +91,35 @@ export async function GET(
       fileName = `Urlaubsantrag_${employeeName.replace(/\s+/g, '_')}.pdf`;
     } else {
       // Day-off request
-      // For day-off, time_from and time_to might not be in the database
-      // We'll use a default time range or extract from period_start if it's a datetime
-      const dateObj = new Date(leaveRequest.period_start);
-      const timeFrom = dateObj.getHours() > 0 || dateObj.getMinutes() > 0
-        ? formatTime(leaveRequest.period_start)
-        : "08:00"; // Default if no time specified
-      const timeTo = dateObj.getHours() > 0 || dateObj.getMinutes() > 0
-        ? formatTime(leaveRequest.period_end)
-        : "17:00"; // Default if no time specified
+      const defaultTimeFrom = "08:00";
+      const defaultTimeTo = "17:00";
+
+      let timeFrom = defaultTimeFrom;
+      let timeTo = defaultTimeTo;
+      let reasonText = leaveRequest.comment || "";
+
+      // Try to extract an inline time range from the comment, e.g. "(Zeit: 15:00 - 18:00)"
+      const timePattern = /\(Zeit:\s*([0-2]?\d:[0-5]\d)\s*[-–]\s*([0-2]?\d:[0-5]\d)\s*\)/i;
+      const timeMatch = reasonText.match(timePattern);
+
+      if (timeMatch) {
+        timeFrom = timeMatch[1];
+        timeTo = timeMatch[2];
+        // Remove the time annotation from the comment for the PDF output
+        reasonText = reasonText.replace(timeMatch[0], "").trim();
+        // Collapse any duplicated whitespace after removal
+        reasonText = reasonText.replace(/\s{2,}/g, " ").trim();
+        if (!reasonText) {
+          reasonText = "—";
+        }
+      }
 
       pdfDocument = React.createElement(DayOffRequestPDF, {
         employeeName,
         date: formatDate(leaveRequest.period_start),
         timeFrom,
         timeTo,
-        reason: leaveRequest.comment || "",
+        reason: reasonText,
       });
       fileName = `Tagesbefreiung_${employeeName.replace(/\s+/g, '_')}.pdf`;
     }
