@@ -110,7 +110,6 @@ interface VacationRequestPDFProps {
   dateRequest: string;
   dateFrom: string;
   dateTo: string;
-  reason: string;
 }
 
 export function VacationRequestPDF({
@@ -118,7 +117,6 @@ export function VacationRequestPDF({
   dateRequest,
   dateFrom,
   dateTo,
-  reason,
 }: VacationRequestPDFProps) {
   return (
     <Document>
@@ -174,15 +172,6 @@ export function VacationRequestPDF({
             </View>
           </View>
 
-          {/* Row 4: Grund */}
-          <View style={styles.tableRow}>
-            <View style={styles.labelCell}>
-              <Text style={styles.labelText}>Grund</Text>
-            </View>
-            <View style={styles.valueCell}>
-              <Text style={styles.valueText}>{reason}</Text>
-            </View>
-          </View>
         </View>
       </Page>
     </Document>

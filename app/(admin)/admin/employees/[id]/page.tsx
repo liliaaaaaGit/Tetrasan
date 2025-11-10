@@ -50,7 +50,7 @@ interface LeaveRequest {
   type: string;
   period_start: string;
   period_end: string;
-  comment: string;
+  comment: string | null;
   status: string;
   created_at: string;
 }
@@ -286,7 +286,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
           type: editModal.request.type,
           period_start: editModal.values.period_start,
           period_end: editModal.request.type === 'day_off' ? editModal.values.period_start : editModal.values.period_end,
-          comment: editModal.values.comment,
+          comment: editModal.request.type === 'day_off' ? editModal.values.comment : null,
         }),
       });
       if (!res.ok) {
@@ -440,7 +440,9 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                       {getStatusText(request.status)}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{request.comment}</p>
+                  {request.comment && (
+                    <p className="text-sm text-muted-foreground mb-3">{request.comment}</p>
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex gap-2 flex-wrap">
                       {/* PDF Download Button */}
@@ -529,7 +531,9 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                       {getStatusText(request.status)}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{request.comment}</p>
+                  {request.comment && (
+                    <p className="text-sm text-muted-foreground mb-3">{request.comment}</p>
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex gap-2 flex-wrap">
                       {/* PDF Download Button */}
@@ -696,15 +700,17 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                   />
                 </div>
               )}
-              <div>
-                <label className="block text-xs mb-1">Grund / Kommentar</label>
-                <textarea
-                  value={editModal.values.comment}
-                  onChange={(e) => setEditModal(s => ({ ...s, values: { ...s.values, comment: e.target.value } }))}
-                  className="w-full px-3 py-2 border border-border rounded"
-                  rows={3}
-                />
-              </div>
+              {editModal.request?.type === 'day_off' && (
+                <div>
+                  <label className="block text-xs mb-1">Grund / Kommentar</label>
+                  <textarea
+                    value={editModal.values.comment}
+                    onChange={(e) => setEditModal(s => ({ ...s, values: { ...s.values, comment: e.target.value } }))}
+                    className="w-full px-3 py-2 border border-border rounded"
+                    rows={3}
+                  />
+                </div>
+              )}
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button

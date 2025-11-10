@@ -11,7 +11,7 @@ interface LeaveRequest {
   type: 'vacation' | 'day_off';
   period_start: string;
   period_end: string;
-  comment: string;
+  comment: string | null;
   status: 'submitted' | 'approved' | 'rejected';
   created_at: string;
 }
@@ -53,7 +53,7 @@ export default function EmployeeLeavePage() {
     }
   };
 
-  const handleSubmitRequest = async (formData: any) => {
+  const handleSubmitRequest = async (formData: { startDate: string; endDate: string }) => {
     try {
       setIsSubmitting(true);
       
@@ -64,7 +64,6 @@ export default function EmployeeLeavePage() {
           type: 'vacation',
           period_start: formData.startDate,
           period_end: formData.endDate,
-          comment: formData.comment,
         }),
       });
 
@@ -147,7 +146,6 @@ export default function EmployeeLeavePage() {
                   {getStatusText(request.status)}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">{request.comment}</p>
               <p className="text-xs text-muted-foreground mt-2">
                 {tLeave("submittedOn", {
                   date: new Date(request.created_at).toLocaleDateString(locale),
@@ -185,12 +183,19 @@ export default function EmployeeLeavePage() {
 }
 
 // Leave Request Form Component
-function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => void; onSubmit: (data: any) => void; isLoading: boolean }) {
+function LeaveRequestForm({
+  onClose,
+  onSubmit,
+  isLoading,
+}: {
+  onClose: () => void;
+  onSubmit: (data: { startDate: string; endDate: string }) => void;
+  isLoading: boolean;
+}) {
   const tForm = useTranslations("leavePage.form");
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [comment, setComment] = useState('');
-  const [errors, setErrors] = useState<{ startDate?: string; endDate?: string; comment?: string; dateRange?: string }>({});
+  const [errors, setErrors] = useState<{ startDate?: string; endDate?: string; dateRange?: string }>({});
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -201,10 +206,6 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
 
     if (!endDate) {
       newErrors.endDate = tForm("endRequired");
-    }
-
-    if (!comment.trim()) {
-      newErrors.comment = tForm("commentRequired");
     }
 
     // Date range validation
@@ -223,7 +224,7 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
       return;
     }
 
-    onSubmit({ startDate, endDate, comment });
+    onSubmit({ startDate, endDate });
   };
 
   return (
@@ -292,30 +293,6 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                 <p className="text-sm text-red-600" role="alert">{errors.dateRange}</p>
               </div>
             )}
-            
-            <div>
-              <label htmlFor="comment" className="block text-sm font-medium mb-1.5 text-foreground">
-                {tForm("commentLabel")}
-              </label>
-              <textarea
-                id="comment"
-                value={comment}
-                onChange={(e) => {
-                  setComment(e.target.value);
-                  if (errors.comment) {
-                    setErrors(prev => ({ ...prev, comment: undefined }));
-                  }
-                }}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
-                  errors.comment ? "border-red-500" : "border-border"
-                }`}
-                rows={4}
-                placeholder={tForm("commentPlaceholder")}
-              />
-              {errors.comment && (
-                <p className="mt-1 text-sm text-red-600" role="alert">{errors.comment}</p>
-              )}
-            </div>
             
             <div className="flex gap-3 pt-4">
               <button

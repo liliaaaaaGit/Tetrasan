@@ -86,7 +86,6 @@ export async function GET(
         dateRequest: formatDate(leaveRequest.created_at),
         dateFrom: formatDate(leaveRequest.period_start),
         dateTo: formatDate(leaveRequest.period_end),
-        reason: leaveRequest.comment || "",
       });
       fileName = `Urlaubsantrag_${employeeName.replace(/\s+/g, '_')}.pdf`;
     } else {

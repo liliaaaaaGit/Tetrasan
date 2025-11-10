@@ -28,9 +28,10 @@ export async function PUT(
     const body = await request.json();
 
     const { type, period_start, period_end, comment } = body;
+    const requiresComment = type !== 'vacation';
 
     // Validate required fields
-    if (!type || !period_start || !period_end || !comment) {
+    if (!type || !period_start || !period_end || (requiresComment && !comment)) {
       return NextResponse.json(
         { error: "Alle Pflichtfelder müssen ausgefüllt werden." },
         { status: 400 }
@@ -44,7 +45,7 @@ export async function PUT(
         type,
         period_start,
         period_end,
-        comment,
+        comment: requiresComment ? comment : null,
       })
       .eq('id', params.id);
 
