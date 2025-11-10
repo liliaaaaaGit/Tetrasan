@@ -18,7 +18,7 @@ export default async function RootLayout({
 }>) {
   const session = await getSession();
   const profile = session?.user ? await getProfile(session.user.id) : null;
-  const language = resolveLanguage(profile);
+  const language = resolveLanguage(profile ? { language: profile.language } : null);
   const locale = languageToLocale(language);
   const localeMessages = messages[language] ?? messages[DEFAULT_LANGUAGE];
 
