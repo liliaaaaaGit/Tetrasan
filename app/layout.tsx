@@ -16,9 +16,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
-  const profile = session?.user ? await getProfile(session.user.id) : null;
-  const language = resolveLanguage(profile);
+  let language = DEFAULT_LANGUAGE;
+
+  try {
+    const session = await getSession();
+    const profile = session?.user ? await getProfile(session.user.id) : null;
+    language = resolveLanguage(profile);
+  } catch (error) {
+    console.error("[RootLayout] Failed to resolve language, falling back to default:", error);
+  }
+
   const locale = languageToLocale(language);
   const localeMessages = messages[language] ?? messages[DEFAULT_LANGUAGE];
 
