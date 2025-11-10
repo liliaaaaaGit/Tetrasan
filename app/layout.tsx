@@ -6,15 +6,28 @@ export const metadata: Metadata = {
   description: "Zeiterfassung für Tetrasan Mitarbeiter",
 };
 
-export default function RootLayout({
+import { NextIntlClientProvider } from "next-intl";
+import { getProfile, getSession } from "@/lib/auth/session";
+import { DEFAULT_LANGUAGE, languageToLocale, resolveLanguage } from "@/lib/i18n/language";
+import { messages } from "@/lib/i18n/messages";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+  const profile = session?.user ? await getProfile(session.user.id) : null;
+  const language = resolveLanguage(profile);
+  const locale = languageToLocale(language);
+  const localeMessages = messages[language] ?? messages[DEFAULT_LANGUAGE];
+
   return (
-    <html lang="de-DE">
+    <html lang={locale}>
       <body className="antialiased">
-        {children}
+        <NextIntlClientProvider locale={language} messages={localeMessages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LucideIcon, LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { TetrasanLogo } from "@/components/branding/TetrasanLogo";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
+import type { SupportedLanguage } from "@/lib/i18n/language";
 
 interface NavItem {
   href: string;
@@ -16,6 +19,8 @@ interface AppHeaderProps {
   navItems: NavItem[];
   logoSize?: "sm" | "md" | "lg" | "xl";
   backgroundColor?: string;
+  language?: SupportedLanguage;
+  onLanguageChange?: (language: SupportedLanguage) => void;
 }
 
 /**
@@ -23,8 +28,15 @@ interface AppHeaderProps {
  * Reusable header with logo, navigation links, and logout button
  * Used by both employee and admin layouts
  */
-export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-white" }: AppHeaderProps) {
+export function AppHeader({
+  navItems,
+  logoSize = "xl",
+  backgroundColor = "bg-white",
+  language,
+  onLanguageChange,
+}: AppHeaderProps) {
   const pathname = usePathname();
+  const tCommon = useTranslations("Common");
 
   return (
     <>
@@ -38,7 +50,7 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
             </div>
             
             {/* Navigation tabs with logout */}
-            <nav className="flex gap-6 items-center">
+            <nav className="flex flex-wrap gap-4 items-center justify-end">
               {navItems.map((item) => {
                 const isActive = pathname.startsWith(item.href) || pathname === item.href;
                 const Icon = item.icon;
@@ -59,6 +71,13 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
                   </Link>
                 );
               })}
+
+              {language && onLanguageChange && (
+                <LanguageSwitcher
+                  language={language}
+                  onLanguageChange={onLanguageChange}
+                />
+              )}
               
               {/* Logout button */}
               <Link
@@ -66,7 +85,7 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
                 className="flex items-center gap-2 py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="text-sm font-medium">Abmelden</span>
+                <span className="text-sm font-medium">{tCommon("logout")}</span>
               </Link>
             </nav>
           </div>
@@ -82,7 +101,13 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
           </div>
           
           {/* Navigation tabs with logout */}
-          <nav className="flex gap-2 justify-end">
+          <nav className="flex flex-col gap-3">
+            {language && onLanguageChange && (
+              <LanguageSwitcher
+                language={language}
+                onLanguageChange={onLanguageChange}
+              />
+            )}
             {navItems.map((item) => {
               const isActive = pathname.startsWith(item.href) || pathname === item.href;
               const Icon = item.icon;
@@ -107,10 +132,10 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
             {/* Logout button */}
             <Link
               href="/logout"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors self-end"
             >
               <LogOut className="h-4 w-4" />
-              <span>Abmelden</span>
+              <span>{tCommon("logout")}</span>
             </Link>
           </nav>
         </div>

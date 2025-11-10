@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Clock, Plane, Calendar, LogOut, Menu, Lock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { TetrasanLogo } from "@/components/branding/TetrasanLogo";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
+import {
+  DEFAULT_LANGUAGE,
+  languageToLocale,
+  resolveLanguage,
+  type SupportedLanguage,
+} from "@/lib/i18n/language";
 
 /**
  * Employee Layout
@@ -25,6 +33,9 @@ export default function EmployeeLayout({
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
+  const tNav = useTranslations("EmployeeNav");
+  const tCommon = useTranslations("Common");
 
   useEffect(() => {
     const supabase = createClient();
@@ -52,7 +63,7 @@ export default function EmployeeLayout({
 
     supabase
       .from('profiles')
-      .select('must_change_password')
+      .select('must_change_password, language')
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
@@ -68,6 +79,9 @@ export default function EmployeeLayout({
         if (shouldForce && pathname !== '/employee/change-password') {
           router.replace('/employee/change-password');
         }
+
+        const resolvedLanguage = resolveLanguage(data);
+        setLanguage(resolvedLanguage);
       });
 
     return () => {
@@ -75,22 +89,26 @@ export default function EmployeeLayout({
     };
   }, [user, pathname, router]);
 
+  useEffect(() => {
+    document.documentElement.lang = languageToLocale(language);
+  }, [language]);
+
   // Navigation items for the bottom tab bar
   const navItems = [
     {
       href: "/employee/hours",
       icon: Clock,
-      label: "Stunden",
+      label: tNav("hours"),
     },
     {
       href: "/employee/leave",
       icon: Plane,
-      label: "Urlaub",
+      label: tNav("leave"),
     },
     {
       href: "/employee/dayoff",
       icon: Calendar,
-      label: "Tagesbefreiung",
+      label: tNav("dayOff"),
     },
   ];
 
@@ -122,7 +140,7 @@ export default function EmployeeLayout({
             </div>
             
             {/* Navigation tabs with logout */}
-            <nav className="flex gap-6 justify-end">
+            <nav className="flex flex-wrap gap-4 justify-end items-center">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -143,6 +161,11 @@ export default function EmployeeLayout({
                   </Link>
                 );
               })}
+
+              <LanguageSwitcher
+                language={language}
+                onLanguageChange={(lang) => setLanguage(lang)}
+              />
               
               {/* Logout button */}
               <Link
@@ -155,14 +178,14 @@ export default function EmployeeLayout({
                 )}
               >
                 <Lock className="h-5 w-5" />
-                <span className="text-sm font-medium">Passwort ändern</span>
+                <span className="text-sm font-medium">{tCommon("changePassword")}</span>
               </Link>
               <Link
                 href="/logout"
                 className="flex items-center gap-2 py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="text-sm font-medium">Abmelden</span>
+                <span className="text-sm font-medium">{tCommon("logout")}</span>
               </Link>
             </nav>
           </div>
@@ -192,6 +215,13 @@ export default function EmployeeLayout({
               aria-label="Navigation"
               className="mt-3 rounded-lg border border-border bg-white shadow-md divide-y"
             >
+              <div className="p-4">
+                <LanguageSwitcher
+                  language={language}
+                onLanguageChange={(lang) => setLanguage(lang)}
+                  className="w-full"
+                />
+              </div>
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -219,7 +249,7 @@ export default function EmployeeLayout({
                 )}
               >
                 <Lock className="h-5 w-5" />
-                <span className="font-medium">Passwort ändern</span>
+                <span className="font-medium">{tCommon("changePassword")}</span>
               </Link>
               <Link
                 href="/logout"
@@ -227,7 +257,7 @@ export default function EmployeeLayout({
                 className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="font-medium">Abmelden</span>
+                <span className="font-medium">{tCommon("logout")}</span>
               </Link>
             </div>
           )}

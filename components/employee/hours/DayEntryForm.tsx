@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { DayEntry, DayStatus } from "./types";
 import { calculateHours, formatHours } from "@/lib/date-utils";
 import { Info } from "lucide-react";
@@ -28,6 +29,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const [taetigkeit, setTaetigkeit] = useState(initialData?.taetigkeit ?? "");
   const [kommentar, setKommentar] = useState(initialData?.kommentar ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const t = useTranslations("DayEntryForm");
 
   // Normalize time strings (handle HH:MM:SS format from HTML time inputs)
   const normalizeTime = (time: string): string => {
@@ -57,30 +59,30 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
     if (status === "arbeit") {
       if (!normalizedFrom) {
-        newErrors.from = "Please enter a start time.";
+        newErrors.from = t("errors.fromRequired");
       }
 
-      if (pauseMinutes < 0) newErrors.pause = "Pause darf nicht negativ sein";
+      if (pauseMinutes < 0) newErrors.pause = t("errors.pauseNegative");
 
       if (hasEndTime) {
         if (!trimmedBauvorhaben) {
-          newErrors.bauvorhaben = "Please enter a project name.";
+          newErrors.bauvorhaben = t("errors.projectMissing");
         }
         if (!trimmedTaetigkeit) {
-          newErrors.taetigkeit = "Please enter a work report.";
+          newErrors.taetigkeit = t("errors.workReportMissing");
         }
 
         if (normalizedFrom) {
           const hours = calculateHours(normalizedFrom, normalizedTo, pauseMinutes);
           if (hours === null) {
-            newErrors.to = "End time must be after start time.";
+            newErrors.to = t("errors.endAfterStart");
           }
         }
       }
     } else {
       // Vacation or sick day
       if (!kommentar.trim()) {
-        newErrors.kommentar = "Kommentar ist erforderlich";
+        newErrors.kommentar = t("errors.commentRequired");
       }
     }
 
@@ -95,7 +97,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
     // For work entries, calculatedHours must be a valid number (not null)
     if (status === "arbeit" && hasEndTime && calculatedHours === null) {
-      setErrors((prev) => ({ ...prev, to: "End time must be after start time." }));
+      setErrors((prev) => ({ ...prev, to: t("errors.endAfterStart") }));
       return;
     }
 
@@ -124,7 +126,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Status Selection */}
       <div>
-        <label className="block text-sm font-medium mb-3">Status</label>
+        <label className="block text-sm font-medium mb-3">{t("status")}</label>
         <div className="grid grid-cols-3 gap-2">
           {(["arbeit", "urlaub", "krank"] as DayStatus[]).map((s) => (
             <button
@@ -141,7 +143,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                   : "bg-secondary text-foreground hover:bg-secondary/80"
               } ${isAdmin ? "cursor-not-allowed opacity-60" : ""}`}
             >
-              {s === "arbeit" ? "Arbeit" : s === "urlaub" ? "Urlaub" : "Krank"}
+              {s === "arbeit"
+                ? t("statusOptions.work")
+                : s === "urlaub"
+                  ? t("statusOptions.vacation")
+                  : t("statusOptions.sick")}
             </button>
           ))}
         </div>
@@ -153,7 +159,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           {/* Project name */}
           <div>
             <label htmlFor="bauvorhaben" className="block text-sm font-medium mb-1">
-              Bauvorhaben
+              {t("labels.project")}
               {hasEndTime && <span className="text-red-500"> *</span>}
             </label>
             <textarea
@@ -168,7 +174,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
                 errors.bauvorhaben ? "border-red-500" : "border-border"
               } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
-              placeholder="Z. B. Neubau Musterstraße 12"
+              placeholder={t("placeholders.project")}
             />
             {errors.bauvorhaben && (
               <p className="text-xs text-red-600 mt-1">{errors.bauvorhaben}</p>
@@ -179,7 +185,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           <div className="flex flex-col sm:flex-row sm:items-end gap-3">
             <div className="flex-1 sm:max-w-[150px]">
               <label htmlFor="from" className="block text-sm font-medium mb-1">
-                Von
+                {t("labels.from")}
               </label>
               <input
                 id="from"
@@ -201,7 +207,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
             <div className="flex-1 sm:max-w-[150px]">
               <label htmlFor="to" className="block text-sm font-medium mb-1">
-                Bis
+                {t("labels.to")}
               </label>
               <input
                 id="to"
@@ -226,14 +232,12 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               )}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            You can save your start time first. Project and report are only required when you log your end time.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("helpText.startOnly")}</p>
 
           {/* Pause */}
           <div>
             <label htmlFor="pause" className="block text-sm font-medium mb-1">
-              Pause (Minuten)
+              {t("labels.pause")}
             </label>
               <input
                 id="pause"
@@ -260,7 +264,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-blue-900">
-                  Stunden (berechnet):{" "}
+                  {t("info.hoursCalculated")}:{" "}
                   {calculatedHours !== null ? formatHours(calculatedHours) : "—"}
                 </p>
               </div>
@@ -270,7 +274,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           {/* Activity Report */}
           <div>
             <label htmlFor="taetigkeit" className="block text-sm font-medium mb-1">
-              Tätigkeitsbericht
+              {t("labels.activity")}
               {hasEndTime && <span className="text-red-500"> *</span>}
             </label>
             <textarea
@@ -285,7 +289,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
                 errors.taetigkeit ? "border-red-500" : "border-border"
               } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
-              placeholder="Was hast du heute gemacht?"
+              placeholder={t("placeholders.activity")}
             />
             {errors.taetigkeit && (
               <p className="text-xs text-red-600 mt-1">{errors.taetigkeit}</p>
@@ -298,7 +302,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       {status !== "arbeit" && (
         <div>
           <label htmlFor="kommentar" className="block text-sm font-medium mb-1">
-            Kommentar *
+            {t("labels.comment")} *
           </label>
           <textarea
             id="kommentar"
@@ -314,8 +318,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
             } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
             placeholder={
               status === "urlaub"
-                ? "Urlaubsgrund (optional)"
-                : "Grund für Krankheit (optional)"
+                ? t("placeholders.commentVacation")
+                : t("placeholders.commentSick")
             }
           />
           {errors.kommentar && (
@@ -332,14 +336,14 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-foreground bg-secondary rounded-md hover:bg-secondary/80"
           >
-            Abbrechen
+            {t("buttons.cancel")}
           </button>
           <button
             type="submit"
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Speichern..." : "Speichern"}
+            {isLoading ? t("buttons.saving") : t("buttons.save")}
           </button>
         </div>
       )}
