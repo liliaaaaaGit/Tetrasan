@@ -107,13 +107,17 @@ function HoursPageContent() {
       const entriesMap: Record<string, DayEntry> = {};
       data.forEach((entry: any) => {
         const dateStr = entry.date;
+        const sanitizedTimeTo =
+          entry.time_to && entry.time_to !== "00:00" ? entry.time_to : undefined;
+        const sanitizedHours =
+          typeof entry.hours_decimal === "number" ? entry.hours_decimal : undefined;
         entriesMap[dateStr] = {
           id: entry.id,
           date: dateStr,
           from: entry.time_from,
-          to: entry.time_to,
+          to: sanitizedTimeTo,
           pause: entry.break_minutes || 0,
-          hours: entry.hours_decimal,
+          hours: sanitizedHours,
           status: entry.status === 'work' ? 'arbeit' : entry.status === 'vacation' ? 'urlaub' : 'krank',
           note: entry.activity_note,
           comment: entry.comment,

@@ -119,7 +119,7 @@ export async function PUT(
             date,
             status,
             time_from: normalizedFrom || null,
-            time_to: hasEndTime ? normalizedTo : null,
+            time_to: hasEndTime ? normalizedTo : "00:00",
             break_minutes: breakMinutesValue,
             hours_decimal: computedHours,
             activity_note: trimmedActivityNote ? trimmedActivityNote : null,
