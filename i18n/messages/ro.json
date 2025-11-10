@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Ore",
+    "prevMonth": "Luna precedentă",
+    "nextMonth": "Luna următoare",
+    "holidayTooltip": "Sărbătoare: {name}",
+    "legend": {
+      "work": "Lucru",
+      "vacation": "Concediu",
+      "sick": "Boală",
+      "holiday": "Sărbătoare",
+      "today": "Astăzi",
+      "correction": "Corecție",
+      "correctionTooltip": "Există o corecție"
+    },
+    "empty": "Nu există încă înregistrări pentru această lună",
+    "loading": "Se încarcă…",
+    "exportPdf": "Exportă PDF",
+    "summary": {
+      "title": "Rezumat lunar",
+      "loading": "Se încarcă rezumatul lunar...",
+      "totalHours": "Ore totale",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Concediu",
+    "newRequest": "Cerere concediu",
+    "loading": "Se încarcă cererile...",
+    "empty": "Nu există încă cereri de concediu.",
+    "status": {
+      "submitted": "Trimisă",
+      "approved": "Aprobată",
+      "rejected": "Respinsă"
+    },
+    "submittedOn": "Trimisă: {date}",
+    "downloadPdf": "Descarcă PDF",
+    "form": {
+      "title": "Cerere concediu",
+      "startLabel": "De la",
+      "endLabel": "Până la",
+      "commentLabel": "Comentariu / motivul concediului",
+      "commentPlaceholder": "Motivul concediului...",
+      "startRequired": "Selectează data de început.",
+      "endRequired": "Selectează data de sfârșit.",
+      "commentRequired": "Comentariul este obligatoriu.",
+      "dateRange": "Data de sfârșit trebuie să fie după data de început.",
+      "datePlaceholder": "zz.ll.aaaa",
+      "cancel": "Anulează",
+      "submit": "Trimite",
+      "submitting": "Se trimite..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Zi liberă",
+    "newRequest": "Zi liberă",
+    "loading": "Se încarcă cererile...",
+    "empty": "Nu există încă cereri de zi liberă.",
+    "status": {
+      "submitted": "Trimisă",
+      "approved": "Aprobată",
+      "rejected": "Respinsă"
+    },
+    "submittedOn": "Trimisă: {date}",
+    "downloadPdf": "Descarcă PDF",
+    "form": {
+      "title": "Zi liberă",
+      "dateLabel": "Data",
+      "datePlaceholder": "zz.ll.aaaa",
+      "typeLabel": "Tip",
+      "typeFull": "Toată ziua",
+      "typePartial": "Interval (de/la)",
+      "timeFromLabel": "De la",
+      "timeToLabel": "Până la",
+      "commentLabel": "Motiv / comentariu",
+      "commentPlaceholder": "Motivul pentru ziua liberă...",
+      "timeAnnotation": "Interval orar: {from} - {to}",
+      "dateRequired": "Selectează data.",
+      "commentRequired": "Motivul este obligatoriu.",
+      "timeFromRequired": "Introdu ora de început.",
+      "timeToRequired": "Introdu ora de sfârșit.",
+      "timeOrder": "Ora de sfârșit trebuie să fie după ora de început.",
+      "cancel": "Anulează",
+      "submit": "Trimite",
+      "submitting": "Se trimite..."
+    }
+  },
   "dayEntryForm": {
     "status": "Status",
     "labels": {

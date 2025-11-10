@@ -3,7 +3,7 @@
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Calendar, Plus, Loader2, Download } from "lucide-react";
 
 interface LeaveRequest {
@@ -22,6 +22,8 @@ interface LeaveRequest {
  */
 export default function EmployeeLeavePage() {
   const tRequests = useTranslations("notifications.requests");
+  const tLeave = useTranslations("leavePage");
+  const locale = useLocale();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -92,13 +94,7 @@ export default function EmployeeLeavePage() {
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved': return 'Genehmigt';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Eingereicht';
-    }
-  };
+  const getStatusText = (status: string) => tLeave(`status.${status}` as const);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -108,14 +104,14 @@ export default function EmployeeLeavePage() {
   return (
     <div>
       <PageHeader
-        title="Urlaub"
+        title={tLeave("title")}
         button={
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            <span className="text-sm font-medium">Urlaubsantrag</span>
+            <span className="text-sm font-medium">{tLeave("newRequest")}</span>
           </button>
         }
       />
@@ -133,7 +129,7 @@ export default function EmployeeLeavePage() {
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Lade Anträge...</span>
+          <span className="ml-2">{tLeave("loading")}</span>
         </div>
       ) : requests.length > 0 ? (
         <div className="space-y-4">
@@ -143,7 +139,8 @@ export default function EmployeeLeavePage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">
-                    {new Date(request.period_start).toLocaleDateString('de-DE')} - {new Date(request.period_end).toLocaleDateString('de-DE')}
+                    {new Date(request.period_start).toLocaleDateString(locale)} -{" "}
+                    {new Date(request.period_end).toLocaleDateString(locale)}
                   </span>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
@@ -152,7 +149,9 @@ export default function EmployeeLeavePage() {
               </div>
               <p className="text-sm text-muted-foreground">{request.comment}</p>
               <p className="text-xs text-muted-foreground mt-2">
-                Eingereicht: {new Date(request.created_at).toLocaleDateString('de-DE')}
+                {tLeave("submittedOn", {
+                  date: new Date(request.created_at).toLocaleDateString(locale),
+                })}
               </p>
               <div className="mt-3">
                 <button
@@ -163,7 +162,7 @@ export default function EmployeeLeavePage() {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition-colors"
                 >
                   <Download className="h-4 w-4" />
-                  <span>PDF herunterladen</span>
+                  <span>{tLeave("downloadPdf")}</span>
                 </button>
               </div>
             </div>
@@ -171,7 +170,7 @@ export default function EmployeeLeavePage() {
         </div>
       ) : (
         <div className="border border-border rounded-lg">
-          <EmptyState message="Noch keine Urlaubsanträge eingereicht" />
+          <EmptyState message={tLeave("empty")} />
         </div>
       )}
 
@@ -187,6 +186,7 @@ export default function EmployeeLeavePage() {
 
 // Leave Request Form Component
 function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => void; onSubmit: (data: any) => void; isLoading: boolean }) {
+  const tForm = useTranslations("leavePage.form");
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [comment, setComment] = useState('');
@@ -196,20 +196,20 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
     const newErrors: typeof errors = {};
 
     if (!startDate) {
-      newErrors.startDate = "Bitte Startdatum wählen.";
+      newErrors.startDate = tForm("startRequired");
     }
 
     if (!endDate) {
-      newErrors.endDate = "Bitte Enddatum wählen.";
+      newErrors.endDate = tForm("endRequired");
     }
 
     if (!comment.trim()) {
-      newErrors.comment = "Kommentar ist erforderlich.";
+      newErrors.comment = tForm("commentRequired");
     }
 
     // Date range validation
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      newErrors.dateRange = "Das Enddatum muss nach dem Startdatum liegen.";
+      newErrors.dateRange = tForm("dateRange");
     }
 
     setErrors(newErrors);
@@ -230,12 +230,12 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
-          <h3 className="text-lg font-semibold mb-6">Urlaubsantrag</h3>
+          <h3 className="text-lg font-semibold mb-6">{tForm("title")}</h3>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium mb-1.5 text-foreground">
-                Von
+                {tForm("startLabel")}
               </label>
               <input
                 id="startDate"
@@ -251,9 +251,9 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                   }
                 }}
                 className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                  errors.startDate || errors.dateRange ? 'border-red-500' : 'border-border'
+                  errors.startDate || errors.dateRange ? "border-red-500" : "border-border"
                 }`}
-                placeholder="tt.mm.jjjj"
+                placeholder={tForm("datePlaceholder")}
               />
               {errors.startDate && (
                 <p className="mt-1 text-sm text-red-600" role="alert">{errors.startDate}</p>
@@ -262,7 +262,7 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
             
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium mb-1.5 text-foreground">
-                Bis
+                {tForm("endLabel")}
               </label>
               <input
                 id="endDate"
@@ -278,9 +278,9 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                   }
                 }}
                 className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                  errors.endDate || errors.dateRange ? 'border-red-500' : 'border-border'
+                  errors.endDate || errors.dateRange ? "border-red-500" : "border-border"
                 }`}
-                placeholder="tt.mm.jjjj"
+                placeholder={tForm("datePlaceholder")}
               />
               {errors.endDate && (
                 <p className="mt-1 text-sm text-red-600" role="alert">{errors.endDate}</p>
@@ -295,7 +295,7 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
             
             <div>
               <label htmlFor="comment" className="block text-sm font-medium mb-1.5 text-foreground">
-                Kommentar / Grund für den Urlaub
+                {tForm("commentLabel")}
               </label>
               <textarea
                 id="comment"
@@ -307,10 +307,10 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                   }
                 }}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
-                  errors.comment ? 'border-red-500' : 'border-border'
+                  errors.comment ? "border-red-500" : "border-border"
                 }`}
                 rows={4}
-                placeholder="Grund für den Urlaub..."
+                placeholder={tForm("commentPlaceholder")}
               />
               {errors.comment && (
                 <p className="mt-1 text-sm text-red-600" role="alert">{errors.comment}</p>
@@ -324,14 +324,14 @@ function LeaveRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => voi
                 disabled={isLoading}
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
               >
-                Abbrechen
+                {tForm("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Einreichen..." : "Einreichen"}
+                {isLoading ? tForm("submitting") : tForm("submit")}
               </button>
             </div>
           </form>

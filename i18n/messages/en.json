@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Hours",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "holidayTooltip": "Holiday: {name}",
+    "legend": {
+      "work": "Work",
+      "vacation": "Vacation",
+      "sick": "Sick",
+      "holiday": "Holiday",
+      "today": "Today",
+      "correction": "Correction",
+      "correctionTooltip": "Correction available"
+    },
+    "empty": "No entries for this month yet",
+    "loading": "Loading…",
+    "exportPdf": "Export PDF",
+    "summary": {
+      "title": "Monthly overview",
+      "loading": "Loading monthly overview...",
+      "totalHours": "Total hours",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Vacation",
+    "newRequest": "Vacation request",
+    "loading": "Loading requests...",
+    "empty": "No vacation requests submitted yet",
+    "status": {
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "submittedOn": "Submitted: {date}",
+    "downloadPdf": "Download PDF",
+    "form": {
+      "title": "Vacation request",
+      "startLabel": "From",
+      "endLabel": "To",
+      "commentLabel": "Comment / reason for the vacation",
+      "commentPlaceholder": "Reason for the vacation...",
+      "startRequired": "Please select a start date.",
+      "endRequired": "Please select an end date.",
+      "commentRequired": "Comment is required.",
+      "dateRange": "The end date must be after the start date.",
+      "datePlaceholder": "dd.mm.yyyy",
+      "cancel": "Cancel",
+      "submit": "Submit",
+      "submitting": "Submitting..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Day off",
+    "newRequest": "Day off",
+    "loading": "Loading requests...",
+    "empty": "No day-off requests submitted yet",
+    "status": {
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "submittedOn": "Submitted: {date}",
+    "downloadPdf": "Download PDF",
+    "form": {
+      "title": "Day off",
+      "dateLabel": "Date",
+      "datePlaceholder": "dd.mm.yyyy",
+      "typeLabel": "Type",
+      "typeFull": "Full day",
+      "typePartial": "Time (from/to)",
+      "timeFromLabel": "From",
+      "timeToLabel": "To",
+      "commentLabel": "Reason / comment",
+      "commentPlaceholder": "Reason for the day off...",
+      "timeAnnotation": "Time: {from} - {to}",
+      "dateRequired": "Please select a date.",
+      "commentRequired": "Reason is required.",
+      "timeFromRequired": "Please enter the start time.",
+      "timeToRequired": "Please enter the end time.",
+      "timeOrder": "End time must be after start time.",
+      "cancel": "Cancel",
+      "submit": "Submit",
+      "submitting": "Submitting..."
+    }
+  },
   "dayEntryForm": {
     "status": "Status",
     "labels": {

@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Orë",
+    "prevMonth": "Muaji i kaluar",
+    "nextMonth": "Muaji tjetër",
+    "holidayTooltip": "Festë: {name}",
+    "legend": {
+      "work": "Punë",
+      "vacation": "Pushim",
+      "sick": "Sëmurë",
+      "holiday": "Festë",
+      "today": "Sot",
+      "correction": "Korrigjim",
+      "correctionTooltip": "Ka një korrigjim"
+    },
+    "empty": "Ende nuk ka shënime për këtë muaj",
+    "loading": "Po ngarkohet…",
+    "exportPdf": "Eksporto PDF",
+    "summary": {
+      "title": "Përmbledhja mujore",
+      "loading": "Po ngarkohet përmbledhja mujore...",
+      "totalHours": "Orë gjithsej",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} orë",
+      "hoursAndMinutes": "{hours} orë {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Pushim",
+    "newRequest": "Kërkesë pushimi",
+    "loading": "Po ngarkohen kërkesat...",
+    "empty": "Ende nuk ka kërkesa pushimi.",
+    "status": {
+      "submitted": "Dërguar",
+      "approved": "Aprovuar",
+      "rejected": "Refuzuar"
+    },
+    "submittedOn": "Dërguar: {date}",
+    "downloadPdf": "Shkarko PDF",
+    "form": {
+      "title": "Kërkesë pushimi",
+      "startLabel": "Nga",
+      "endLabel": "Deri",
+      "commentLabel": "Koment / arsyeja e pushimit",
+      "commentPlaceholder": "Arsyeja e pushimit...",
+      "startRequired": "Zgjidh datën e fillimit.",
+      "endRequired": "Zgjidh datën e mbarimit.",
+      "commentRequired": "Komenti është i detyrueshëm.",
+      "dateRange": "Data e mbarimit duhet të jetë pas datës së fillimit.",
+      "datePlaceholder": "dd.mm.vvvv",
+      "cancel": "Anulo",
+      "submit": "Dërgo",
+      "submitting": "Duke dërguar..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Ditë e lirë",
+    "newRequest": "Ditë e lirë",
+    "loading": "Po ngarkohen kërkesat...",
+    "empty": "Ende nuk ka kërkesa për ditë të lirë.",
+    "status": {
+      "submitted": "Dërguar",
+      "approved": "Aprovuar",
+      "rejected": "Refuzuar"
+    },
+    "submittedOn": "Dërguar: {date}",
+    "downloadPdf": "Shkarko PDF",
+    "form": {
+      "title": "Ditë e lirë",
+      "dateLabel": "Data",
+      "datePlaceholder": "dd.mm.vvvv",
+      "typeLabel": "Lloji",
+      "typeFull": "Gjithë ditën",
+      "typePartial": "Kohë (prej/deri)",
+      "timeFromLabel": "Prej",
+      "timeToLabel": "Deri",
+      "commentLabel": "Arsyeja / komenti",
+      "commentPlaceholder": "Arsyeja për ditën e lirë...",
+      "timeAnnotation": "Koha: {from} - {to}",
+      "dateRequired": "Zgjidh datën.",
+      "commentRequired": "Arsyeja është e detyrueshme.",
+      "timeFromRequired": "Vendos orën e fillimit.",
+      "timeToRequired": "Vendos orën e mbarimit.",
+      "timeOrder": "Ora e mbarimit duhet të jetë pas orës së fillimit.",
+      "cancel": "Anulo",
+      "submit": "Dërgo",
+      "submitting": "Duke dërguar..."
+    }
+  },
   "dayEntryForm": {
     "status": "Status",
     "labels": {

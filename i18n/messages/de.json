@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Stunden",
+    "prevMonth": "Vorheriger Monat",
+    "nextMonth": "Nächster Monat",
+    "holidayTooltip": "Feiertag: {name}",
+    "legend": {
+      "work": "Arbeit",
+      "vacation": "Urlaub",
+      "sick": "Krank",
+      "holiday": "Feiertag",
+      "today": "Heute",
+      "correction": "Korrektur",
+      "correctionTooltip": "Korrektur vorhanden"
+    },
+    "empty": "Noch keine Einträge in diesem Monat",
+    "loading": "Lädt…",
+    "exportPdf": "PDF exportieren",
+    "summary": {
+      "title": "Monatszusammenfassung",
+      "loading": "Lade Monatszusammenfassung...",
+      "totalHours": "Gesamtstunden",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Urlaub",
+    "newRequest": "Urlaubsantrag",
+    "loading": "Lade Anträge...",
+    "empty": "Noch keine Urlaubsanträge eingereicht",
+    "status": {
+      "submitted": "Eingereicht",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    },
+    "submittedOn": "Eingereicht: {date}",
+    "downloadPdf": "PDF herunterladen",
+    "form": {
+      "title": "Urlaubsantrag",
+      "startLabel": "Von",
+      "endLabel": "Bis",
+      "commentLabel": "Kommentar / Grund für den Urlaub",
+      "commentPlaceholder": "Grund für den Urlaub...",
+      "startRequired": "Bitte Startdatum wählen.",
+      "endRequired": "Bitte Enddatum wählen.",
+      "commentRequired": "Kommentar ist erforderlich.",
+      "dateRange": "Das Enddatum muss nach dem Startdatum liegen.",
+      "datePlaceholder": "tt.mm.jjjj",
+      "cancel": "Abbrechen",
+      "submit": "Einreichen",
+      "submitting": "Einreichen..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Tagesbefreiung",
+    "newRequest": "Tagesbefreiung",
+    "loading": "Lade Anträge...",
+    "empty": "Noch keine Tagesbefreiungen eingereicht",
+    "status": {
+      "submitted": "Eingereicht",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    },
+    "submittedOn": "Eingereicht: {date}",
+    "downloadPdf": "PDF herunterladen",
+    "form": {
+      "title": "Tagesbefreiung",
+      "dateLabel": "Datum",
+      "datePlaceholder": "tt.mm.jjjj",
+      "typeLabel": "Art",
+      "typeFull": "Ganztags",
+      "typePartial": "Zeit (von/bis)",
+      "timeFromLabel": "Von",
+      "timeToLabel": "Bis",
+      "commentLabel": "Grund / Kommentar",
+      "commentPlaceholder": "Grund für die Tagesbefreiung...",
+      "timeAnnotation": "Zeit: {from} - {to}",
+      "dateRequired": "Bitte Datum wählen.",
+      "commentRequired": "Grund ist erforderlich.",
+      "timeFromRequired": "Bitte Zeit (von) angeben.",
+      "timeToRequired": "Bitte Zeit (bis) angeben.",
+      "timeOrder": "Zeit (bis) muss nach Zeit (von) liegen.",
+      "cancel": "Abbrechen",
+      "submit": "Einreichen",
+      "submitting": "Einreichen..."
+    }
+  },
   "dayEntryForm": {
     "status": "Status",
     "labels": {

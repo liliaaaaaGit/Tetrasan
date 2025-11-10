@@ -1,8 +1,8 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, Suspense } from "react";
-import { useTranslations } from "next-intl";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { DayEntryDialog } from "@/components/employee/hours/DayEntryDialog";
@@ -11,8 +11,6 @@ import { DayEntry, MonthSummary } from "@/components/employee/hours/types";
 import { scrollToDateHash } from "@/components/employee/hours/dateAnchors";
 import {
   getCalendarGrid,
-  getMonthName,
-  getDayName,
   isToday,
   formatDateISO,
   formatHours,
@@ -39,7 +37,10 @@ interface Holiday {
 }
 
 function HoursPageContent() {
+  const locale = useLocale();
   const tTimesheet = useTranslations("notifications.timesheet");
+  const tHours = useTranslations("hoursPage");
+  const tLegend = useTranslations("hoursPage.legend");
   const { year, month, goToPreviousMonth, goToNextMonth } = useMonthState();
   const [entries, setEntries] = useState<Record<string, DayEntry>>({});
   const [holidays, setHolidays] = useState<Record<string, Holiday>>({});
@@ -190,7 +191,17 @@ function HoursPageContent() {
 
   // Get calendar grid
   const grid = getCalendarGrid(year, month);
-  const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const weekDays = useMemo(() => {
+    const monday = new Date(Date.UTC(2021, 0, 4)); // Monday
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+    return Array.from({ length: 7 }, (_, index) =>
+      formatter.format(new Date(monday.getTime() + index * 86400000))
+    );
+  }, [locale]);
+  const monthLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, { month: "long" });
+    return formatter.format(new Date(year, month));
+  }, [locale, year, month]);
 
   // Handle day click
   const handleDayClick = (day: number) => {
@@ -325,26 +336,26 @@ function HoursPageContent() {
 
   return (
     <div>
-      <PageHeader title="Stunden" />
+      <PageHeader title={tHours("title")} />
 
       {/* Month Navigation */}
       <div className="mb-6 flex items-center justify-between">
         <button
           onClick={goToPreviousMonth}
           className="p-2 hover:bg-muted rounded-lg transition-colors"
-          aria-label="Vorheriger Monat"
+          aria-label={tHours("prevMonth")}
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
 
         <h2 className="text-xl font-semibold">
-          {getMonthName(month)} {year}
+          {monthLabel} {year}
         </h2>
 
         <button
           onClick={goToNextMonth}
           className="p-2 hover:bg-muted rounded-lg transition-colors"
-          aria-label="Nächster Monat"
+          aria-label={tHours("nextMonth")}
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -387,7 +398,7 @@ function HoursPageContent() {
                     key={dayIdx}
                     id={`day-${dateStr}`}
                     onClick={() => handleDayClick(day)}
-                    title={isHoliday ? `Feiertag: ${holiday.name}` : undefined}
+                    title={isHoliday ? tHours("holidayTooltip", { name: holiday.name }) : undefined}
                     className={cn(
                       "aspect-square rounded-lg border-2 transition-all relative",
                       "hover:border-brand hover:shadow-sm",
@@ -441,20 +452,24 @@ function HoursPageContent() {
         {/* Legend */}
         <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-3 text-xs">
           <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 border-2 border-brand bg-brand/5 rounded" />
+            <span className="text-muted-foreground">{tLegend("today")}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-green-500 bg-green-100 rounded" />
-            <span className="text-muted-foreground">Arbeit</span>
+            <span className="text-muted-foreground">{tLegend("work")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-vacation-border bg-vacation-fill rounded" />
-            <span className="text-muted-foreground">Urlaub</span>
+            <span className="text-muted-foreground">{tLegend("vacation")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-red-500 bg-red-100 rounded" />
-            <span className="text-muted-foreground">Krank</span>
+            <span className="text-muted-foreground">{tLegend("sick")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-holiday-fill rounded" />
-            <span className="text-muted-foreground">Feiertag</span>
+            <span className="text-muted-foreground">{tLegend("holiday")}</span>
           </div>
         </div>
       </div>
@@ -465,7 +480,7 @@ function HoursPageContent() {
       {/* Empty state */}
       {!hasEntriesThisMonth && (
         <div className="border border-border rounded-lg">
-          <EmptyState message="Noch keine Einträge in diesem Monat" />
+          <EmptyState message={tHours("empty")} />
         </div>
       )}
 
@@ -495,8 +510,9 @@ function HoursPageContent() {
 }
 
 export default function EmployeeHoursPage() {
+  const tHours = useTranslations("hoursPage");
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Lädt…</div>}>
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">{tHours("loading")}</div>}>
       <HoursPageContent />
     </Suspense>
   );

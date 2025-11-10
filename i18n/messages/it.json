@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Ore",
+    "prevMonth": "Mese precedente",
+    "nextMonth": "Mese successivo",
+    "holidayTooltip": "Festività: {name}",
+    "legend": {
+      "work": "Lavoro",
+      "vacation": "Ferie",
+      "sick": "Malattia",
+      "holiday": "Festività",
+      "today": "Oggi",
+      "correction": "Correzione",
+      "correctionTooltip": "È disponibile una correzione"
+    },
+    "empty": "Non ci sono ancora registrazioni per questo mese",
+    "loading": "Caricamento…",
+    "exportPdf": "Esporta PDF",
+    "summary": {
+      "title": "Riepilogo mensile",
+      "loading": "Caricamento del riepilogo mensile...",
+      "totalHours": "Ore totali",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Ferie",
+    "newRequest": "Richiesta ferie",
+    "loading": "Caricamento delle richieste...",
+    "empty": "Non ci sono ancora richieste di ferie.",
+    "status": {
+      "submitted": "Inviata",
+      "approved": "Approvata",
+      "rejected": "Respinta"
+    },
+    "submittedOn": "Inviata: {date}",
+    "downloadPdf": "Scarica PDF",
+    "form": {
+      "title": "Richiesta ferie",
+      "startLabel": "Da",
+      "endLabel": "A",
+      "commentLabel": "Commento / motivo delle ferie",
+      "commentPlaceholder": "Motivo delle ferie...",
+      "startRequired": "Seleziona la data di inizio.",
+      "endRequired": "Seleziona la data di fine.",
+      "commentRequired": "Il commento è obbligatorio.",
+      "dateRange": "La data di fine deve essere successiva alla data di inizio.",
+      "datePlaceholder": "gg.mm.aaaa",
+      "cancel": "Annulla",
+      "submit": "Invia",
+      "submitting": "Invio..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Permesso",
+    "newRequest": "Permesso",
+    "loading": "Caricamento delle richieste...",
+    "empty": "Non ci sono ancora richieste di permesso.",
+    "status": {
+      "submitted": "Inviata",
+      "approved": "Approvata",
+      "rejected": "Respinta"
+    },
+    "submittedOn": "Inviata: {date}",
+    "downloadPdf": "Scarica PDF",
+    "form": {
+      "title": "Permesso",
+      "dateLabel": "Data",
+      "datePlaceholder": "gg.mm.aaaa",
+      "typeLabel": "Tipo",
+      "typeFull": "Intera giornata",
+      "typePartial": "Orario (da/a)",
+      "timeFromLabel": "Da",
+      "timeToLabel": "A",
+      "commentLabel": "Motivo / commento",
+      "commentPlaceholder": "Motivo del permesso...",
+      "timeAnnotation": "Orario: {from} - {to}",
+      "dateRequired": "Seleziona la data.",
+      "commentRequired": "Il motivo è obbligatorio.",
+      "timeFromRequired": "Inserisci l'ora di inizio.",
+      "timeToRequired": "Inserisci l'ora di fine.",
+      "timeOrder": "L'ora di fine deve essere successiva a quella di inizio.",
+      "cancel": "Annulla",
+      "submit": "Invia",
+      "submitting": "Invio..."
+    }
+  },
   "dayEntryForm": {
     "status": "Stato",
     "labels": {

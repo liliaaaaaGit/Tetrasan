@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Horas",
+    "prevMonth": "Mês anterior",
+    "nextMonth": "Mês seguinte",
+    "holidayTooltip": "Feriado: {name}",
+    "legend": {
+      "work": "Trabalho",
+      "vacation": "Férias",
+      "sick": "Doença",
+      "holiday": "Feriado",
+      "today": "Hoje",
+      "correction": "Correção",
+      "correctionTooltip": "Existe uma correção"
+    },
+    "empty": "Ainda não existem registos neste mês",
+    "loading": "A carregar…",
+    "exportPdf": "Exportar PDF",
+    "summary": {
+      "title": "Resumo mensal",
+      "loading": "A carregar o resumo mensal...",
+      "totalHours": "Horas totais",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Férias",
+    "newRequest": "Pedido de férias",
+    "loading": "A carregar os pedidos...",
+    "empty": "Ainda não existem pedidos de férias.",
+    "status": {
+      "submitted": "Enviado",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado"
+    },
+    "submittedOn": "Enviado: {date}",
+    "downloadPdf": "Descarregar PDF",
+    "form": {
+      "title": "Pedido de férias",
+      "startLabel": "De",
+      "endLabel": "Até",
+      "commentLabel": "Comentário / motivo das férias",
+      "commentPlaceholder": "Motivo das férias...",
+      "startRequired": "Escolhe a data de início.",
+      "endRequired": "Escolhe a data de fim.",
+      "commentRequired": "O comentário é obrigatório.",
+      "dateRange": "A data de fim tem de ser posterior à data de início.",
+      "datePlaceholder": "dd.mm.aaaa",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "submitting": "A enviar..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Dispensa",
+    "newRequest": "Dispensa",
+    "loading": "A carregar os pedidos...",
+    "empty": "Ainda não existem pedidos de dispensa.",
+    "status": {
+      "submitted": "Enviado",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado"
+    },
+    "submittedOn": "Enviado: {date}",
+    "downloadPdf": "Descarregar PDF",
+    "form": {
+      "title": "Dispensa",
+      "dateLabel": "Data",
+      "datePlaceholder": "dd.mm.aaaa",
+      "typeLabel": "Tipo",
+      "typeFull": "Dia inteiro",
+      "typePartial": "Horário (de/até)",
+      "timeFromLabel": "De",
+      "timeToLabel": "Até",
+      "commentLabel": "Motivo / comentário",
+      "commentPlaceholder": "Motivo da dispensa...",
+      "timeAnnotation": "Hora: {from} - {to}",
+      "dateRequired": "Escolhe a data.",
+      "commentRequired": "O motivo é obrigatório.",
+      "timeFromRequired": "Indica a hora de início.",
+      "timeToRequired": "Indica a hora de fim.",
+      "timeOrder": "A hora de fim tem de ser posterior à hora de início.",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "submitting": "A enviar..."
+    }
+  },
   "dayEntryForm": {
     "status": "Estado",
     "labels": {

@@ -20,7 +20,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getInitialTab, scrollToHash, TabValue } from "@/lib/deeplink";
 import { cn } from "@/lib/utils";
@@ -93,6 +93,9 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
   });
   const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
   const tAdminNotifications = useTranslations("notifications.admin");
+  const tLeave = useTranslations("leavePage");
+  const tDayOff = useTranslations("dayOffPage");
+  const locale = useLocale();
 
   useEffect(() => {
     loadEmployeeData();
@@ -258,13 +261,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved': return 'Genehmigt';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Eingereicht';
-    }
-  };
+  const getStatusText = (status: string) => tLeave(`status.${status}` as const);
 
   const openEdit = (request: LeaveRequest) => {
     setEditModal({
@@ -437,7 +434,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                 <div key={request.id} className="p-4 bg-white border border-border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">
-                      {new Date(request.period_start).toLocaleDateString('de-DE')}
+                      {new Date(request.period_start).toLocaleDateString(locale)}
                     </span>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
                       {getStatusText(request.status)}
@@ -455,7 +452,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                         className="flex items-center gap-1 px-3 py-1 text-xs bg-secondary text-foreground rounded hover:bg-secondary/80 transition-colors"
                       >
                         <Download className="h-3 w-3" />
-                        PDF herunterladen
+                        {tLeave("downloadPdf")}
                       </button>
                       {/* Edit/Delete - always visible */}
                       <button
@@ -508,7 +505,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
             </div>
           ) : (
             <div className="border border-border rounded-lg">
-              <EmptyState message="Noch keine Tagesbefreiungen" />
+              <EmptyState message={tDayOff("empty")} />
             </div>
           )}
         </div>
@@ -525,7 +522,8 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                 <div key={request.id} className="p-4 bg-white border border-border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">
-                      {new Date(request.period_start).toLocaleDateString('de-DE')} - {new Date(request.period_end).toLocaleDateString('de-DE')}
+                      {new Date(request.period_start).toLocaleDateString(locale)} -{" "}
+                      {new Date(request.period_end).toLocaleDateString(locale)}
                     </span>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
                       {getStatusText(request.status)}
@@ -543,7 +541,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
                         className="flex items-center gap-1 px-3 py-1 text-xs bg-secondary text-foreground rounded hover:bg-secondary/80 transition-colors"
                       >
                         <Download className="h-3 w-3" />
-                        PDF herunterladen
+                        {tLeave("downloadPdf")}
                       </button>
                       {/* Edit/Delete - always visible */}
                       <button
@@ -596,7 +594,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
             </div>
           ) : (
             <div className="border border-border rounded-lg">
-              <EmptyState message="Noch keine Urlaubsanträge" />
+              <EmptyState message={tLeave("empty")} />
             </div>
           )}
         </div>

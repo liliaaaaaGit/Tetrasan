@@ -3,7 +3,7 @@
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Calendar, Plus, Loader2, Download } from "lucide-react";
 
 interface LeaveRequest {
@@ -22,6 +22,9 @@ interface LeaveRequest {
  */
 export default function EmployeeDayOffPage() {
   const tRequests = useTranslations("notifications.requests");
+  const tDayOff = useTranslations("dayOffPage");
+  const tDayOffForm = useTranslations("dayOffPage.form");
+  const locale = useLocale();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -64,7 +67,7 @@ export default function EmployeeDayOffPage() {
           period_end: formData.date, // Same day for day-off
           comment:
             formData.mode === 'partial' && formData.timeFrom && formData.timeTo
-              ? `${formData.comment} (Zeit: ${formData.timeFrom} - ${formData.timeTo})`
+              ? `${formData.comment} (${tDayOffForm("timeAnnotation", { from: formData.timeFrom, to: formData.timeTo })})`
               : formData.comment,
         }),
       });
@@ -95,13 +98,7 @@ export default function EmployeeDayOffPage() {
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved': return 'Genehmigt';
-      case 'rejected': return 'Abgelehnt';
-      default: return 'Eingereicht';
-    }
-  };
+  const getStatusText = (status: string) => tDayOff(`status.${status}` as const);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -111,14 +108,14 @@ export default function EmployeeDayOffPage() {
   return (
     <div>
       <PageHeader
-        title="Tagesbefreiung"
+        title={tDayOff("title")}
         button={
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            <span className="text-sm font-medium">Tagesbefreiung</span>
+            <span className="text-sm font-medium">{tDayOff("newRequest")}</span>
           </button>
         }
       />
@@ -136,7 +133,7 @@ export default function EmployeeDayOffPage() {
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Lade Anträge...</span>
+          <span className="ml-2">{tDayOff("loading")}</span>
         </div>
       ) : requests.length > 0 ? (
         <div className="space-y-4">
@@ -146,7 +143,7 @@ export default function EmployeeDayOffPage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">
-                    {new Date(request.period_start).toLocaleDateString('de-DE')}
+                    {new Date(request.period_start).toLocaleDateString(locale)}
                   </span>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
@@ -155,7 +152,9 @@ export default function EmployeeDayOffPage() {
               </div>
               <p className="text-sm text-muted-foreground">{request.comment}</p>
               <p className="text-xs text-muted-foreground mt-2">
-                Eingereicht: {new Date(request.created_at).toLocaleDateString('de-DE')}
+                {tDayOff("submittedOn", {
+                  date: new Date(request.created_at).toLocaleDateString(locale),
+                })}
               </p>
               <div className="mt-3">
                 <button
@@ -166,7 +165,7 @@ export default function EmployeeDayOffPage() {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition-colors"
                 >
                   <Download className="h-4 w-4" />
-                  <span>PDF herunterladen</span>
+                  <span>{tDayOff("downloadPdf")}</span>
                 </button>
               </div>
             </div>
@@ -174,7 +173,7 @@ export default function EmployeeDayOffPage() {
         </div>
       ) : (
         <div className="border border-border rounded-lg">
-          <EmptyState message="Noch keine Tagesbefreiungen eingereicht" />
+          <EmptyState message={tDayOff("empty")} />
         </div>
       )}
 
@@ -190,6 +189,7 @@ export default function EmployeeDayOffPage() {
 
 // Day Off Request Form Component
 function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => void; onSubmit: (data: any) => void; isLoading: boolean }) {
+  const tForm = useTranslations("dayOffPage.form");
   const [date, setDate] = useState('');
   const [comment, setComment] = useState('');
   const [mode, setMode] = useState<'full' | 'partial'>('full');
@@ -201,17 +201,17 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
     const newErrors: typeof errors = {};
 
     if (!date) {
-      newErrors.date = "Bitte Datum wählen.";
+      newErrors.date = tForm("dateRequired");
     }
 
     if (!comment.trim()) {
-      newErrors.comment = "Grund ist erforderlich.";
+      newErrors.comment = tForm("commentRequired");
     }
     if (mode === 'partial') {
-      if (!timeFrom) newErrors.timeFrom = 'Bitte Zeit (von) angeben.';
-      if (!timeTo) newErrors.timeTo = 'Bitte Zeit (bis) angeben.';
+      if (!timeFrom) newErrors.timeFrom = tForm("timeFromRequired");
+      if (!timeTo) newErrors.timeTo = tForm("timeToRequired");
       if (timeFrom && timeTo && timeFrom >= timeTo) {
-        newErrors.timeTo = 'Zeit (bis) muss nach Zeit (von) liegen.';
+        newErrors.timeTo = tForm("timeOrder");
       }
     }
 
@@ -239,12 +239,12 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
-          <h3 className="text-lg font-semibold mb-6">Tagesbefreiung</h3>
+          <h3 className="text-lg font-semibold mb-6">{tForm("title")}</h3>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="date" className="block text-sm font-medium mb-1.5 text-foreground">
-                Datum
+                {tForm("dateLabel")}
               </label>
               <input
                 id="date"
@@ -257,9 +257,9 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                   }
                 }}
                 className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                  errors.date ? 'border-red-500' : 'border-border'
+                  errors.date ? "border-red-500" : "border-border"
                 }`}
-                placeholder="tt.mm.jjjj"
+                placeholder={tForm("datePlaceholder")}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-600" role="alert">{errors.date}</p>
@@ -268,7 +268,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
 
             {/* Ganztags vs Zeitfenster */}
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-foreground">Art</label>
+              <label className="block text-sm font-medium mb-1.5 text-foreground">{tForm("typeLabel")}</label>
               <div className="flex items-center gap-4">
                 <label className="inline-flex items-center gap-2">
                   <input
@@ -278,7 +278,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                     checked={mode === 'full'}
                     onChange={() => setMode('full')}
                   />
-                  <span>Ganztags</span>
+                  <span>{tForm("typeFull")}</span>
                 </label>
                 <label className="inline-flex items-center gap-2">
                   <input
@@ -288,7 +288,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                     checked={mode === 'partial'}
                     onChange={() => setMode('partial')}
                   />
-                  <span>Zeit (von/bis)</span>
+                  <span>{tForm("typePartial")}</span>
                 </label>
               </div>
             </div>
@@ -297,7 +297,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
               <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                 <div>
                   <label htmlFor="timeFrom" className="block text-sm font-medium mb-1.5 text-foreground">
-                    von
+                    {tForm("timeFromLabel")}
                   </label>
                   <input
                     id="timeFrom"
@@ -308,7 +308,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                       if (errors.timeFrom) setErrors(prev => ({ ...prev, timeFrom: undefined }));
                     }}
                     className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                      errors.timeFrom ? 'border-red-500' : 'border-border'
+                      errors.timeFrom ? "border-red-500" : "border-border"
                     }`}
                   />
                   {errors.timeFrom && (
@@ -317,7 +317,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                 </div>
                 <div>
                   <label htmlFor="timeTo" className="block text-sm font-medium mb-1.5 text-foreground">
-                    bis
+                    {tForm("timeToLabel")}
                   </label>
                   <input
                     id="timeTo"
@@ -328,7 +328,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                       if (errors.timeTo) setErrors(prev => ({ ...prev, timeTo: undefined }));
                     }}
                     className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                      errors.timeTo ? 'border-red-500' : 'border-border'
+                      errors.timeTo ? "border-red-500" : "border-border"
                     }`}
                   />
                   {errors.timeTo && (
@@ -340,7 +340,7 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
             
             <div>
               <label htmlFor="comment" className="block text-sm font-medium mb-1.5 text-foreground">
-                Grund / Kommentar
+                {tForm("commentLabel")}
               </label>
               <textarea
                 id="comment"
@@ -352,10 +352,10 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                   }
                 }}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
-                  errors.comment ? 'border-red-500' : 'border-border'
+                  errors.comment ? "border-red-500" : "border-border"
                 }`}
                 rows={4}
-                placeholder="Grund für die Tagesbefreiung..."
+                placeholder={tForm("commentPlaceholder")}
               />
               {errors.comment && (
                 <p className="mt-1 text-sm text-red-600" role="alert">{errors.comment}</p>
@@ -369,14 +369,14 @@ function DayOffRequestForm({ onClose, onSubmit, isLoading }: { onClose: () => vo
                 disabled={isLoading}
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
               >
-                Abbrechen
+                {tForm("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Einreichen..." : "Einreichen"}
+                {isLoading ? tForm("submitting") : tForm("submit")}
               </button>
             </div>
           </form>

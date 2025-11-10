@@ -108,6 +108,94 @@
       }
     }
   },
+  "hoursPage": {
+    "title": "Horas",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "holidayTooltip": "Festivo: {name}",
+    "legend": {
+      "work": "Trabajo",
+      "vacation": "Vacaciones",
+      "sick": "Baja",
+      "holiday": "Festivo",
+      "today": "Hoy",
+      "correction": "Corrección",
+      "correctionTooltip": "Hay una corrección"
+    },
+    "empty": "Aún no hay registros este mes",
+    "loading": "Cargando…",
+    "exportPdf": "Exportar PDF",
+    "summary": {
+      "title": "Resumen mensual",
+      "loading": "Cargando resumen mensual...",
+      "totalHours": "Horas totales",
+      "minutesOnly": "{minutes} min",
+      "hoursOnly": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min"
+    }
+  },
+  "leavePage": {
+    "title": "Vacaciones",
+    "newRequest": "Solicitud de vacaciones",
+    "loading": "Cargando solicitudes...",
+    "empty": "Todavía no hay solicitudes de vacaciones.",
+    "status": {
+      "submitted": "Enviado",
+      "approved": "Aprobado",
+      "rejected": "Rechazado"
+    },
+    "submittedOn": "Enviado: {date}",
+    "downloadPdf": "Descargar PDF",
+    "form": {
+      "title": "Solicitud de vacaciones",
+      "startLabel": "Desde",
+      "endLabel": "Hasta",
+      "commentLabel": "Comentario / motivo de las vacaciones",
+      "commentPlaceholder": "Motivo de las vacaciones...",
+      "startRequired": "Selecciona la fecha de inicio.",
+      "endRequired": "Selecciona la fecha de fin.",
+      "commentRequired": "El comentario es obligatorio.",
+      "dateRange": "La fecha de fin debe ser posterior a la de inicio.",
+      "datePlaceholder": "dd.mm.aaaa",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "submitting": "Enviando..."
+    }
+  },
+  "dayOffPage": {
+    "title": "Día libre",
+    "newRequest": "Día libre",
+    "loading": "Cargando solicitudes...",
+    "empty": "Todavía no hay solicitudes de día libre.",
+    "status": {
+      "submitted": "Enviado",
+      "approved": "Aprobado",
+      "rejected": "Rechazado"
+    },
+    "submittedOn": "Enviado: {date}",
+    "downloadPdf": "Descargar PDF",
+    "form": {
+      "title": "Día libre",
+      "dateLabel": "Fecha",
+      "datePlaceholder": "dd.mm.aaaa",
+      "typeLabel": "Tipo",
+      "typeFull": "Todo el día",
+      "typePartial": "Horario (de/a)",
+      "timeFromLabel": "De",
+      "timeToLabel": "A",
+      "commentLabel": "Motivo / comentario",
+      "commentPlaceholder": "Motivo del día libre...",
+      "timeAnnotation": "Hora: {from} - {to}",
+      "dateRequired": "Selecciona una fecha.",
+      "commentRequired": "El motivo es obligatorio.",
+      "timeFromRequired": "Indica la hora de inicio.",
+      "timeToRequired": "Indica la hora de fin.",
+      "timeOrder": "La hora de fin debe ser posterior a la de inicio.",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "submitting": "Enviando..."
+    }
+  },
   "dayEntryForm": {
     "status": "Estado",
     "labels": {

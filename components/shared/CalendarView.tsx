@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useState, useEffect, useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { EmptyState } from "@/components/empty-state";
 import { DayEntryDialog } from "@/components/employee/hours/DayEntryDialog";
 import { useMonthState } from "@/components/employee/hours/useMonthState";
@@ -9,7 +9,6 @@ import { DayEntry } from "@/components/employee/hours/types";
 import { scrollToDateHash } from "@/components/employee/hours/dateAnchors";
 import {
   getCalendarGrid,
-  getMonthName,
   isToday,
   formatDateISO,
   formatHours,
@@ -88,6 +87,9 @@ export function CalendarView({
   const [monthlySummary, setMonthlySummary] = useState<SummaryOutput | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const tTimesheet = useTranslations("notifications.timesheet");
+  const tHours = useTranslations("hoursPage");
+  const tLegend = useTranslations("hoursPage.legend");
+  const locale = useLocale();
 
   // Load timesheet entries, corrections, holidays, and monthly summary
   useEffect(() => {
@@ -244,7 +246,17 @@ export function CalendarView({
 
   // Get calendar grid
   const grid = getCalendarGrid(year, month);
-  const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const weekDays = useMemo(() => {
+    const monday = new Date(Date.UTC(2021, 0, 4));
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+    return Array.from({ length: 7 }, (_, index) =>
+      formatter.format(new Date(monday.getTime() + index * 86400000))
+    );
+  }, [locale]);
+  const monthLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, { month: "long" });
+    return formatter.format(new Date(year, month));
+  }, [locale, year, month]);
 
   // Handle day click
   const handleDayClick = (day: number) => {
@@ -476,19 +488,19 @@ export function CalendarView({
           <button
             onClick={goToPreviousMonth}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
-            aria-label="Vorheriger Monat"
+            aria-label={tHours("prevMonth")}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
 
           <h2 className="text-xl font-semibold">
-            {getMonthName(month)} {year}
+            {monthLabel} {year}
           </h2>
 
           <button
             onClick={goToNextMonth}
             className="p-2 hover:bg-muted rounded-lg transition-colors"
-            aria-label="Nächster Monat"
+            aria-label={tHours("nextMonth")}
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -532,7 +544,7 @@ export function CalendarView({
                     key={dayIdx}
                     id={`day-${dateStr}`}
                     onClick={() => handleDayClick(day)}
-                    title={isHoliday ? `Feiertag: ${holiday.name}` : undefined}
+                    title={isHoliday ? tHours("holidayTooltip", { name: holiday.name }) : undefined}
                     className={cn(
                       "aspect-square rounded-lg border-2 transition-all relative",
                       "hover:border-brand hover:shadow-sm",
@@ -558,12 +570,14 @@ export function CalendarView({
                       <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                     )}
                     {isHoliday && (
-                      <span className={cn(
-                        "absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-medium text-brand",
-                        !hasEntry && "block",
-                        hasEntry && "hidden"
-                      )}>
-                        Feiertag
+                      <span
+                        className={cn(
+                          "absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-medium text-brand",
+                          !hasEntry && "block",
+                          hasEntry && "hidden"
+                        )}
+                      >
+                        {tLegend("holiday")}
                       </span>
                     )}
                     {hasEntry && entry.status === "arbeit" && entry.hours && (
@@ -572,7 +586,10 @@ export function CalendarView({
                       </span>
                     )}
                     {isAdmin && correction && (
-                      <span className="absolute top-1 left-1 w-2 h-2 bg-red-600 rounded-full" title="Korrektur vorhanden" />
+                      <span
+                        className="absolute top-1 left-1 w-2 h-2 bg-red-600 rounded-full"
+                        title={tLegend("correctionTooltip")}
+                      />
                     )}
                   </button>
                 );
@@ -585,28 +602,28 @@ export function CalendarView({
         <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-3 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-brand/5 rounded" />
-            <span className="text-muted-foreground">Heute</span>
+            <span className="text-muted-foreground">{tLegend("today")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-green-500 bg-green-100 rounded" />
-            <span className="text-muted-foreground">Arbeit</span>
+            <span className="text-muted-foreground">{tLegend("work")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-vacation-border bg-vacation-fill rounded" />
-            <span className="text-muted-foreground">Urlaub</span>
+            <span className="text-muted-foreground">{tLegend("vacation")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-red-500 bg-red-100 rounded" />
-            <span className="text-muted-foreground">Krank</span>
+            <span className="text-muted-foreground">{tLegend("sick")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-holiday-fill rounded" />
-            <span className="text-muted-foreground">Feiertag</span>
+            <span className="text-muted-foreground">{tLegend("holiday")}</span>
           </div>
           {isAdmin && (
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 border-2 border-red-600 bg-red-600 rounded-full" />
-              <span className="text-muted-foreground">Korrektur</span>
+              <span className="text-muted-foreground">{tLegend("correction")}</span>
             </div>
           )}
         </div>
@@ -623,7 +640,7 @@ export function CalendarView({
             className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
           >
             <Download className="h-4 w-4" />
-            <span className="text-sm font-medium">PDF Export</span>
+            <span className="text-sm font-medium">{tHours("exportPdf")}</span>
           </button>
         </div>
       )}
@@ -648,7 +665,7 @@ export function CalendarView({
       {/* Empty state */}
       {!hasEntriesThisMonth && (
         <div className="border border-border rounded-lg">
-          <EmptyState message="Noch keine Einträge in diesem Monat" />
+          <EmptyState message={tHours("empty")} />
         </div>
       )}
 

@@ -1,11 +1,7 @@
-/**
- * Monthly Summary Card Component
- * Displays monthly summary with total hours and breakdown by category
- */
-
-import { SummaryOutput, formatMinutesDe } from '@/lib/logic/monthlySummary';
-import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useTranslations } from "next-intl";
+import { SummaryOutput } from "@/lib/logic/monthlySummary";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MonthlySummaryCardProps {
   summary: SummaryOutput | null;
@@ -16,13 +12,31 @@ export function MonthlySummaryCard({
   summary,
   isLoading = false,
 }: MonthlySummaryCardProps) {
+  const tSummary = useTranslations("hoursPage.summary");
+  const tLegend = useTranslations("hoursPage.legend");
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    if (hours > 0 && mins > 0) {
+      return tSummary("hoursAndMinutes", { hours, minutes: mins });
+    }
+
+    if (hours > 0) {
+      return tSummary("hoursOnly", { hours });
+    }
+
+    return tSummary("minutesOnly", { minutes: mins });
+  };
+
   if (isLoading) {
     return (
       <div className="mb-6 bg-white border border-brand-muted/40 rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-brand-muted" />
           <span className="ml-2 text-sm text-brand-muted">
-            Lade Monatszusammenfassung...
+            {tSummary("loading")}
           </span>
         </div>
       </div>
@@ -38,32 +52,32 @@ export function MonthlySummaryCard({
 
   const categories = [
     {
-      label: 'Arbeit',
+      label: tLegend("work"),
       minutes: workMinutes,
-      borderColor: 'border-green-500',
-      bgColor: 'bg-green-100',
-      textColor: 'text-green-900',
+      borderColor: "border-green-500",
+      bgColor: "bg-green-100",
+      textColor: "text-green-900",
     },
     {
-      label: 'Krank',
+      label: tLegend("sick"),
       minutes: sickMinutes,
-      borderColor: 'border-red-500',
-      bgColor: 'bg-red-100',
-      textColor: 'text-red-900',
+      borderColor: "border-red-500",
+      bgColor: "bg-red-100",
+      textColor: "text-red-900",
     },
     {
-      label: 'Urlaub',
+      label: tLegend("vacation"),
       minutes: vacationMinutes,
-      borderColor: 'border-vacation-border',
-      bgColor: 'bg-vacation-fill',
-      textColor: 'text-brand',
+      borderColor: "border-vacation-border",
+      bgColor: "bg-vacation-fill",
+      textColor: "text-brand",
     },
     {
-      label: 'Feiertag',
+      label: tLegend("holiday"),
       minutes: holidayMinutes,
-      borderColor: 'border-brand',
-      bgColor: 'bg-brand/10',
-      textColor: 'text-brand',
+      borderColor: "border-brand",
+      bgColor: "bg-brand/10",
+      textColor: "text-brand",
     },
   ];
 
@@ -72,17 +86,17 @@ export function MonthlySummaryCard({
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-foreground mb-4">
-          Monatszusammenfassung
+          {tSummary("title")}
         </h3>
 
         {/* Total Hours */}
         <div className="mb-6 pb-6 border-b border-border">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl md:text-4xl font-bold text-brand">
-              {formatMinutesDe(totalMinutes)}
+              {formatDuration(totalMinutes)}
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              Gesamtstunden
+              {tSummary("totalHours")}
             </span>
           </div>
         </div>
@@ -94,7 +108,7 @@ export function MonthlySummaryCard({
           <div
             key={category.label}
             className={cn(
-              'rounded-lg border-2 p-3 md:p-4',
+              "rounded-lg border-2 p-3 md:p-4",
               category.borderColor,
               category.bgColor
             )}
@@ -102,8 +116,8 @@ export function MonthlySummaryCard({
             <div className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
               {category.label}
             </div>
-            <div className={cn('text-lg md:text-xl font-semibold', category.textColor)}>
-              {formatMinutesDe(category.minutes)}
+            <div className={cn("text-lg md:text-xl font-semibold", category.textColor)}>
+              {formatDuration(category.minutes)}
             </div>
           </div>
         ))}
