@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "Tetrasan Time Tracking",
+    "description": "Easily track hours and requests."
+  },
+  "common": {
+    "back": "Back",
+    "backToLogin": "Back to login",
+    "logout": "Sign out",
+    "languageSwitcher": {
+      "label": "Language",
+      "aria": "Choose language",
+      "change": "Change language",
+      "error": "Could not save the language."
+    },
+    "menu": {
+      "open": "Open menu",
+      "navigation": "Navigation"
+    },
+    "legal": {
+      "privacy": "Privacy",
+      "imprint": "Legal notice"
+    }
+  },
+  "nav": {
+    "employee": {
+      "hours": "Hours",
+      "leave": "Vacation",
+      "dayOff": "Day off",
+      "changePassword": "Change password"
+    },
+    "admin": {
+      "employees": "Employees",
+      "inbox": "Inbox",
+      "passwordResets": "Password reset"
+    }
+  },
+  "auth": {
+    "login": {
+      "heading": "Sign in",
+      "identifierLabel": "Email or staff number",
+      "identifierPlaceholder": "max@tetrasan.de or 01234",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Sign in",
+      "loading": "Signing in...",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "No account yet?",
+      "createAccount": "Create account",
+      "errors": {
+        "missing": "Please check your entries.",
+        "invalid": "Sign in not possible. Please check your details.",
+        "generic": "Something went wrong. Please try again later."
+      }
+    },
+    "employeeLogin": {
+      "heading": "Employee login",
+      "personalNumberLabel": "Staff number",
+      "personalNumberPlaceholder": "e.g. 01234",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Sign in",
+      "adminHint": "Admin?",
+      "adminLink": "Go to admin login",
+      "errors": {
+        "invalidPersonalNumber": "Please enter a 5-digit staff number.",
+        "missingPassword": "Please enter a password.",
+        "invalidCredentials": "Staff number or password is wrong.",
+        "generic": "Sign in not possible. Please try again."
+      }
+    },
+    "signup": {
+      "heading": "Create account",
+      "info": "Sign up is only for employees that already exist.",
+      "personalNumberLabel": "Staff number",
+      "personalNumberPlaceholder": "e.g. 01234",
+      "personalNumberTitle": "Enter exactly 5 digits (e.g. 01234)",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "passwordHint": "At least 8 characters",
+      "passwordConfirmLabel": "Repeat password",
+      "passwordConfirmPlaceholder": "Confirm password",
+      "submit": "Sign up",
+      "loading": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Go to sign in",
+      "errors": {
+        "required": "Please fill in all fields.",
+        "invalidPersonalNumber": "Please enter a 5-digit staff number.",
+        "shortPassword": "Password must be at least 8 characters.",
+        "mismatch": "Passwords do not match.",
+        "server": "Sign up failed.",
+        "generic": "Something went wrong. Please try again later."
+      },
+      "successRedirect": "Sign up successful. Please sign in."
+    },
+    "forgot": {
+      "heading": "Forgot password",
+      "successHeading": "Request sent",
+      "successBody": "If an account exists, the reset request was sent. Please check your inbox or call the office.",
+      "identifierLabel": "Email or staff number",
+      "identifierPlaceholder": "max@tetrasan.de or 01234",
+      "instructions": "Admins: enter your email. Employees: enter your staff number.",
+      "submit": "Request link",
+      "loading": "Sending...",
+      "errors": {
+        "missingIdentifier": "Please enter an email or staff number."
+      }
+    }
+  },
+  "dayEntryForm": {
+    "status": "Status",
+    "labels": {
+      "project": "Project",
+      "from": "From",
+      "to": "To",
+      "pause": "Break (minutes)",
+      "activity": "Work report",
+      "comment": "Comment"
+    },
+    "placeholders": {
+      "project": "e.g. New build Musterstraße 12",
+      "activity": "What did you do today?",
+      "commentVacation": "Reason for leave (optional)",
+      "commentSick": "Reason for sickness (optional)"
+    },
+    "info": {
+      "hoursCalculated": "Hours (calculated)"
+    },
+    "helpText": {
+      "startOnly": "You can save your start time first. Project and report are only required when you enter your end time."
+    },
+    "errors": {
+      "fromRequired": "Start time is required.",
+      "pauseNegative": "Break must not be negative.",
+      "projectMissing": "Please enter a project.",
+      "workReportMissing": "Please enter a work report.",
+      "endAfterStart": "End must be after start or the time values are invalid.",
+      "commentRequired": "Comment is required."
+    },
+    "statusOptions": {
+      "work": "Work",
+      "vacation": "Vacation",
+      "sick": "Sick"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    }
+  },
+  "notifications": {
+    "timesheet": {
+      "loadError": "Could not load work entries",
+      "saveSuccess": "Saved",
+      "saveError": "Could not save",
+      "deleteSuccess": "Deleted",
+      "deleteError": "Could not delete",
+      "correctionSaveSuccess": "Correction saved",
+      "correctionSaveError": "Could not save correction",
+      "pdfLoading": "PDF download started...",
+      "pdfError": "Could not export the PDF"
+    },
+    "requests": {
+      "submitSuccess": "Request sent.",
+      "submitError": "Could not send the request."
+    },
+    "admin": {
+      "tempPasswordCreated": "Temporary password created.",
+      "approveSuccess": "Request approved",
+      "approveError": "Could not approve",
+      "rejectSuccess": "Request rejected",
+      "rejectError": "Could not reject",
+      "updateSuccess": "Request updated",
+      "updateError": "Could not update",
+      "deleteSuccess": "Request deleted",
+      "deleteError": "Could not delete"
+    }
+  }
+}
+

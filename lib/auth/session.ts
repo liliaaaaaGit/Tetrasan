@@ -9,6 +9,8 @@ export interface UserProfile {
   full_name: string | null;
   role: UserRole;
   active: boolean;
+  must_change_password?: boolean | null;
+  preferred_language: string;
 }
 
 /**
@@ -41,7 +43,10 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     return null;
   }
 
-  return data as UserProfile;
+  return {
+    ...data,
+    preferred_language: (data as { preferred_language?: string }).preferred_language ?? "de",
+  } as UserProfile;
 }
 
 /**

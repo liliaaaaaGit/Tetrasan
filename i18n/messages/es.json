@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "Control de horas Tetrasan",
+    "description": "Gestiona horas y solicitudes de forma sencilla."
+  },
+  "common": {
+    "back": "Volver",
+    "backToLogin": "Volver al inicio de sesión",
+    "logout": "Cerrar sesión",
+    "languageSwitcher": {
+      "label": "Idioma",
+      "aria": "Elegir idioma",
+      "change": "Cambiar idioma",
+      "error": "No se pudo guardar el idioma."
+    },
+    "menu": {
+      "open": "Abrir menú",
+      "navigation": "Navegación"
+    },
+    "legal": {
+      "privacy": "Privacidad",
+      "imprint": "Aviso legal"
+    }
+  },
+  "nav": {
+    "employee": {
+      "hours": "Horas",
+      "leave": "Vacaciones",
+      "dayOff": "Día libre",
+      "changePassword": "Cambiar contraseña"
+    },
+    "admin": {
+      "employees": "Empleados",
+      "inbox": "Bandeja",
+      "passwordResets": "Restablecer contraseña"
+    }
+  },
+  "auth": {
+    "login": {
+      "heading": "Iniciar sesión",
+      "identifierLabel": "Correo o número de empleado",
+      "identifierPlaceholder": "max@tetrasan.de o 01234",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Entrar",
+      "loading": "Iniciando...",
+      "forgotPassword": "¿Olvidaste la contraseña?",
+      "noAccount": "¿No tienes cuenta?",
+      "createAccount": "Crear cuenta",
+      "errors": {
+        "missing": "Comprueba los datos.",
+        "invalid": "No es posible iniciar sesión. Comprueba los datos.",
+        "generic": "Algo salió mal. Inténtalo de nuevo más tarde."
+      }
+    },
+    "employeeLogin": {
+      "heading": "Acceso empleados",
+      "personalNumberLabel": "Número de empleado",
+      "personalNumberPlaceholder": "p. ej. 01234",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Entrar",
+      "adminHint": "¿Admin?",
+      "adminLink": "Ir al acceso admin",
+      "errors": {
+        "invalidPersonalNumber": "Introduce un número de empleado de 5 cifras.",
+        "missingPassword": "Introduce la contraseña.",
+        "invalidCredentials": "Número o contraseña incorrectos.",
+        "generic": "No es posible iniciar sesión. Inténtalo de nuevo."
+      }
+    },
+    "signup": {
+      "heading": "Crear cuenta",
+      "info": "Registro solo para empleados ya dados de alta.",
+      "personalNumberLabel": "Número de empleado",
+      "personalNumberPlaceholder": "p. ej. 01234",
+      "personalNumberTitle": "Introduce exactamente 5 cifras (p. ej. 01234)",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "Al menos 8 caracteres",
+      "passwordHint": "Al menos 8 caracteres",
+      "passwordConfirmLabel": "Repetir contraseña",
+      "passwordConfirmPlaceholder": "Confirmar contraseña",
+      "submit": "Registrarse",
+      "loading": "Registrando...",
+      "hasAccount": "¿Ya tienes cuenta?",
+      "loginLink": "Ir al inicio de sesión",
+      "errors": {
+        "required": "Rellena todos los campos.",
+        "invalidPersonalNumber": "Introduce un número de empleado de 5 cifras.",
+        "shortPassword": "La contraseña debe tener al menos 8 caracteres.",
+        "mismatch": "Las contraseñas no coinciden.",
+        "server": "El registro ha fallado.",
+        "generic": "Algo salió mal. Inténtalo de nuevo más tarde."
+      },
+      "successRedirect": "Registro correcto. Inicia sesión."
+    },
+    "forgot": {
+      "heading": "Contraseña olvidada",
+      "successHeading": "Solicitud enviada",
+      "successBody": "Si existe una cuenta, se ha enviado la solicitud. Revisa tu correo o llama a la oficina.",
+      "identifierLabel": "Correo o número de empleado",
+      "identifierPlaceholder": "max@tetrasan.de o 01234",
+      "instructions": "Admins: escribe tu correo. Empleados: escribe tu número.",
+      "submit": "Pedir enlace",
+      "loading": "Enviando...",
+      "errors": {
+        "missingIdentifier": "Introduce el correo o el número."
+      }
+    }
+  },
+  "dayEntryForm": {
+    "status": "Estado",
+    "labels": {
+      "project": "Proyecto",
+      "from": "Desde",
+      "to": "Hasta",
+      "pause": "Pausa (minutos)",
+      "activity": "Informe de trabajo",
+      "comment": "Comentario"
+    },
+    "placeholders": {
+      "project": "Ej. nueva obra Calle Ejemplo 12",
+      "activity": "¿Qué hiciste hoy?",
+      "commentVacation": "Motivo del permiso (opcional)",
+      "commentSick": "Motivo de la baja (opcional)"
+    },
+    "info": {
+      "hoursCalculated": "Horas (calculadas)"
+    },
+    "helpText": {
+      "startOnly": "Puedes guardar primero la hora de inicio. El proyecto y el informe solo son necesarios cuando registras la hora de fin."
+    },
+    "errors": {
+      "fromRequired": "Introduce la hora de inicio.",
+      "pauseNegative": "La pausa no puede ser negativa.",
+      "projectMissing": "Introduce el proyecto.",
+      "workReportMissing": "Introduce el informe de trabajo.",
+      "endAfterStart": "La hora de fin debe ser posterior a la de inicio o los datos son inválidos.",
+      "commentRequired": "El comentario es obligatorio."
+    },
+    "statusOptions": {
+      "work": "Trabajo",
+      "vacation": "Vacaciones",
+      "sick": "Baja"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando..."
+    }
+  },
+  "notifications": {
+    "timesheet": {
+      "loadError": "No se pudieron cargar las horas",
+      "saveSuccess": "Guardado",
+      "saveError": "No se pudo guardar",
+      "deleteSuccess": "Eliminado",
+      "deleteError": "No se pudo eliminar",
+      "correctionSaveSuccess": "Corrección guardada",
+      "correctionSaveError": "No se pudo guardar la corrección",
+      "pdfLoading": "Descarga de PDF iniciada...",
+      "pdfError": "No se pudo exportar el PDF"
+    },
+    "requests": {
+      "submitSuccess": "Solicitud enviada.",
+      "submitError": "No se pudo enviar la solicitud."
+    },
+    "admin": {
+      "tempPasswordCreated": "Contraseña temporal creada.",
+      "approveSuccess": "Solicitud aprobada",
+      "approveError": "No se pudo aprobar",
+      "rejectSuccess": "Solicitud rechazada",
+      "rejectError": "No se pudo rechazar",
+      "updateSuccess": "Solicitud actualizada",
+      "updateError": "No se pudo actualizar",
+      "deleteSuccess": "Solicitud eliminada",
+      "deleteError": "No se pudo eliminar"
+    }
+  }
+}
+

@@ -3,19 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Clock, Plane, Calendar, LogOut, Menu, Lock } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { TetrasanLogo } from "@/components/branding/TetrasanLogo";
-import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
-import {
-  DEFAULT_LANGUAGE,
-  languageToLocale,
-  resolveLanguage,
-  type SupportedLanguage,
-} from "@/lib/i18n/language";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useTranslations } from "next-intl";
 
 /**
  * Employee Layout
@@ -33,9 +27,8 @@ export default function EmployeeLayout({
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
-  const [language, setLanguage] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
-  const tNav = useTranslations("EmployeeNav");
-  const tCommon = useTranslations("Common");
+  const tNav = useTranslations("nav.employee");
+  const tCommon = useTranslations("common");
 
   useEffect(() => {
     const supabase = createClient();
@@ -63,7 +56,7 @@ export default function EmployeeLayout({
 
     supabase
       .from('profiles')
-      .select('must_change_password, language')
+      .select('must_change_password')
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
@@ -79,19 +72,12 @@ export default function EmployeeLayout({
         if (shouldForce && pathname !== '/employee/change-password') {
           router.replace('/employee/change-password');
         }
-
-        const resolvedLanguage = resolveLanguage(data);
-        setLanguage(resolvedLanguage);
       });
 
     return () => {
       isMounted = false;
     };
   }, [user, pathname, router]);
-
-  useEffect(() => {
-    document.documentElement.lang = languageToLocale(language);
-  }, [language]);
 
   // Navigation items for the bottom tab bar
   const navItems = [
@@ -140,7 +126,7 @@ export default function EmployeeLayout({
             </div>
             
             {/* Navigation tabs with logout */}
-            <nav className="flex flex-wrap gap-4 justify-end items-center">
+            <nav className="flex gap-4 justify-end items-center">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -161,11 +147,7 @@ export default function EmployeeLayout({
                   </Link>
                 );
               })}
-
-              <LanguageSwitcher
-                language={language}
-                onLanguageChange={(lang) => setLanguage(lang)}
-              />
+              <LanguageSelector size="sm" />
               
               {/* Logout button */}
               <Link
@@ -178,7 +160,7 @@ export default function EmployeeLayout({
                 )}
               >
                 <Lock className="h-5 w-5" />
-                <span className="text-sm font-medium">{tCommon("changePassword")}</span>
+                <span className="text-sm font-medium">{tNav("changePassword")}</span>
               </Link>
               <Link
                 href="/logout"
@@ -198,7 +180,7 @@ export default function EmployeeLayout({
           <div className="flex items-center justify-between">
             <TetrasanLogo size="lg" />
             <button
-              aria-label="Menü öffnen"
+              aria-label={tCommon("menu.open")}
               aria-haspopup="menu"
               aria-expanded={isMobileMenuOpen}
               onClick={() => setIsMobileMenuOpen((v) => !v)}
@@ -212,15 +194,11 @@ export default function EmployeeLayout({
           {isMobileMenuOpen && (
             <div
               role="menu"
-              aria-label="Navigation"
+              aria-label={tCommon("menu.navigation")}
               className="mt-3 rounded-lg border border-border bg-white shadow-md divide-y"
             >
-              <div className="p-4">
-                <LanguageSwitcher
-                  language={language}
-                onLanguageChange={(lang) => setLanguage(lang)}
-                  className="w-full"
-                />
+              <div className="px-4 py-3">
+                <LanguageSelector size="sm" />
               </div>
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -249,7 +227,7 @@ export default function EmployeeLayout({
                 )}
               >
                 <Lock className="h-5 w-5" />
-                <span className="font-medium">{tCommon("changePassword")}</span>
+                <span className="font-medium">{tNav("changePassword")}</span>
               </Link>
               <Link
                 href="/logout"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/empty-state";
 import { DayEntryDialog } from "@/components/employee/hours/DayEntryDialog";
 import { useMonthState } from "@/components/employee/hours/useMonthState";
@@ -86,6 +87,7 @@ export function CalendarView({
   const [isSaving, setIsSaving] = useState(false);
   const [monthlySummary, setMonthlySummary] = useState<SummaryOutput | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const tTimesheet = useTranslations("notifications.timesheet");
 
   // Load timesheet entries, corrections, holidays, and monthly summary
   useEffect(() => {
@@ -151,7 +153,7 @@ export function CalendarView({
       setEntries(entriesMap);
     } catch (error) {
       console.error('Error loading timesheet entries:', error);
-      showToast('Fehler beim Laden der Zeiteinträge');
+      showToast(tTimesheet("loadError"));
     } finally {
       setIsLoading(false);
     }
@@ -315,7 +317,7 @@ export function CalendarView({
         },
       }));
       
-      showToast("Gespeichert");
+      showToast(tTimesheet("saveSuccess"));
       loadMonthlySummary();
       if (isAdmin) {
         loadCorrections();
@@ -326,7 +328,7 @@ export function CalendarView({
       }
     } catch (error) {
       console.error('Error saving timesheet entry:', error);
-      showToast('Fehler beim Speichern');
+      showToast(tTimesheet("saveError"));
     } finally {
       setIsSaving(false);
     }
@@ -354,7 +356,7 @@ export function CalendarView({
         return newEntries;
       });
       
-      showToast("Gelöscht");
+      showToast(tTimesheet("deleteSuccess"));
       loadMonthlySummary();
       if (isAdmin) {
         loadCorrections();
@@ -365,7 +367,7 @@ export function CalendarView({
       }
     } catch (error) {
       console.error('Error deleting timesheet entry:', error);
-      showToast('Fehler beim Löschen');
+      showToast(tTimesheet("deleteError"));
     } finally {
       setIsSaving(false);
     }
@@ -394,7 +396,7 @@ export function CalendarView({
       const { data } = await response.json();
       console.log('[CalendarView] Correction saved successfully:', data);
 
-      showToast("Korrektur gespeichert");
+      showToast(tTimesheet("correctionSaveSuccess"));
       
       // Reload entries, corrections, and summary to reflect changes
       await loadTimesheetEntries();
@@ -409,7 +411,7 @@ export function CalendarView({
       }
     } catch (error) {
       console.error('[CalendarView] Error saving correction:', error);
-      showToast('Fehler beim Speichern der Korrektur');
+      showToast(tTimesheet("correctionSaveError"));
     } finally {
       setIsSaving(false);
     }
@@ -436,10 +438,10 @@ export function CalendarView({
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
       
-      showToast("PDF wird heruntergeladen...");
+      showToast(tTimesheet("pdfLoading"));
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      showToast('Fehler beim Exportieren des PDFs');
+      showToast(tTimesheet("pdfError"));
     }
   };
 

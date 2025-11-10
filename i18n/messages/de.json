@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "Tetrasan Zeiterfassung",
+    "description": "Arbeitszeiten und Anträge einfach verwalten."
+  },
+  "common": {
+    "back": "Zurück",
+    "backToLogin": "Zurück zur Anmeldung",
+    "logout": "Abmelden",
+    "languageSwitcher": {
+      "label": "Sprache",
+      "aria": "Sprache wählen",
+      "change": "Sprache ändern",
+      "error": "Sprache konnte nicht gespeichert werden."
+    },
+    "menu": {
+      "open": "Menü öffnen",
+      "navigation": "Navigation"
+    },
+    "legal": {
+      "privacy": "Datenschutz",
+      "imprint": "Impressum"
+    }
+  },
+  "nav": {
+    "employee": {
+      "hours": "Stunden",
+      "leave": "Urlaub",
+      "dayOff": "Tagesbefreiung",
+      "changePassword": "Passwort ändern"
+    },
+    "admin": {
+      "employees": "Mitarbeiter",
+      "inbox": "Postfach",
+      "passwordResets": "Passwort-Reset"
+    }
+  },
+  "auth": {
+    "login": {
+      "heading": "Anmelden",
+      "identifierLabel": "E-Mail oder Personalnummer",
+      "identifierPlaceholder": "max@tetrasan.de oder 01234",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Anmelden",
+      "loading": "Anmelden...",
+      "forgotPassword": "Passwort vergessen?",
+      "noAccount": "Noch kein Konto?",
+      "createAccount": "Konto erstellen",
+      "errors": {
+        "missing": "Bitte Eingaben prüfen.",
+        "invalid": "Anmeldung nicht möglich. Bitte Angaben prüfen.",
+        "generic": "Ein Fehler ist aufgetreten. Bitte später erneut versuchen."
+      }
+    },
+    "employeeLogin": {
+      "heading": "Mitarbeiter-Login",
+      "personalNumberLabel": "Personalnummer",
+      "personalNumberPlaceholder": "z. B. 01234",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Anmelden",
+      "adminHint": "Admin?",
+      "adminLink": "Zum Admin-Login",
+      "errors": {
+        "invalidPersonalNumber": "Bitte 5-stellige Personalnummer eingeben.",
+        "missingPassword": "Bitte Passwort eingeben.",
+        "invalidCredentials": "Personalnummer oder Passwort falsch.",
+        "generic": "Anmeldung nicht möglich. Bitte erneut versuchen."
+      }
+    },
+    "signup": {
+      "heading": "Konto erstellen",
+      "info": "Registrierung nur für bereits angelegte Mitarbeitende.",
+      "personalNumberLabel": "Personalnummer",
+      "personalNumberPlaceholder": "z. B. 01234",
+      "personalNumberTitle": "Bitte genau 5 Ziffern eingeben (z. B. 01234)",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "Mindestens 8 Zeichen",
+      "passwordHint": "Mindestens 8 Zeichen",
+      "passwordConfirmLabel": "Passwort wiederholen",
+      "passwordConfirmPlaceholder": "Passwort bestätigen",
+      "submit": "Registrieren",
+      "loading": "Registrieren...",
+      "hasAccount": "Bereits ein Konto?",
+      "loginLink": "Zur Anmeldung",
+      "errors": {
+        "required": "Bitte alle Felder ausfüllen.",
+        "invalidPersonalNumber": "Bitte 5-stellige Personalnummer eingeben.",
+        "shortPassword": "Passwort muss mindestens 8 Zeichen lang sein.",
+        "mismatch": "Passwörter stimmen nicht überein.",
+        "server": "Registrierung fehlgeschlagen.",
+        "generic": "Ein Fehler ist aufgetreten. Bitte später erneut versuchen."
+      },
+      "successRedirect": "Registrierung erfolgreich. Bitte anmelden."
+    },
+    "forgot": {
+      "heading": "Passwort vergessen",
+      "successHeading": "Anfrage übermittelt",
+      "successBody": "Wenn ein Konto existiert, wurde eine Reset-Anfrage übermittelt. Bitte prüfe dein Postfach oder wende dich an das Büro.",
+      "identifierLabel": "E-Mail oder Personalnummer",
+      "identifierPlaceholder": "max@tetrasan.de oder 01234",
+      "instructions": "Admins: E-Mail-Adresse eingeben. Mitarbeiter:innen: Personalnummer eingeben.",
+      "submit": "Link anfordern",
+      "loading": "Wird gesendet...",
+      "errors": {
+        "missingIdentifier": "Bitte E-Mail oder Personalnummer eingeben."
+      }
+    }
+  },
+  "dayEntryForm": {
+    "status": "Status",
+    "labels": {
+      "project": "Bauvorhaben",
+      "from": "Von",
+      "to": "Bis",
+      "pause": "Pause (Minuten)",
+      "activity": "Tätigkeitsbericht",
+      "comment": "Kommentar"
+    },
+    "placeholders": {
+      "project": "Z. B. Neubau Musterstraße 12",
+      "activity": "Was hast du heute gemacht?",
+      "commentVacation": "Urlaubsgrund (optional)",
+      "commentSick": "Grund für Krankheit (optional)"
+    },
+    "info": {
+      "hoursCalculated": "Stunden (berechnet)"
+    },
+    "helpText": {
+      "startOnly": "Du kannst zuerst die Startzeit speichern. Bauvorhaben und Bericht werden erst beim Eintragen der Endzeit benötigt."
+    },
+    "errors": {
+      "fromRequired": "Bitte Startzeit eingeben.",
+      "pauseNegative": "Pause darf nicht negativ sein",
+      "projectMissing": "Bitte Bauvorhaben ausfüllen.",
+      "workReportMissing": "Bitte Tätigkeitsbericht ausfüllen.",
+      "endAfterStart": "Ende muss nach Beginn liegen oder Zeitangaben sind ungültig.",
+      "commentRequired": "Kommentar ist erforderlich"
+    },
+    "statusOptions": {
+      "work": "Arbeit",
+      "vacation": "Urlaub",
+      "sick": "Krank"
+    },
+    "buttons": {
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "saving": "Speichern..."
+    }
+  },
+  "notifications": {
+    "timesheet": {
+      "loadError": "Fehler beim Laden der Zeiteinträge",
+      "saveSuccess": "Gespeichert",
+      "saveError": "Fehler beim Speichern",
+      "deleteSuccess": "Gelöscht",
+      "deleteError": "Fehler beim Löschen",
+      "correctionSaveSuccess": "Korrektur gespeichert",
+      "correctionSaveError": "Fehler beim Speichern der Korrektur",
+      "pdfLoading": "PDF wird heruntergeladen...",
+      "pdfError": "Fehler beim Exportieren des PDFs"
+    },
+    "requests": {
+      "submitSuccess": "Antrag wurde eingereicht.",
+      "submitError": "Fehler beim Einreichen des Antrags."
+    },
+    "admin": {
+      "tempPasswordCreated": "Temporäres Passwort erstellt.",
+      "approveSuccess": "Antrag wurde genehmigt",
+      "approveError": "Fehler beim Genehmigen",
+      "rejectSuccess": "Antrag wurde abgelehnt",
+      "rejectError": "Fehler beim Ablehnen",
+      "updateSuccess": "Antrag aktualisiert",
+      "updateError": "Fehler beim Aktualisieren",
+      "deleteSuccess": "Antrag gelöscht",
+      "deleteError": "Fehler beim Löschen"
+    }
+  }
+}
+

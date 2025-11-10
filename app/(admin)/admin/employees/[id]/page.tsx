@@ -20,6 +20,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getInitialTab, scrollToHash, TabValue } from "@/lib/deeplink";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
     password: null,
   });
   const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
+  const tAdminNotifications = useTranslations("notifications.admin");
 
   useEffect(() => {
     loadEmployeeData();
@@ -166,7 +168,7 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
       }
 
       setTempPasswordModal({ open: true, password: payload.tempPassword });
-      showToast('Temporäres Passwort erstellt.', 'success');
+      showToast(tAdminNotifications("tempPasswordCreated"), 'success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Fehler beim Erstellen des temporären Passworts.';
       console.error('[AdminEmployeeDetail] Reset password error:', error);
@@ -212,10 +214,10 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
 
       // Reload data to get updated status
       await loadEmployeeData();
-      showToast('Antrag wurde genehmigt', 'success');
+      showToast(tAdminNotifications("approveSuccess"), 'success');
     } catch (error) {
       console.error('Error approving request:', error);
-      showToast(error instanceof Error ? error.message : 'Fehler beim Genehmigen', 'error');
+      showToast(error instanceof Error ? error.message : tAdminNotifications("approveError"), 'error');
     } finally {
       setProcessingRequest(null);
     }
@@ -239,10 +241,10 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
 
       // Reload data to get updated status
       await loadEmployeeData();
-      showToast('Antrag wurde abgelehnt', 'success');
+      showToast(tAdminNotifications("rejectSuccess"), 'success');
     } catch (error) {
       console.error('Error rejecting request:', error);
-      showToast(error instanceof Error ? error.message : 'Fehler beim Ablehnen', 'error');
+      showToast(error instanceof Error ? error.message : tAdminNotifications("rejectError"), 'error');
     } finally {
       setProcessingRequest(null);
     }
@@ -295,11 +297,11 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
         throw new Error(err.error || 'Update fehlgeschlagen');
       }
       await loadEmployeeData();
-      showToast('Antrag aktualisiert', 'success');
+      showToast(tAdminNotifications("updateSuccess"), 'success');
       setEditModal({ open: false, request: null, values: { period_start: '', period_end: '', comment: '' } });
     } catch (e) {
       console.error('Edit error', e);
-      showToast(e instanceof Error ? e.message : 'Fehler beim Aktualisieren', 'error');
+      showToast(e instanceof Error ? e.message : tAdminNotifications("updateError"), 'error');
     } finally {
       setProcessingRequest(null);
     }
@@ -315,10 +317,10 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
         throw new Error(err.error || 'Löschen fehlgeschlagen');
       }
       await loadEmployeeData();
-      showToast('Antrag gelöscht', 'success');
+      showToast(tAdminNotifications("deleteSuccess"), 'success');
     } catch (e) {
       console.error('Delete error', e);
-      showToast(e instanceof Error ? e.message : 'Fehler beim Löschen', 'error');
+      showToast(e instanceof Error ? e.message : tAdminNotifications("deleteError"), 'error');
     } finally {
       setProcessingRequest(null);
     }

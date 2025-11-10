@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { LogIn, Loader2 } from "lucide-react";
 
@@ -12,6 +13,7 @@ import { LogIn, Loader2 } from "lucide-react";
  */
 export function EmployeeLoginForm() {
   const router = useRouter();
+  const t = useTranslations("auth.employeeLogin");
   const [personalNumber, setPersonalNumber] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,12 +26,12 @@ export function EmployeeLoginForm() {
 
     // Basic validation
     if (!/^\d{5}$/.test(personalNumber)) {
-      setError("Bitte 5-stellige Personalnummer eingeben.");
+      setError(t("errors.invalidPersonalNumber"));
       setIsLoading(false);
       return;
     }
     if (!password) {
-      setError("Bitte Passwort eingeben.");
+      setError(t("errors.missingPassword"));
       setIsLoading(false);
       return;
     }
@@ -47,7 +49,7 @@ export function EmployeeLoginForm() {
         .maybeSingle();
 
       if (profileError || !profile) {
-        setError("Personalnummer oder Passwort falsch.");
+        setError(t("errors.invalidCredentials"));
         setIsLoading(false);
         return;
       }
@@ -60,7 +62,7 @@ export function EmployeeLoginForm() {
       });
 
       if (signInError || !data.session) {
-        setError("Personalnummer oder Passwort falsch.");
+        setError(t("errors.invalidCredentials"));
         setIsLoading(false);
         return;
       }
@@ -69,7 +71,7 @@ export function EmployeeLoginForm() {
       router.push("/employee/hours");
     } catch (err) {
       console.error("[EmployeeLogin]", err);
-      setError("Anmeldung nicht möglich. Bitte erneut versuchen.");
+      setError(t("errors.generic"));
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +80,7 @@ export function EmployeeLoginForm() {
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div>
-        <label htmlFor="pnr" className="block text-sm font-medium mb-1.5">Personalnummer</label>
+        <label htmlFor="pnr" className="block text-sm font-medium mb-1.5">{t("personalNumberLabel")}</label>
         <input
           id="pnr"
           type="text"
@@ -86,19 +88,19 @@ export function EmployeeLoginForm() {
           pattern="\\d*"
           maxLength={5}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="z. B. 01234"
+          placeholder={t("personalNumberPlaceholder")}
           value={personalNumber}
           onChange={(e) => setPersonalNumber(e.target.value.replace(/\D/g, ""))}
           autoComplete="off"
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1.5">Passwort</label>
+        <label htmlFor="password" className="block text-sm font-medium mb-1.5">{t("passwordLabel")}</label>
         <input
           id="password"
           type="password"
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="••••••••"
+          placeholder={t("passwordPlaceholder")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
@@ -115,12 +117,12 @@ export function EmployeeLoginForm() {
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand text-white rounded-lg hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
       >
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-        <span>Anmelden</span>
+        <span>{t("submit")}</span>
       </button>
 
       <div className="text-sm text-center">
-        <span className="text-muted-foreground">Admin? </span>
-        <Link href="/login" className="text-brand hover:underline font-medium">Zum Admin‑Login</Link>
+        <span className="text-muted-foreground">{t("adminHint")} </span>
+        <Link href="/login" className="text-brand hover:underline font-medium">{t("adminLink")}</Link>
       </div>
     </form>
   );

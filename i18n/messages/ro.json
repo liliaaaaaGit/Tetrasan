@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "Pontaj Tetrasan",
+    "description": "Gestionează ușor orele și cererile."
+  },
+  "common": {
+    "back": "Înapoi",
+    "backToLogin": "Înapoi la autentificare",
+    "logout": "Deconectare",
+    "languageSwitcher": {
+      "label": "Limbă",
+      "aria": "Alege limba",
+      "change": "Schimbă limba",
+      "error": "Limba nu a putut fi salvată."
+    },
+    "menu": {
+      "open": "Deschide meniul",
+      "navigation": "Navigare"
+    },
+    "legal": {
+      "privacy": "Confidențialitate",
+      "imprint": "Mențiuni legale"
+    }
+  },
+  "nav": {
+    "employee": {
+      "hours": "Ore",
+      "leave": "Concediu",
+      "dayOff": "Zi liberă",
+      "changePassword": "Schimbă parola"
+    },
+    "admin": {
+      "employees": "Angajați",
+      "inbox": "Mesaje",
+      "passwordResets": "Resetare parolă"
+    }
+  },
+  "auth": {
+    "login": {
+      "heading": "Autentificare",
+      "identifierLabel": "Email sau număr personal",
+      "identifierPlaceholder": "max@tetrasan.de sau 01234",
+      "passwordLabel": "Parolă",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Intră",
+      "loading": "Se autentifică...",
+      "forgotPassword": "Ai uitat parola?",
+      "noAccount": "Nu ai cont?",
+      "createAccount": "Creează cont",
+      "errors": {
+        "missing": "Verifică datele.",
+        "invalid": "Autentificarea a eșuat. Verifică datele.",
+        "generic": "A apărut o eroare. Încearcă mai târziu."
+      }
+    },
+    "employeeLogin": {
+      "heading": "Autentificare angajați",
+      "personalNumberLabel": "Număr personal",
+      "personalNumberPlaceholder": "ex. 01234",
+      "passwordLabel": "Parolă",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Intră",
+      "adminHint": "Admin?",
+      "adminLink": "Mergi la autentificarea admin",
+      "errors": {
+        "invalidPersonalNumber": "Introdu un număr personal din 5 cifre.",
+        "missingPassword": "Introdu parola.",
+        "invalidCredentials": "Numărul personal sau parola sunt greșite.",
+        "generic": "Autentificarea nu este posibilă. Încearcă din nou."
+      }
+    },
+    "signup": {
+      "heading": "Creează cont",
+      "info": "Înregistrarea este doar pentru angajații deja adăugați.",
+      "personalNumberLabel": "Număr personal",
+      "personalNumberPlaceholder": "ex. 01234",
+      "personalNumberTitle": "Introdu exact 5 cifre (ex. 01234)",
+      "passwordLabel": "Parolă",
+      "passwordPlaceholder": "Cel puțin 8 caractere",
+      "passwordHint": "Cel puțin 8 caractere",
+      "passwordConfirmLabel": "Repetă parola",
+      "passwordConfirmPlaceholder": "Confirmă parola",
+      "submit": "Înregistrează-te",
+      "loading": "Se înregistrează...",
+      "hasAccount": "Ai deja cont?",
+      "loginLink": "Mergi la autentificare",
+      "errors": {
+        "required": "Completează toate câmpurile.",
+        "invalidPersonalNumber": "Introdu un număr personal din 5 cifre.",
+        "shortPassword": "Parola trebuie să aibă cel puțin 8 caractere.",
+        "mismatch": "Parolele nu coincid.",
+        "server": "Înregistrarea a eșuat.",
+        "generic": "A apărut o eroare. Încearcă mai târziu."
+      },
+      "successRedirect": "Înregistrare reușită. Autentifică-te."
+    },
+    "forgot": {
+      "heading": "Parolă uitată",
+      "successHeading": "Cerere trimisă",
+      "successBody": "Dacă există un cont, cererea a fost trimisă. Verifică emailul sau contactează biroul.",
+      "identifierLabel": "Email sau număr personal",
+      "identifierPlaceholder": "max@tetrasan.de sau 01234",
+      "instructions": "Admini: introduceți emailul. Angajați: introduceți numărul personal.",
+      "submit": "Cere link",
+      "loading": "Se trimite...",
+      "errors": {
+        "missingIdentifier": "Introdu emailul sau numărul personal."
+      }
+    }
+  },
+  "dayEntryForm": {
+    "status": "Status",
+    "labels": {
+      "project": "Proiect",
+      "from": "De la",
+      "to": "Până la",
+      "pause": "Pauză (minute)",
+      "activity": "Raport de lucru",
+      "comment": "Comentariu"
+    },
+    "placeholders": {
+      "project": "ex. Construcție nouă Strada Exemplu 12",
+      "activity": "Ce ai făcut astăzi?",
+      "commentVacation": "Motivul concediului (opțional)",
+      "commentSick": "Motivul absenței (opțional)"
+    },
+    "info": {
+      "hoursCalculated": "Ore (calculate)"
+    },
+    "helpText": {
+      "startOnly": "Poți salva mai întâi ora de început. Proiectul și raportul sunt necesare doar când introduci ora de final."
+    },
+    "errors": {
+      "fromRequired": "Introdu ora de început.",
+      "pauseNegative": "Pauza nu poate fi negativă.",
+      "projectMissing": "Introdu proiectul.",
+      "workReportMissing": "Introdu raportul de lucru.",
+      "endAfterStart": "Ora de final trebuie să fie după ora de început sau valorile sunt invalide.",
+      "commentRequired": "Comentariul este obligatoriu."
+    },
+    "statusOptions": {
+      "work": "Lucru",
+      "vacation": "Concediu",
+      "sick": "Boală"
+    },
+    "buttons": {
+      "cancel": "Anulează",
+      "save": "Salvează",
+      "saving": "Se salvează..."
+    }
+  },
+  "notifications": {
+    "timesheet": {
+      "loadError": "Nu s-au putut încărca înregistrările",
+      "saveSuccess": "Salvat",
+      "saveError": "Nu s-a putut salva",
+      "deleteSuccess": "Șters",
+      "deleteError": "Nu s-a putut șterge",
+      "correctionSaveSuccess": "Corecția a fost salvată",
+      "correctionSaveError": "Nu s-a putut salva corecția",
+      "pdfLoading": "Descărcarea PDF a început...",
+      "pdfError": "PDF-ul nu a putut fi exportat"
+    },
+    "requests": {
+      "submitSuccess": "Cererea a fost trimisă.",
+      "submitError": "Cererea nu a putut fi trimisă."
+    },
+    "admin": {
+      "tempPasswordCreated": "Parolă temporară creată.",
+      "approveSuccess": "Cererea a fost aprobată",
+      "approveError": "Nu s-a putut aproba",
+      "rejectSuccess": "Cererea a fost respinsă",
+      "rejectError": "Nu s-a putut respinge",
+      "updateSuccess": "Cererea a fost actualizată",
+      "updateError": "Nu s-a putut actualiza",
+      "deleteSuccess": "Cererea a fost ștearsă",
+      "deleteError": "Nu s-a putut șterge"
+    }
+  }
+}
+

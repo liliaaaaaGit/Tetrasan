@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { LogIn, Loader2 } from "lucide-react";
 import { redirectByRole } from "@/lib/auth/redirects";
@@ -14,6 +15,7 @@ import { redirectByRole } from "@/lib/auth/redirects";
  */
 export function LoginForm() {
   const router = useRouter();
+  const t = useTranslations("auth.login");
   const [identifier, setIdentifier] = useState(""); // email or 5-digit personal number
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ export function LoginForm() {
 
     // Basic client-side validation
     if (!identifier || !password) {
-      setError("Bitte Eingaben prüfen.");
+      setError(t("errors.missing"));
       setIsLoading(false);
       return;
     }
@@ -50,7 +52,7 @@ export function LoginForm() {
       // If still no email or invalid format, show neutral error
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(loginEmail)) {
-        setError("Anmeldung nicht möglich. Bitte Angaben prüfen.");
+        setError(t("errors.invalid"));
         setIsLoading(false);
         return;
       }
@@ -63,7 +65,7 @@ export function LoginForm() {
 
       if (signInError || !data.session) {
         // Neutral error - don't reveal whether email exists or password is wrong
-        setError("Anmeldung nicht möglich. Bitte Angaben prüfen.");
+        setError(t("errors.invalid"));
         setIsLoading(false);
         return;
       }
@@ -90,7 +92,7 @@ export function LoginForm() {
 
     } catch (err) {
       console.error("[Login] Error:", err);
-      setError("Ein Fehler ist aufgetreten. Bitte später erneut versuchen.");
+      setError(t("errors.generic"));
       setIsLoading(false);
     }
   };
@@ -100,7 +102,7 @@ export function LoginForm() {
       {/* Email or Personal number */}
       <div>
         <label htmlFor="identifier" className="block text-sm font-medium mb-1.5">
-          E-Mail oder Personalnummer
+          {t("identifierLabel")}
         </label>
         <input
           id="identifier"
@@ -108,7 +110,7 @@ export function LoginForm() {
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="max@tetrasan.de oder 01234"
+          placeholder={t("identifierPlaceholder")}
           disabled={isLoading}
           autoComplete="username"
         />
@@ -117,7 +119,7 @@ export function LoginForm() {
       {/* Password */}
       <div>
         <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-          Passwort
+          {t("passwordLabel")}
         </label>
         <input
           id="password"
@@ -125,7 +127,7 @@ export function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="••••••••"
+          placeholder={t("passwordPlaceholder")}
           disabled={isLoading}
           autoComplete="current-password"
         />
@@ -147,12 +149,12 @@ export function LoginForm() {
         {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Anmelden...</span>
+            <span>{t("loading")}</span>
           </>
         ) : (
           <>
             <LogIn className="h-4 w-4" />
-            <span>Anmelden</span>
+            <span>{t("submit")}</span>
           </>
         )}
       </button>
@@ -161,13 +163,13 @@ export function LoginForm() {
       <div className="space-y-2 text-sm text-center">
         <div>
           <Link href="/forgot-password" className="text-brand hover:underline">
-            Passwort vergessen?
+            {t("forgotPassword")}
           </Link>
         </div>
         <div>
-          <span className="text-muted-foreground">Noch kein Konto? </span>
+          <span className="text-muted-foreground">{t("noAccount")} </span>
           <Link href="/signup" className="text-brand hover:underline font-medium">
-            Konto erstellen
+            {t("createAccount")}
           </Link>
         </div>
       </div>

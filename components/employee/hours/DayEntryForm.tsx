@@ -29,11 +29,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const [taetigkeit, setTaetigkeit] = useState(initialData?.taetigkeit ?? "");
   const [kommentar, setKommentar] = useState(initialData?.kommentar ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const t = useTranslations("DayEntryForm");
+  const t = useTranslations("dayEntryForm");
 
   // Normalize time strings (handle HH:MM:SS format from HTML time inputs)
   const normalizeTime = (time: string): string => {
-    if (!time) return '';
+    if (!time) return "";
     // If time has seconds (HH:MM:SS), remove them
     return time.length >= 5 ? time.substring(0, 5) : time;
   };
@@ -92,7 +92,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
 
     // For work entries, calculatedHours must be a valid number (not null)

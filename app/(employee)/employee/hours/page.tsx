@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { DayEntryDialog } from "@/components/employee/hours/DayEntryDialog";
@@ -38,6 +39,7 @@ interface Holiday {
 }
 
 function HoursPageContent() {
+  const tTimesheet = useTranslations("notifications.timesheet");
   const { year, month, goToPreviousMonth, goToNextMonth } = useMonthState();
   const [entries, setEntries] = useState<Record<string, DayEntry>>({});
   const [holidays, setHolidays] = useState<Record<string, Holiday>>({});
@@ -131,7 +133,7 @@ function HoursPageContent() {
       setEntries(entriesMap);
     } catch (error) {
       console.error('Error loading timesheet entries:', error);
-      showToast('Fehler beim Laden der Zeiteinträge');
+      showToast(tTimesheet("loadError"));
     } finally {
       setIsLoading(false);
     }
@@ -255,7 +257,7 @@ function HoursPageContent() {
 
       const { data } = await response.json();
       
-      showToast("Gespeichert");
+      showToast(tTimesheet("saveSuccess"));
       
       // Reload entries from database to ensure state is in sync
       // This ensures we have the correct entry ID and prevents duplicates
@@ -265,7 +267,7 @@ function HoursPageContent() {
       loadMonthlySummary();
     } catch (error) {
       console.error('Error saving timesheet entry:', error);
-      showToast('Fehler beim Speichern');
+      showToast(tTimesheet("saveError"));
     } finally {
       setIsSaving(false);
     }
@@ -293,12 +295,12 @@ function HoursPageContent() {
         return newEntries;
       });
       
-      showToast("Gelöscht");
+      showToast(tTimesheet("deleteSuccess"));
       // Reload summary after deleting
       loadMonthlySummary();
     } catch (error) {
       console.error('Error deleting timesheet entry:', error);
-      showToast('Fehler beim Löschen');
+      showToast(tTimesheet("deleteError"));
     } finally {
       setIsSaving(false);
     }

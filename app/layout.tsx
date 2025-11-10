@@ -1,38 +1,29 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+
 import "./globals.css";
+
+import { getMessagesWithFallback } from "@/i18n/get-messages";
+import { getRequestLocale } from "@/i18n/get-request-locale";
+import { toHtmlLang } from "@/i18n/config";
 
 export const metadata: Metadata = {
   title: "Tetrasan Zeiterfassung",
   description: "Zeiterfassung für Tetrasan Mitarbeiter",
 };
 
-import { NextIntlClientProvider } from "next-intl";
-import { getProfile, getSession } from "@/lib/auth/session";
-import { DEFAULT_LANGUAGE, languageToLocale, resolveLanguage } from "@/lib/i18n/language";
-import { messages } from "@/lib/i18n/messages";
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let language = DEFAULT_LANGUAGE;
-
-  try {
-    const session = await getSession();
-    const profile = session?.user ? await getProfile(session.user.id) : null;
-    language = resolveLanguage(profile);
-  } catch (error) {
-    console.error("[RootLayout] Failed to resolve language, falling back to default:", error);
-  }
-
-  const locale = languageToLocale(language);
-  const localeMessages = messages[language] ?? messages[DEFAULT_LANGUAGE];
+  const locale = await getRequestLocale();
+  const messages = await getMessagesWithFallback(locale);
 
   return (
-    <html lang={locale}>
+    <html lang={toHtmlLang(locale)} suppressHydrationWarning>
       <body className="antialiased">
-        <NextIntlClientProvider locale={language} messages={localeMessages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
       </body>

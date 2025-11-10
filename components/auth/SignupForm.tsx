@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { UserPlus, Loader2, Info } from "lucide-react";
 
 /**
@@ -12,6 +13,7 @@ import { UserPlus, Loader2, Info } from "lucide-react";
  */
 export function SignupForm() {
   const router = useRouter();
+  const t = useTranslations("auth.signup");
   const [personalNumber, setPersonalNumber] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -25,28 +27,28 @@ export function SignupForm() {
 
     // Basic validation
     if (!personalNumber || !password || !passwordConfirm) {
-      setError("Bitte alle Felder ausfüllen.");
+      setError(t("errors.required"));
       setIsLoading(false);
       return;
     }
 
     // Personal number check
     if (!/^\d{5}$/.test(personalNumber)) {
-      setError("Bitte 5-stellige Personalnummer eingeben.");
+      setError(t("errors.invalidPersonalNumber"));
       setIsLoading(false);
       return;
     }
 
     // Password length check
     if (password.length < 8) {
-      setError("Passwort muss mindestens 8 Zeichen lang sein.");
+      setError(t("errors.shortPassword"));
       setIsLoading(false);
       return;
     }
 
     // Password match check
     if (password !== passwordConfirm) {
-      setError("Passwörter stimmen nicht überein.");
+      setError(t("errors.mismatch"));
       setIsLoading(false);
       return;
     }
@@ -68,17 +70,18 @@ export function SignupForm() {
 
       if (!response.ok) {
         // Server returned error (neutral message)
-        setError(data.error || "Registrierung fehlgeschlagen.");
+        setError(data.error || t("errors.server"));
         setIsLoading(false);
         return;
       }
 
       // Success - redirect to login with message
-      router.push("/login?message=Registrierung erfolgreich. Bitte anmelden.");
+      const successMessage = encodeURIComponent(t("successRedirect"));
+      router.push(`/login?message=${successMessage}`);
 
     } catch (err) {
       console.error("[Signup] Error:", err);
-      setError("Ein Fehler ist aufgetreten. Bitte später erneut versuchen.");
+      setError(t("errors.generic"));
       setIsLoading(false);
     }
   };
@@ -90,7 +93,7 @@ export function SignupForm() {
         <div className="flex items-start gap-2">
           <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-blue-800">
-            Registrierung nur für bereits angelegte Mitarbeitende.
+            {t("info")}
           </p>
         </div>
       </div>
@@ -98,7 +101,7 @@ export function SignupForm() {
       {/* Personal number */}
       <div>
         <label htmlFor="pnr" className="block text-sm font-medium mb-1.5">
-          Personalnummer
+          {t("personalNumberLabel")}
         </label>
         <input
           id="pnr"
@@ -109,17 +112,17 @@ export function SignupForm() {
           value={personalNumber}
           onChange={(e) => setPersonalNumber(e.target.value.replace(/\D/g, ""))}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="z. B. 01234"
+          placeholder={t("personalNumberPlaceholder")}
           disabled={isLoading}
           autoComplete="off"
-          title="Bitte genau 5 Ziffern eingeben (z. B. 01234)"
+          title={t("personalNumberTitle")}
         />
       </div>
 
       {/* Password */}
       <div>
         <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-          Passwort
+          {t("passwordLabel")}
         </label>
         <input
           id="password"
@@ -127,19 +130,19 @@ export function SignupForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Mindestens 8 Zeichen"
+          placeholder={t("passwordPlaceholder")}
           disabled={isLoading}
           autoComplete="new-password"
         />
         <p className="text-xs text-muted-foreground mt-1">
-          Mindestens 8 Zeichen
+          {t("passwordHint")}
         </p>
       </div>
 
       {/* Password Confirmation */}
       <div>
         <label htmlFor="password-confirm" className="block text-sm font-medium mb-1.5">
-          Passwort wiederholen
+          {t("passwordConfirmLabel")}
         </label>
         <input
           id="password-confirm"
@@ -147,7 +150,7 @@ export function SignupForm() {
           value={passwordConfirm}
           onChange={(e) => setPasswordConfirm(e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Passwort bestätigen"
+          placeholder={t("passwordConfirmPlaceholder")}
           disabled={isLoading}
           autoComplete="new-password"
         />
@@ -169,21 +172,21 @@ export function SignupForm() {
         {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Registrieren...</span>
+            <span>{t("loading")}</span>
           </>
         ) : (
           <>
             <UserPlus className="h-4 w-4" />
-            <span>Registrieren</span>
+            <span>{t("submit")}</span>
           </>
         )}
       </button>
 
       {/* Links */}
       <div className="text-sm text-center">
-        <span className="text-muted-foreground">Bereits ein Konto? </span>
+        <span className="text-muted-foreground">{t("hasAccount")} </span>
         <Link href="/login" className="text-brand hover:underline font-medium">
-          Zur Anmeldung
+          {t("loginLink")}
         </Link>
       </div>
     </form>

@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "Rilevazione Ore Tetrasan",
+    "description": "Gestisci ore e richieste con facilità."
+  },
+  "common": {
+    "back": "Indietro",
+    "backToLogin": "Torna al login",
+    "logout": "Esci",
+    "languageSwitcher": {
+      "label": "Lingua",
+      "aria": "Scegli la lingua",
+      "change": "Cambia lingua",
+      "error": "Lingua non salvata."
+    },
+    "menu": {
+      "open": "Apri menu",
+      "navigation": "Navigazione"
+    },
+    "legal": {
+      "privacy": "Privacy",
+      "imprint": "Note legali"
+    }
+  },
+  "nav": {
+    "employee": {
+      "hours": "Ore",
+      "leave": "Ferie",
+      "dayOff": "Giorno libero",
+      "changePassword": "Cambia password"
+    },
+    "admin": {
+      "employees": "Dipendenti",
+      "inbox": "Posta",
+      "passwordResets": "Reset password"
+    }
+  },
+  "auth": {
+    "login": {
+      "heading": "Accedi",
+      "identifierLabel": "Email o numero personale",
+      "identifierPlaceholder": "max@tetrasan.de o 01234",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Accedi",
+      "loading": "Accesso in corso...",
+      "forgotPassword": "Password dimenticata?",
+      "noAccount": "Non hai un account?",
+      "createAccount": "Crea account",
+      "errors": {
+        "missing": "Controlla i dati.",
+        "invalid": "Impossibile accedere. Controlla i dati.",
+        "generic": "Si è verificato un errore. Riprova più tardi."
+      }
+    },
+    "employeeLogin": {
+      "heading": "Accesso dipendenti",
+      "personalNumberLabel": "Numero personale",
+      "personalNumberPlaceholder": "es. 01234",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Accedi",
+      "adminHint": "Admin?",
+      "adminLink": "Vai al login admin",
+      "errors": {
+        "invalidPersonalNumber": "Inserisci un numero personale di 5 cifre.",
+        "missingPassword": "Inserisci la password.",
+        "invalidCredentials": "Numero o password errati.",
+        "generic": "Impossibile accedere. Riprova."
+      }
+    },
+    "signup": {
+      "heading": "Crea account",
+      "info": "Registrazione solo per dipendenti già inseriti.",
+      "personalNumberLabel": "Numero personale",
+      "personalNumberPlaceholder": "es. 01234",
+      "personalNumberTitle": "Inserisci esattamente 5 cifre (es. 01234)",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Almeno 8 caratteri",
+      "passwordHint": "Almeno 8 caratteri",
+      "passwordConfirmLabel": "Ripeti password",
+      "passwordConfirmPlaceholder": "Conferma password",
+      "submit": "Registrati",
+      "loading": "Registrazione...",
+      "hasAccount": "Hai già un account?",
+      "loginLink": "Vai al login",
+      "errors": {
+        "required": "Compila tutti i campi.",
+        "invalidPersonalNumber": "Inserisci un numero personale di 5 cifre.",
+        "shortPassword": "La password deve avere almeno 8 caratteri.",
+        "mismatch": "Le password non coincidono.",
+        "server": "Registrazione non riuscita.",
+        "generic": "Si è verificato un errore. Riprova più tardi."
+      },
+      "successRedirect": "Registrazione riuscita. Accedi."
+    },
+    "forgot": {
+      "heading": "Password dimenticata",
+      "successHeading": "Richiesta inviata",
+      "successBody": "Se esiste un account, la richiesta è stata inviata. Controlla la mail o contatta l'ufficio.",
+      "identifierLabel": "Email o numero personale",
+      "identifierPlaceholder": "max@tetrasan.de o 01234",
+      "instructions": "Admin: inserisci la tua email. Dipendenti: inserite il numero personale.",
+      "submit": "Richiedi link",
+      "loading": "Invio in corso...",
+      "errors": {
+        "missingIdentifier": "Inserisci email o numero personale."
+      }
+    }
+  },
+  "dayEntryForm": {
+    "status": "Stato",
+    "labels": {
+      "project": "Progetto",
+      "from": "Da",
+      "to": "A",
+      "pause": "Pausa (minuti)",
+      "activity": "Resoconto di lavoro",
+      "comment": "Commento"
+    },
+    "placeholders": {
+      "project": "Es. nuova costruzione Via Esempio 12",
+      "activity": "Che cosa hai fatto oggi?",
+      "commentVacation": "Motivo del permesso (facoltativo)",
+      "commentSick": "Motivo dell'assenza (facoltativo)"
+    },
+    "info": {
+      "hoursCalculated": "Ore (calcolate)"
+    },
+    "helpText": {
+      "startOnly": "Puoi salvare per prima l'ora di inizio. Progetto e resoconto servono solo quando inserisci l'ora di fine."
+    },
+    "errors": {
+      "fromRequired": "Inserisci l'orario di inizio.",
+      "pauseNegative": "La pausa non può essere negativa.",
+      "projectMissing": "Inserisci il progetto.",
+      "workReportMissing": "Inserisci il resoconto di lavoro.",
+      "endAfterStart": "L'orario di fine deve essere dopo l'inizio oppure i valori sono invalidi.",
+      "commentRequired": "Il commento è obbligatorio."
+    },
+    "statusOptions": {
+      "work": "Lavoro",
+      "vacation": "Ferie",
+      "sick": "Malattia"
+    },
+    "buttons": {
+      "cancel": "Annulla",
+      "save": "Salva",
+      "saving": "Salvataggio..."
+    }
+  },
+  "notifications": {
+    "timesheet": {
+      "loadError": "Impossibile caricare le timbrature",
+      "saveSuccess": "Salvato",
+      "saveError": "Impossibile salvare",
+      "deleteSuccess": "Eliminato",
+      "deleteError": "Impossibile eliminare",
+      "correctionSaveSuccess": "Correzione salvata",
+      "correctionSaveError": "Impossibile salvare la correzione",
+      "pdfLoading": "Download PDF avviato...",
+      "pdfError": "Impossibile esportare il PDF"
+    },
+    "requests": {
+      "submitSuccess": "Richiesta inviata.",
+      "submitError": "Impossibile inviare la richiesta."
+    },
+    "admin": {
+      "tempPasswordCreated": "Password temporanea creata.",
+      "approveSuccess": "Richiesta approvata",
+      "approveError": "Impossibile approvare",
+      "rejectSuccess": "Richiesta rifiutata",
+      "rejectError": "Impossibile rifiutare",
+      "updateSuccess": "Richiesta aggiornata",
+      "updateError": "Impossibile aggiornare",
+      "deleteSuccess": "Richiesta eliminata",
+      "deleteError": "Impossibile eliminare"
+    }
+  }
+}
+

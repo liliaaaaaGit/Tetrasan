@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { TetrasanLogo } from "@/components/branding/TetrasanLogo";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
 
 /**
  * Auth Layout
@@ -17,20 +19,24 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const tCommon = useTranslations("common");
   const isLegalPage = pathname === "/datenschutz" || pathname === "/impressum";
   const maxWidth = isLegalPage ? "max-w-4xl" : "max-w-md";
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Header with back link */}
-      <header className="p-4">
+      <header className="p-4 flex items-center justify-between gap-4">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Zurück</span>
+          <span>{tCommon("back")}</span>
         </Link>
+        <div className="min-w-[140px]">
+          <LanguageSelector size="sm" />
+        </div>
       </header>
 
       {/* Main content - centered */}
@@ -51,11 +57,11 @@ export default function AuthLayout({
           {/* Legal links */}
           <div className="mt-6 text-center text-xs text-muted-foreground space-x-4">
             <Link href="/datenschutz" className="hover:underline">
-              Datenschutz
+              {tCommon("legal.privacy")}
             </Link>
             <span>•</span>
             <Link href="/impressum" className="hover:underline">
-              Impressum
+              {tCommon("legal.imprint")}
             </Link>
           </div>
         </div>

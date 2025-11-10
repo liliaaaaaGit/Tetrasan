@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "Tetrasan Matja e Orëve",
+    "description": "Regjistro orët dhe kërkesat me lehtësi."
+  },
+  "common": {
+    "back": "Kthehu",
+    "backToLogin": "Kthehu te hyrja",
+    "logout": "Dil",
+    "languageSwitcher": {
+      "label": "Gjuha",
+      "aria": "Zgjidh gjuhën",
+      "change": "Ndrysho gjuhën",
+      "error": "Gjuha nuk u ruajt."
+    },
+    "menu": {
+      "open": "Hap menunë",
+      "navigation": "Lundrim"
+    },
+    "legal": {
+      "privacy": "Privatësia",
+      "imprint": "Informacion ligjor"
+    }
+  },
+  "nav": {
+    "employee": {
+      "hours": "Orë",
+      "leave": "Pushim",
+      "dayOff": "Ditë e lirë",
+      "changePassword": "Ndrysho fjalëkalimin"
+    },
+    "admin": {
+      "employees": "Punonjësit",
+      "inbox": "Mesazhet",
+      "passwordResets": "Rivendosje fjalëkalimi"
+    }
+  },
+  "auth": {
+    "login": {
+      "heading": "Hyr",
+      "identifierLabel": "Email ose numër personal",
+      "identifierPlaceholder": "max@tetrasan.de ose 01234",
+      "passwordLabel": "Fjalëkalimi",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Hyr",
+      "loading": "Po hyn...",
+      "forgotPassword": "Harrove fjalëkalimin?",
+      "noAccount": "Ende nuk ke llogari?",
+      "createAccount": "Krijo llogari",
+      "errors": {
+        "missing": "Kontrollo të dhënat.",
+        "invalid": "Hyrja nuk është e mundur. Kontrollo të dhënat.",
+        "generic": "Diçka shkoi keq. Provo përsëri më vonë."
+      }
+    },
+    "employeeLogin": {
+      "heading": "Hyrja e punonjësit",
+      "personalNumberLabel": "Numër personal",
+      "personalNumberPlaceholder": "p.sh. 01234",
+      "passwordLabel": "Fjalëkalimi",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Hyr",
+      "adminHint": "Admin?",
+      "adminLink": "Shko te hyrja e adminit",
+      "errors": {
+        "invalidPersonalNumber": "Shkruaj numër personal me 5 shifra.",
+        "missingPassword": "Shkruaj fjalëkalimin.",
+        "invalidCredentials": "Numri personal ose fjalëkalimi gabim.",
+        "generic": "Hyrja nuk është e mundur. Provo përsëri."
+      }
+    },
+    "signup": {
+      "heading": "Krijo llogari",
+      "info": "Regjistrimi vetëm për punonjësit që janë shtuar.",
+      "personalNumberLabel": "Numër personal",
+      "personalNumberPlaceholder": "p.sh. 01234",
+      "personalNumberTitle": "Shkruaj saktësisht 5 shifra (p.sh. 01234)",
+      "passwordLabel": "Fjalëkalimi",
+      "passwordPlaceholder": "Të paktën 8 shenja",
+      "passwordHint": "Të paktën 8 shenja",
+      "passwordConfirmLabel": "Përsërit fjalëkalimin",
+      "passwordConfirmPlaceholder": "Konfirmo fjalëkalimin",
+      "submit": "Regjistrohu",
+      "loading": "Po krijohet...",
+      "hasAccount": "Ke tashmë llogari?",
+      "loginLink": "Shko te hyrja",
+      "errors": {
+        "required": "Plotëso të gjitha fushat.",
+        "invalidPersonalNumber": "Shkruaj numër personal me 5 shifra.",
+        "shortPassword": "Fjalëkalimi duhet të ketë të paktën 8 shenja.",
+        "mismatch": "Fjalëkalimet nuk përputhen.",
+        "server": "Regjistrimi dështoi.",
+        "generic": "Diçka shkoi keq. Provo përsëri më vonë."
+      },
+      "successRedirect": "Regjistrimi u krye. Hyr tani."
+    },
+    "forgot": {
+      "heading": "Harrove fjalëkalimin",
+      "successHeading": "Kërkesa u dërgua",
+      "successBody": "Nëse ekziston një llogari, kërkesa u dërgua. Kontrollo emailin ose kontakto zyrën.",
+      "identifierLabel": "Email ose numër personal",
+      "identifierPlaceholder": "max@tetrasan.de ose 01234",
+      "instructions": "Adminët: shkruani emailin. Punonjësit: shkruani numrin personal.",
+      "submit": "Kërko lidhjen",
+      "loading": "Po dërgohet...",
+      "errors": {
+        "missingIdentifier": "Shkruaj emailin ose numrin personal."
+      }
+    }
+  },
+  "dayEntryForm": {
+    "status": "Status",
+    "labels": {
+      "project": "Projekt",
+      "from": "Nga",
+      "to": "Deri",
+      "pause": "Pushim (minuta)",
+      "activity": "Përshkrim pune",
+      "comment": "Koment"
+    },
+    "placeholders": {
+      "project": "p.sh. Ndërtim i ri Rruga Shembull 12",
+      "activity": "Çfarë pune bërë sot?",
+      "commentVacation": "Arsyeja e pushimit (opsionale)",
+      "commentSick": "Arsyeja e sëmundjes (opsionale)"
+    },
+    "info": {
+      "hoursCalculated": "Orë (llogaritur)"
+    },
+    "helpText": {
+      "startOnly": "Mund të ruash fillimin së pari. Projekti dhe raporti duhen vetëm kur shënon orën e përfundimit."
+    },
+    "errors": {
+      "fromRequired": "Shkruaj orën e fillimit.",
+      "pauseNegative": "Pushimi nuk mund të jetë negativ.",
+      "projectMissing": "Shkruaj projektin.",
+      "workReportMissing": "Shkruaj përshkrimin e punës.",
+      "endAfterStart": "Ora e përfundimit duhet të jetë pas fillimit ose orët janë të pavlefshme.",
+      "commentRequired": "Komenti është i detyrueshëm."
+    },
+    "statusOptions": {
+      "work": "Punë",
+      "vacation": "Pushim",
+      "sick": "Sëmurë"
+    },
+    "buttons": {
+      "cancel": "Anulo",
+      "save": "Ruaj",
+      "saving": "Duke ruajtur..."
+    }
+  },
+  "notifications": {
+    "timesheet": {
+      "loadError": "Nuk u ngarkuan regjistrimet",
+      "saveSuccess": "U ruajt",
+      "saveError": "Nuk u ruajt",
+      "deleteSuccess": "U fshi",
+      "deleteError": "Nuk u fshi",
+      "correctionSaveSuccess": "Korrigjimi u ruajt",
+      "correctionSaveError": "Nuk u ruajt korrigjimi",
+      "pdfLoading": "Shkarkimi i PDF filloi...",
+      "pdfError": "PDF nuk u eksportua"
+    },
+    "requests": {
+      "submitSuccess": "Kërkesa u dërgua.",
+      "submitError": "Kërkesa nuk u dërgua."
+    },
+    "admin": {
+      "tempPasswordCreated": "Fjalëkalim i përkohshëm u krijua.",
+      "approveSuccess": "Kërkesa u miratua",
+      "approveError": "Miratimi dështoi",
+      "rejectSuccess": "Kërkesa u refuzua",
+      "rejectError": "Refuzimi dështoi",
+      "updateSuccess": "Kërkesa u përditësua",
+      "updateError": "Përditësimi dështoi",
+      "deleteSuccess": "Kërkesa u fshi",
+      "deleteError": "Fshirja dështoi"
+    }
+  }
+}
+

@@ -3,12 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
  * Forgot Password Page
  * Allows users to request password reset via email (admin) or personal number (employee)
  */
 export default function ForgotPasswordPage() {
+  const t = useTranslations("auth.forgot");
+  const tCommon = useTranslations("common");
   const [identifier, setIdentifier] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -20,7 +23,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     if (!identifier.trim()) {
-      setError("Bitte E-Mail oder Personalnummer eingeben.");
+      setError(t("errors.missingIdentifier"));
       setIsLoading(false);
       return;
     }
@@ -55,14 +58,13 @@ export default function ForgotPasswordPage() {
     return (
       <div>
         <h2 className="text-xl font-semibold text-center mb-6">
-          Anfrage übermittelt
+          {t("successHeading")}
         </h2>
 
         <div className="text-center space-y-4">
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-900">
-              Wenn ein Konto existiert, wurde eine Reset-Anfrage übermittelt.
-              Bitte prüfe dein Postfach bzw. wende dich an das Büro.
+              {t("successBody")}
             </p>
           </div>
 
@@ -72,7 +74,7 @@ export default function ForgotPasswordPage() {
               className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Zurück zur Anmeldung</span>
+              <span>{tCommon("backToLogin")}</span>
             </Link>
           </div>
         </div>
@@ -83,13 +85,13 @@ export default function ForgotPasswordPage() {
   return (
     <div>
       <h2 className="text-xl font-semibold text-center mb-6">
-        Passwort vergessen
+        {t("heading")}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="identifier" className="block text-sm font-medium mb-1.5">
-            E-Mail oder Personalnummer
+            {t("identifierLabel")}
           </label>
           <input
             id="identifier"
@@ -97,12 +99,12 @@ export default function ForgotPasswordPage() {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="max@tetrasan.de oder 01234"
+            placeholder={t("identifierPlaceholder")}
             disabled={isLoading}
             autoComplete="username"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Admins: E-Mail-Adresse eingeben. Mitarbeiter:innen: Personalnummer eingeben.
+            {t("instructions")}
           </p>
         </div>
 
@@ -120,12 +122,12 @@ export default function ForgotPasswordPage() {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Wird gesendet...</span>
+              <span>{t("loading")}</span>
             </>
           ) : (
             <>
               <Mail className="h-4 w-4" />
-              <span>Link anfordern</span>
+              <span>{t("submit")}</span>
             </>
           )}
         </button>
@@ -136,7 +138,7 @@ export default function ForgotPasswordPage() {
             className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Zurück zur Anmeldung</span>
+            <span>{tCommon("backToLogin")}</span>
           </Link>
         </div>
       </form>

@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Calendar, Plus, Loader2, Download } from "lucide-react";
 
 interface LeaveRequest {
@@ -20,6 +21,7 @@ interface LeaveRequest {
  * Allows employees to submit day-off requests
  */
 export default function EmployeeDayOffPage() {
+  const tRequests = useTranslations("notifications.requests");
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -74,12 +76,12 @@ export default function EmployeeDayOffPage() {
 
       const { data } = await response.json();
       setShowForm(false);
-      showToast("Antrag wurde eingereicht.");
+      showToast(tRequests("submitSuccess"));
       // Reload requests to get updated list
       await loadDayOffRequests();
     } catch (error) {
       console.error('Error submitting day-off request:', error);
-      showToast(error instanceof Error ? error.message : 'Fehler beim Einreichen des Antrags.');
+      showToast(error instanceof Error ? error.message : tRequests("submitError"));
     } finally {
       setIsSubmitting(false);
     }
