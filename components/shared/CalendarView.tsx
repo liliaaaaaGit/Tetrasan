@@ -538,6 +538,13 @@ export function CalendarView({
                 const isHoliday = !!holiday;
                 const statusClass = getDayStatusClass(dateStr);
                 const correction = entry?.id ? corrections[entry.id] : undefined;
+                const hasEndTime = !!entry?.to;
+                const showWorkHours =
+                  hasEntry &&
+                  entry?.status === "arbeit" &&
+                  hasEndTime &&
+                  typeof entry?.hours === "number" &&
+                  entry.hours > 0;
 
                 return (
                   <button
@@ -580,7 +587,7 @@ export function CalendarView({
                         {tLegend("holiday")}
                       </span>
                     )}
-                    {hasEntry && entry.status === "arbeit" && entry.hours && (
+                    {showWorkHours && (
                       <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium">
                         {formatHours(entry.hours)}h
                       </span>
