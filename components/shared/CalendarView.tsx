@@ -545,6 +545,7 @@ export function CalendarView({
                   hasEndTime &&
                   typeof entry?.hours === "number" &&
                   entry.hours > 0;
+                const workHoursValue = showWorkHours ? (entry?.hours as number) : null;
 
                 return (
                   <button
@@ -587,9 +588,9 @@ export function CalendarView({
                         {tLegend("holiday")}
                       </span>
                     )}
-                    {showWorkHours && (
+                    {showWorkHours && workHoursValue !== null && (
                       <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium">
-                        {formatHours(entry.hours)}h
+                        {formatHours(workHoursValue)}h
                       </span>
                     )}
                     {isAdmin && correction && (

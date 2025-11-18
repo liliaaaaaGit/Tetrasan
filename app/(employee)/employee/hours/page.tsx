@@ -398,6 +398,7 @@ function HoursPageContent() {
                   hasEndTime &&
                   typeof entry?.hours === "number" &&
                   entry.hours > 0;
+                const workHoursValue = showWorkHours ? (entry?.hours as number) : null;
                 
 
                 return (
@@ -430,8 +431,10 @@ function HoursPageContent() {
                     <div className="flex h-full w-full flex-col items-center justify-between md:hidden py-1">
                       <div className="text-[11px] font-medium text-black self-start pl-1 pt-0.5">{day}</div>
                       {/* Show hours if there's a work entry (holidays with work entries will show hours too) */}
-                      {showWorkHours && (
-                        <div className="text-[11px] font-medium text-muted-foreground">{formatHours(entry.hours)}h</div>
+                      {showWorkHours && workHoursValue !== null && (
+                        <div className="text-[11px] font-medium text-muted-foreground">
+                          {formatHours(workHoursValue)}h
+                        </div>
                       )}
                       {/* No "Feiertag" text in holiday cells - only day number and optional hours */}
                     </div>
@@ -443,9 +446,9 @@ function HoursPageContent() {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                       )}
                       {/* No "Feiertag" text in holiday cells - only show hours if present */}
-                      {showWorkHours && (
+                      {showWorkHours && workHoursValue !== null && (
                         <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-muted-foreground">
-                          {formatHours(entry.hours)}h
+                          {formatHours(workHoursValue)}h
                         </span>
                       )}
                     </div>
