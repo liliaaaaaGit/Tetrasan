@@ -79,8 +79,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           }
         }
       }
-    } else {
-      // Vacation or sick day
+    } else if (status === "krank") {
+      // Sick day: comment required
       if (!kommentar.trim()) {
         newErrors.kommentar = t("errors.commentRequired");
       }
@@ -302,7 +302,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       {status !== "arbeit" && (
         <div>
           <label htmlFor="kommentar" className="block text-sm font-medium mb-1">
-            {t("labels.comment")} *
+            {t("labels.comment")}
+            {status === "krank" && <span className="text-red-500"> *</span>}
           </label>
           <textarea
             id="kommentar"

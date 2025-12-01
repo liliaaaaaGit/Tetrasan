@@ -88,9 +88,10 @@ export async function PUT(
       }
     }
 
-    if ((status === "vacation" || status === "sick") && !trimmedComment) {
+    // For sick days, a comment is required. For vacation, it is optional.
+    if (status === "sick" && !trimmedComment) {
       return NextResponse.json(
-        { error: "Für Urlaub/Krank ist ein Kommentar erforderlich." },
+        { error: "Für Krankmeldungen ist ein Kommentar erforderlich." },
         { status: 400 }
       );
     }
