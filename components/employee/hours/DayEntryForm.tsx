@@ -114,7 +114,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           hours: calculatedHours ?? undefined,
         }),
       }),
-      ...(status !== "arbeit" && {
+      ...(status === "krank" && {
         kommentar,
       }),
     };
@@ -298,12 +298,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         </>
       )}
 
-      {/* Vacation/Sick comment */}
-      {status !== "arbeit" && (
+      {/* Sick comment (vacation has no reason field) */}
+      {status === "krank" && (
         <div>
           <label htmlFor="kommentar" className="block text-sm font-medium mb-1">
-            {t("labels.comment")}
-            {status === "krank" && <span className="text-red-500"> *</span>}
+            {t("labels.comment")} *
           </label>
           <textarea
             id="kommentar"
@@ -317,11 +316,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
               errors.kommentar ? "border-red-500" : "border-border"
             } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
-            placeholder={
-              status === "urlaub"
-                ? t("placeholders.commentVacation")
-                : t("placeholders.commentSick")
-            }
+            placeholder={t("placeholders.commentSick")}
           />
           {errors.kommentar && (
             <p className="text-xs text-red-600 mt-1">{errors.kommentar}</p>
