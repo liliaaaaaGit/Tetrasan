@@ -3,7 +3,7 @@
  * Pure functions for calculating monthly summaries from timesheet entries
  */
 
-import { holidayPaidHours } from "@/lib/date-utils";
+import { holidayPaidHours, isBlockedDay } from "@/lib/date-utils";
 
 export type SummaryInput = {
   year: number;
@@ -116,7 +116,13 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
     } else if (entry.status === "vacation") {
       // Vacation days: always 8h = 480 minutes per entry
       // Each entry represents one vacation day
-      vacationMinutes += 480;
+      // Exclude vacation entries on blocked days (Sundays and weekday holidays)
+      // These should not exist, but add safeguard
+      if (!isBlockedDay(entry.date, holidays)) {
+        vacationMinutes += 480;
+      } else {
+        console.warn(`[computeMonthlySummary] Skipping vacation entry on blocked day: ${entry.date}`);
+      }
     } else if (entry.status === "day_off") {
       // Day-off exemptions (Tagesbefreiung):
       // Use the effective hours so partial-day exemptions contribute proportionally.

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
-import { calculateHours, isSunday } from "@/lib/date-utils";
+import { calculateHours, isSunday, isBlockedDay } from "@/lib/date-utils";
+import { getHolidaysForMonth } from "@/lib/data/holidays";
 
 /**
  * API Routes for Timesheet Entries
@@ -132,12 +133,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Block entries on Sundays - Sundays are always free
-    if (isSunday(date)) {
-      return NextResponse.json(
-        { error: "Sonntage sind immer frei; Einträge sind nicht erlaubt." },
-        { status: 400 }
-      );
+    // Block entries on blocked days (Sundays and weekday holidays)
+    // Fetch holidays for the date's month to check if it's a weekday holiday
+    const dateObj = new Date(date + 'T00:00:00Z');
+    const year = dateObj.getUTCFullYear();
+    const month = dateObj.getUTCMonth();
+    const holidaysArray = await getHolidaysForMonth(year, month);
+    const holidaysSet = new Set(holidaysArray.map(h => h.dateISO));
+    
+    if (isBlockedDay(date, holidaysSet)) {
+      if (isSunday(date)) {
+        return NextResponse.json(
+          { error: "Sonntage sind immer frei; Einträge sind nicht erlaubt." },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: "An Feiertagen können keine Einträge erstellt werden." },
+          { status: 400 }
+        );
+      }
     }
 
     if (status === "work") {

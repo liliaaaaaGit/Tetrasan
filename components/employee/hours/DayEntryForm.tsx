@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { DayEntry, DayStatus } from "./types";
-import { calculateHours, formatHours, isSunday } from "@/lib/date-utils";
+import { calculateHours, formatHours, isSunday, isBlockedDay } from "@/lib/date-utils";
 import { Info } from "lucide-react";
 
 interface DayEntryFormProps {
@@ -45,6 +45,31 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const [vacationEndDate, setVacationEndDate] = useState<string>(
     (initialData?.rangeEnd as string | undefined) || initialData?.date || date
   );
+  
+  // Load holidays for validation
+  const [holidays, setHolidays] = useState<Record<string, any>>({});
+  useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        const dateObj = new Date(date + 'T00:00:00Z');
+        const year = dateObj.getUTCFullYear();
+        const month = dateObj.getUTCMonth();
+        const response = await fetch(`/api/holidays?year=${year}&month=${month}`);
+        if (response.ok) {
+          const result = await response.json();
+          const data = result?.data || [];
+          const holidaysMap: Record<string, any> = {};
+          data.forEach((h: { dateISO: string }) => {
+            holidaysMap[h.dateISO] = h;
+          });
+          setHolidays(holidaysMap);
+        }
+      } catch (error) {
+        console.error('Error loading holidays:', error);
+      }
+    };
+    loadHolidays();
+  }, [date]);
 
   // Normalize time strings (handle HH:MM:SS format from HTML time inputs)
   const normalizeTime = (time: string): string => {
@@ -76,9 +101,14 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Block entries on Sundays - Sundays are always free
-    if (isSunday(date)) {
-      newErrors.date = "Sonntage sind immer frei; Einträge sind nicht erlaubt.";
+    // Block entries on blocked days (Sundays and weekday holidays)
+    const holidaysSet = new Set(Object.keys(holidays));
+    if (isBlockedDay(date, holidaysSet)) {
+      if (isSunday(date)) {
+        newErrors.date = "Sonntage sind immer frei; Einträge sind nicht erlaubt.";
+      } else {
+        newErrors.date = "An Feiertagen können keine Einträge erstellt werden.";
+      }
       setErrors(newErrors);
       return false;
     }
@@ -119,20 +149,21 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         if (start > end) {
           newErrors.vacationDateRange = t("errors.dateRangeInvalid");
         }
-        // Check if range contains at least one non-Sunday day
+        // Check if range contains at least one non-blocked day (excluding Sundays and weekday holidays)
+        const holidaysSet = new Set(Object.keys(holidays));
         let hasValidDay = false;
         for (let d = new Date(start.getTime()); d <= end; d.setDate(d.getDate() + 1)) {
           const year = d.getFullYear();
           const month = String(d.getMonth() + 1).padStart(2, "0");
           const day = String(d.getDate()).padStart(2, "0");
           const dateStr = `${year}-${month}-${day}`;
-          if (!isSunday(dateStr)) {
+          if (!isBlockedDay(dateStr, holidaysSet)) {
             hasValidDay = true;
             break;
           }
         }
         if (!hasValidDay) {
-          newErrors.vacationDateRange = "Keine gültigen Tage im Zeitraum. Sonntage sind immer frei und können nicht als Urlaub markiert werden.";
+          newErrors.vacationDateRange = "Keine gültigen Tage im Zeitraum. Sonntage und Feiertage sind immer frei und können nicht als Urlaub markiert werden.";
         }
       }
     } else if (status === "krank") {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession, requireRole } from "@/lib/auth/session";
 import { createTimesheetEntriesFromLeaveRequest, generateDateRange } from "./[id]/approve/route";
-import { isSunday } from "@/lib/date-utils";
+import { getHolidaysForMonth } from "@/lib/data/holidays";
 
 /**
  * API Routes for Leave Requests
@@ -106,12 +106,23 @@ export async function POST(request: NextRequest) {
       isAdminCreated = true;
     }
 
-    // Validate that the date range contains at least one non-Sunday day
-    // Generate dates excluding Sundays to check if any valid days exist
-    const validDates = generateDateRange(period_start, period_end);
+    // Validate that the date range contains at least one non-blocked day
+    // Fetch holidays for the period to exclude weekday holidays
+    const startDateObj = new Date(period_start + 'T00:00:00Z');
+    const endDateObj = new Date(period_end + 'T00:00:00Z');
+    const holidaysArray = await getHolidaysForMonth(startDateObj.getUTCFullYear(), startDateObj.getUTCMonth());
+    // Also fetch holidays for the end month if different
+    if (endDateObj.getUTCMonth() !== startDateObj.getUTCMonth() || endDateObj.getUTCFullYear() !== startDateObj.getUTCFullYear()) {
+      const endMonthHolidays = await getHolidaysForMonth(endDateObj.getUTCFullYear(), endDateObj.getUTCMonth());
+      holidaysArray.push(...endMonthHolidays);
+    }
+    const holidaysSet = new Set(holidaysArray.map(h => h.dateISO));
+    
+    // Generate dates excluding blocked days (Sundays and weekday holidays) to check if any valid days exist
+    const validDates = generateDateRange(period_start, period_end, holidaysSet);
     if (validDates.length === 0) {
       return NextResponse.json(
-        { error: "Keine gültigen Tage im Zeitraum. Sonntage sind immer frei und können nicht als Urlaub oder Tagesbefreiung markiert werden." },
+        { error: "Keine gültigen Tage im Zeitraum. Sonntage und Feiertage sind immer frei und können nicht als Urlaub oder Tagesbefreiung markiert werden." },
         { status: 400 }
       );
     }

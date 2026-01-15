@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/session";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { calculateHours, isSunday } from "@/lib/date-utils";
+import { calculateHours, isSunday, isBlockedDay } from "@/lib/date-utils";
+import { getHolidaysForMonth } from "@/lib/data/holidays";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -10,11 +11,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 
 /**
- * Helper function to generate all dates in a range (inclusive), excluding Sundays
+ * Helper function to generate all dates in a range (inclusive), excluding blocked days (Sundays and weekday holidays)
  * Handles date strings in YYYY-MM-DD format, avoiding timezone issues
- * Sundays are excluded because they are always free and cannot be vacation/day-off
+ * Blocked days are excluded because they cannot be vacation/day-off
+ * @param startDate - Start date (YYYY-MM-DD)
+ * @param endDate - End date (YYYY-MM-DD)
+ * @param holidays - Optional Set/Map/Record of holiday dates. If provided, weekday holidays are also excluded.
  */
-export function generateDateRange(startDate: string, endDate: string): string[] {
+export function generateDateRange(
+  startDate: string, 
+  endDate: string, 
+  holidays?: Set<string> | Record<string, any> | Map<string, any>
+): string[] {
   const dates: string[] = [];
   
   // Parse dates as UTC to avoid timezone shifts
@@ -33,7 +41,7 @@ export function generateDateRange(startDate: string, endDate: string): string[] 
     return [];
   }
   
-  // Generate all dates in the range (inclusive), excluding Sundays
+  // Generate all dates in the range (inclusive), excluding blocked days
   const current = new Date(start);
   while (current <= end) {
     // Format as YYYY-MM-DD in UTC
@@ -42,9 +50,16 @@ export function generateDateRange(startDate: string, endDate: string): string[] 
     const day = String(current.getUTCDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
     
-    // Skip Sundays - Sundays are always free and cannot be vacation
-    if (!isSunday(dateStr)) {
-      dates.push(dateStr);
+    // Skip blocked days (Sundays and weekday holidays)
+    if (holidays) {
+      if (!isBlockedDay(dateStr, holidays)) {
+        dates.push(dateStr);
+      }
+    } else {
+      // If no holidays provided, only skip Sundays
+      if (!isSunday(dateStr)) {
+        dates.push(dateStr);
+      }
     }
     
     // Move to next day in UTC
@@ -118,12 +133,23 @@ export async function createTimesheetEntriesFromLeaveRequest(
   const partialDayOffTimes =
     timesheetStatus === "day_off" ? extractDayOffTimesFromComment(comment) : null;
   
-  // Generate all dates in the period (excluding Sundays)
-  const dates = generateDateRange(period_start, period_end);
+  // Fetch holidays for the period to exclude weekday holidays
+  const startDateObj = new Date(period_start + 'T00:00:00Z');
+  const endDateObj = new Date(period_end + 'T00:00:00Z');
+  const holidaysArray = await getHolidaysForMonth(startDateObj.getUTCFullYear(), startDateObj.getUTCMonth());
+  // Also fetch holidays for the end month if different
+  if (endDateObj.getUTCMonth() !== startDateObj.getUTCMonth() || endDateObj.getUTCFullYear() !== startDateObj.getUTCFullYear()) {
+    const endMonthHolidays = await getHolidaysForMonth(endDateObj.getUTCFullYear(), endDateObj.getUTCMonth());
+    holidaysArray.push(...endMonthHolidays);
+  }
+  const holidaysSet = new Set(holidaysArray.map(h => h.dateISO));
+  
+  // Generate all dates in the period (excluding blocked days: Sundays and weekday holidays)
+  const dates = generateDateRange(period_start, period_end, holidaysSet);
   
   if (dates.length === 0) {
-    // If all days in range are Sundays, reject the request
-    throw new Error("Keine gültigen Tage im Zeitraum. Sonntage sind immer frei und können nicht als Urlaub oder Tagesbefreiung markiert werden.");
+    // If all days in range are blocked, reject the request
+    throw new Error("Keine gültigen Tage im Zeitraum. Sonntage und Feiertage sind immer frei und können nicht als Urlaub oder Tagesbefreiung markiert werden.");
   }
   
   const timestamp = new Date().toISOString();

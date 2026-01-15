@@ -231,6 +231,45 @@ export function isHoliday(
 }
 
 /**
+ * Check if a date is a weekday holiday (holiday on Mon-Fri)
+ * @param date - Date string (YYYY-MM-DD) or Date object
+ * @param holidays - Set/Map/Record of holiday dates
+ * @returns true if the date is a holiday on a weekday (Mon-Fri)
+ */
+export function isWeekdayHoliday(
+  date: string | Date,
+  holidays: Set<string> | Record<string, any> | Map<string, any>
+): boolean {
+  if (!isHoliday(date, holidays)) {
+    return false;
+  }
+  
+  const dayOfWeek = getDayOfWeek(date);
+  // Monday (1) through Friday (5) are weekdays
+  return dayOfWeek >= 1 && dayOfWeek <= 5;
+}
+
+/**
+ * Check if a date is a blocked day (Sunday or weekday holiday)
+ * Blocked days cannot have any entries created (Arbeit, Urlaub, Krank, Tagesbefreiung)
+ * @param date - Date string (YYYY-MM-DD) or Date object
+ * @param holidays - Set/Map/Record of holiday dates
+ * @returns true if the date is blocked (Sunday or weekday holiday)
+ */
+export function isBlockedDay(
+  date: string | Date,
+  holidays: Set<string> | Record<string, any> | Map<string, any>
+): boolean {
+  // Sunday is always blocked
+  if (isSunday(date)) {
+    return true;
+  }
+  
+  // Weekday holidays are also blocked
+  return isWeekdayHoliday(date, holidays);
+}
+
+/**
  * Calculate paid hours for a holiday based on business rules:
  * - Mon-Fri holiday: 8h paid
  * - Saturday holiday: 0h paid
