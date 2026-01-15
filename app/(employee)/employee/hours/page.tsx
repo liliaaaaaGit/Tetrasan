@@ -564,26 +564,19 @@ function HoursPageContent() {
                       "aspect-square rounded-lg border-2 transition-all relative",
                       // Sunday: always disabled, grayed out, no hover
                       isSundayDate && "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60",
-                      // Weekday holiday: disabled but keep holiday styling (blue/purple)
+                      // Holiday styling: ALWAYS show blue/purple for holidays (takes priority over all entries)
+                      !isSundayDate && isHoliday && "!border-brand bg-holiday-fill",
+                      // Weekday holiday: also disabled (non-clickable)
                       isWeekdayHoliday && "cursor-not-allowed",
-                      isWeekdayHoliday && !hasEntry && "!border-brand bg-holiday-fill",
-                      isWeekdayHoliday && hasEntry && "!border-brand bg-holiday-fill/40",
-                      // Non-blocked: normal interactions
-                      !isBlocked && "hover:border-brand hover:shadow-sm",
-                      !isBlocked && "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
-                      // Entry styling first (if there's an entry and not Sunday)
-                      // Note: Entries should not exist on blocked days, but handle gracefully
-                      !isSundayDate && hasEntry && statusClass,
-                      // Holiday border: ALWAYS show blue border if it's a holiday (overrides entry border, but not Sunday)
-                      !isSundayDate && isHoliday && "!border-brand",
-                      // Holiday fill: show blue fill if holiday and no entry (more saturated blue)
-                      !isSundayDate && !isWeekdayHoliday && isHoliday && !hasEntry && "bg-holiday-fill",
-                      // Holiday with entry: show subtle blue tint on top of entry color
-                      !isSundayDate && !isWeekdayHoliday && isHoliday && hasEntry && "bg-holiday-fill/40",
+                      // Entry styling (only if NOT a holiday and not Sunday)
+                      !isSundayDate && !isHoliday && hasEntry && statusClass,
+                      // Non-blocked: normal interactions (only if not a holiday)
+                      !isBlocked && !isHoliday && "hover:border-brand hover:shadow-sm",
+                      !isBlocked && !isHoliday && "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
                       // Today styling (if not a holiday and no entry and not Sunday)
-                      !isSundayDate && isTodayDate && !hasEntry && !isHoliday && "border-brand bg-brand/5 font-bold",
-                      // Today + holiday: apply holiday fill
-                      !isSundayDate && isTodayDate && isHoliday && !hasEntry && "bg-holiday-fill font-bold",
+                      !isSundayDate && !isHoliday && isTodayDate && !hasEntry && "border-brand bg-brand/5 font-bold",
+                      // Today + holiday: apply holiday fill (already handled above, but ensure font-bold)
+                      !isSundayDate && isTodayDate && isHoliday && "font-bold",
                       // Empty day (no entry, no holiday, not today, not Sunday)
                       !isSundayDate && !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
                     )}
