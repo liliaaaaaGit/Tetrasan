@@ -377,9 +377,13 @@ export async function GET(request: NextRequest) {
         styles.cell, // Base cell style (padding, borders, font) - NO backgroundColor
       ];
       
-      // Add column-specific styles (width, textAlign) but EXCLUDE backgroundColor
+      // Add column-specific styles (width, textAlign) - keep backgroundColor separate
       if (cellStyle) {
-        const { backgroundColor: _, ...cellStyleWithoutBg } = cellStyle;
+        const { backgroundColor: bgColor, ...cellStyleWithoutBg } = cellStyle;
+        // If backgroundColor was extracted, use it (will be added last)
+        if (bgColor && !backgroundColor) {
+          backgroundColor = bgColor;
+        }
         if (Object.keys(cellStyleWithoutBg).length > 0) {
           baseStyle.push(cellStyleWithoutBg);
         }
@@ -475,11 +479,11 @@ export async function GET(request: NextRequest) {
             
             // Normalize dateISO to ensure consistent format (YYYY-MM-DD)
             const normalizedDate = d.dateISO.split('T')[0];
-            const isHolidayDate = isHoliday(normalizedDate, holidaysSet);
+            // DIRECT check - bypass isHoliday function to avoid any issues
+            const isHolidayDate = holidaysSet.has(normalizedDate);
             const isSundayDate = isSunday(normalizedDate);
             const dayOfWeek = getDayOfWeek(normalizedDate);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
-            const isWeekdayDate = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday = 1-5
             
             // Determine background color for "Tag" cell with EXACT priority rules:
             // 1. If Sunday → BLUE (even if holiday)
@@ -490,32 +494,26 @@ export async function GET(request: NextRequest) {
             
             if (isSundayDate) {
               // Rule 1: Sunday → BLUE (even if holiday)
-              backgroundColor = '#BFE3F2'; // Explicit blue hex
+              backgroundColor = '#BFE3F2';
             } else if (isHolidayDate) {
               // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
-              backgroundColor = '#F7B6C2'; // Explicit pink hex
+              backgroundColor = '#F7B6C2';
             } else if (isSaturdayDate) {
               // Rule 3: Saturday (non-holiday) → BLUE
-              backgroundColor = '#BFE3F2'; // Explicit blue hex
+              backgroundColor = '#BFE3F2';
             }
-            // Rule 4: Otherwise → default (no background color)
             
-            // Debug: Print row info for ALL days to see what's happening
             const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
-            console.log(`[PDF] row day=${dayNumber} date=${normalizedDate} isHoliday=${isHolidayDate} isSaturday=${isSaturdayDate} isSunday=${isSundayDate} chosenBg=${backgroundColor || 'undefined'} holidaysSet.has=${holidaysSet.has(normalizedDate)}`);
             
-            // Build tag cell style with explicit backgroundColor
+            // Build tag cell style - ALWAYS include backgroundColor if set
             const tagCellBaseStyle: any = { 
               width: columnDefs[0].width, 
               textAlign: columnDefs[0].textAlign,
             };
             
-            // Apply backgroundColor if determined - ALWAYS set it explicitly
+            // CRITICAL: Set backgroundColor directly on the style object
             if (backgroundColor) {
               tagCellBaseStyle.backgroundColor = backgroundColor;
-              console.log(`[PDF] ✓ Setting ${backgroundColor === '#F7B6C2' ? 'PINK' : 'BLUE'} background for ${normalizedDate} (day ${dayNumber})`);
-            } else {
-              console.log(`[PDF] ✗ NO background color for ${normalizedDate} (day ${dayNumber})`);
             }
             
             // Visual debug marker for holidays (dev only - remove after verification)
