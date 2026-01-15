@@ -272,6 +272,7 @@ export async function GET(request: NextRequest) {
       sickMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.sickHours * 60, 0)),
       vacationMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.vacationHours * 60, 0)),
       holidayMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + (d.isHolidayWork ? d.workHours * 60 : 0), 0)),
+      dayOffMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.dayOffHours * 60, 0)),
     };
 
     // Generate PDF via @react-pdf/renderer (avoids font file issues)
@@ -446,6 +447,7 @@ export async function GET(request: NextRequest) {
         React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Krank:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.sickMinutes || 0))),
         React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Urlaub:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.vacationMinutes || 0))),
         React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Feiertag:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.holidayMinutes || 0))),
+        React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Tagesbefreiung:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.dayOffMinutes || 0))),
         React.createElement(View, { style: { marginTop: 12 } }, React.createElement(Text, null, `Freigegeben durch Admin: ____________________   Datum: ${new Date().toLocaleDateString('de-DE')}`))
       )
     );
