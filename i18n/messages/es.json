@@ -219,7 +219,11 @@
       "hoursCalculated": "Horas (calculadas)"
     },
     "helpText": {
-      "startOnly": "Puedes guardar primero la hora de inicio. El proyecto y el informe solo son necesarios cuando registras la hora de fin."
+      "startOnly": "Puedes guardar primero la hora de inicio. El proyecto y el informe solo son necesarios cuando registras la hora de fin.",
+      "dayOff": "Opcional: introduce un rango horario (p. ej. 08:00–12:30) para una exención parcial. Si lo dejas vacío, cuenta como día completo."
+    },
+    "preview": {
+      "dayOffDuration": "Duración (exención)"
     },
     "errors": {
       "fromRequired": "Introduce la hora de inicio.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Trabajo",
       "vacation": "Vacaciones",
-      "sick": "Baja"
+      "sick": "Baja",
+      "dayOff": "Exención"
     },
     "buttons": {
       "cancel": "Cancelar",

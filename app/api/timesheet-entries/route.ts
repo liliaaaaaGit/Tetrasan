@@ -109,7 +109,8 @@ export async function POST(request: NextRequest) {
     const breakMinutesRaw =
       typeof break_minutes === "number" ? break_minutes : Number(break_minutes ?? 0);
     const breakMinutesValue = Number.isFinite(breakMinutesRaw) ? breakMinutesRaw : 0;
-    const hasEndTime = status === "work" && normalizedTo !== "";
+    const hasEndTime =
+      (status === "work" || status === "day_off") && normalizedTo !== "";
 
     // Determine target employee (admins can create entries for others)
     let targetEmployeeId = session.user.id;
@@ -159,6 +160,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (status === "day_off") {
+      // Day-off exemption (Tagesbefreiung):
+      // - Full-day allowed: no end time
+      // - Partial-day allowed: time range (no break)
+      if (hasEndTime) {
+        const hoursResult = calculateHours(normalizedFrom, normalizedTo, 0);
+        if (hoursResult === null) {
+          return NextResponse.json(
+            { error: "End time must be after start time." },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     if (status === "sick" && !trimmedComment) {
       return NextResponse.json(
         { error: "Für Krank-Tage ist ein Kommentar erforderlich." },
@@ -168,7 +184,11 @@ export async function POST(request: NextRequest) {
 
     let computedHours = 0;
     if (status === "work" && hasEndTime) {
-      const hoursResult = calculateHours(normalizedFrom, normalizedTo, breakMinutesValue);
+      const hoursResult = calculateHours(
+        normalizedFrom,
+        normalizedTo,
+        breakMinutesValue
+      );
       if (hoursResult === null) {
         return NextResponse.json(
           { error: "End time must be after start time." },
@@ -178,12 +198,23 @@ export async function POST(request: NextRequest) {
       computedHours = hoursResult;
     }
 
-    // Upsert behaviour: update existing entry if present
+    if (status === "day_off") {
+      if (hasEndTime) {
+        computedHours = calculateHours(normalizedFrom, normalizedTo, 0) ?? 0;
+      } else {
+        // Full-day exemption: show as 8h in summaries
+        computedHours = 8;
+      }
+    }
+
+    // Upsert behaviour: update existing entry if present.
+    // IMPORTANT: include status so "day_off" can coexist with "work" on the same date.
     const { data: existingEntry, error: checkError } = await supabase
       .from("timesheet_entries")
       .select("id")
       .eq("employee_id", targetEmployeeId)
       .eq("date", date)
+      .eq("status", status)
       .maybeSingle();
 
     if (checkError) {
@@ -209,6 +240,19 @@ export async function POST(request: NextRequest) {
       updated_at: timestamp,
     };
 
+    const dayOffUpdatePayload = {
+      date,
+      status,
+      time_from: hasEndTime ? normalizedFrom : "00:00",
+      time_to: hasEndTime ? normalizedTo : "00:01",
+      break_minutes: 0,
+      hours_decimal: computedHours,
+      activity_note: null,
+      comment: null,
+      project_name: null,
+      updated_at: timestamp,
+    };
+
     const nonWorkUpdatePayload = {
       date,
       status,
@@ -228,7 +272,13 @@ export async function POST(request: NextRequest) {
     if (existingEntry) {
       const { data: updatedData, error: updateError } = await supabase
         .from("timesheet_entries")
-        .update(status === "work" ? workUpdatePayload : nonWorkUpdatePayload)
+        .update(
+          status === "work"
+            ? workUpdatePayload
+            : status === "day_off"
+              ? dayOffUpdatePayload
+              : nonWorkUpdatePayload
+        )
         .eq("id", existingEntry.id)
         .eq("employee_id", targetEmployeeId)
         .select()
@@ -243,6 +293,11 @@ export async function POST(request: NextRequest) {
               employee_id: targetEmployeeId,
               ...workUpdatePayload,
             }
+          : status === "day_off"
+            ? {
+                employee_id: targetEmployeeId,
+                ...dayOffUpdatePayload,
+              }
           : {
               employee_id: targetEmployeeId,
               ...nonWorkUpdatePayload,

@@ -219,7 +219,11 @@
       "hoursCalculated": "Ore (calculate)"
     },
     "helpText": {
-      "startOnly": "Poți salva mai întâi ora de început. Proiectul și raportul sunt necesare doar când introduci ora de final."
+      "startOnly": "Poți salva mai întâi ora de început. Proiectul și raportul sunt necesare doar când introduci ora de final.",
+      "dayOff": "Opțional: introdu un interval (ex. 08:00–12:30) pentru o zi liberă parțială. Dacă îl lași gol, se consideră zi întreagă."
+    },
+    "preview": {
+      "dayOffDuration": "Durată (zi liberă)"
     },
     "errors": {
       "fromRequired": "Introdu ora de început.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Lucru",
       "vacation": "Concediu",
-      "sick": "Boală"
+      "sick": "Boală",
+      "dayOff": "Zi liberă"
     },
     "buttons": {
       "cancel": "Anulează",

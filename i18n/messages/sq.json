@@ -219,7 +219,11 @@
       "hoursCalculated": "Orë (llogaritur)"
     },
     "helpText": {
-      "startOnly": "Mund të ruash fillimin së pari. Projekti dhe raporti duhen vetëm kur shënon orën e përfundimit."
+      "startOnly": "Mund të ruash fillimin së pari. Projekti dhe raporti duhen vetëm kur shënon orën e përfundimit.",
+      "dayOff": "Opsionale: shkruaj një interval (p.sh. 08:00–12:30) për një ditë të lirë pjesërisht. Nëse e lë bosh, llogaritet si ditë e plotë."
+    },
+    "preview": {
+      "dayOffDuration": "Kohëzgjatja (ditë e lirë)"
     },
     "errors": {
       "fromRequired": "Shkruaj orën e fillimit.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Punë",
       "vacation": "Pushim",
-      "sick": "Sëmurë"
+      "sick": "Sëmurë",
+      "dayOff": "Ditë e lirë"
     },
     "buttons": {
       "cancel": "Anulo",

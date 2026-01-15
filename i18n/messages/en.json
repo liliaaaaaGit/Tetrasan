@@ -219,7 +219,11 @@
       "hoursCalculated": "Hours (calculated)"
     },
     "helpText": {
-      "startOnly": "You can save your start time first. Project and report are only required when you enter your end time."
+      "startOnly": "You can save your start time first. Project and report are only required when you enter your end time.",
+      "dayOff": "Optional: enter a time range (e.g. 08:00–12:30) for a partial day-off. If you leave it empty, it counts as a full day."
+    },
+    "preview": {
+      "dayOffDuration": "Duration (day-off)"
     },
     "errors": {
       "fromRequired": "Start time is required.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Work",
       "vacation": "Vacation",
-      "sick": "Sick"
+      "sick": "Sick",
+      "dayOff": "Day-off"
     },
     "buttons": {
       "cancel": "Cancel",

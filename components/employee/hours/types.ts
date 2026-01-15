@@ -2,7 +2,7 @@
  * Types for employee hours tracking
  */
 
-export type DayStatus = "arbeit" | "urlaub" | "krank";
+export type DayStatus = "arbeit" | "urlaub" | "krank" | "tagesbefreiung";
 
 export interface DayEntry {
   id?: string; // Database ID

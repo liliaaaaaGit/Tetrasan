@@ -219,7 +219,11 @@
       "hoursCalculated": "Horas (calculadas)"
     },
     "helpText": {
-      "startOnly": "Podes guardar primeiro a hora de início. O projeto e o relatório só são necessários quando registas a hora de fim."
+      "startOnly": "Podes guardar primeiro a hora de início. O projeto e o relatório só são necessários quando registas a hora de fim.",
+      "dayOff": "Opcional: indica um intervalo (ex. 08:00–12:30) para uma dispensa parcial. Se deixares vazio, conta como dia completo."
+    },
+    "preview": {
+      "dayOffDuration": "Duração (dispensa)"
     },
     "errors": {
       "fromRequired": "Introduz a hora de início.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Trabalho",
       "vacation": "Férias",
-      "sick": "Doença"
+      "sick": "Doença",
+      "dayOff": "Dispensa"
     },
     "buttons": {
       "cancel": "Cancelar",

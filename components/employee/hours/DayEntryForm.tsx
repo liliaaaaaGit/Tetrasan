@@ -49,8 +49,12 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
 
   // Calculate hours preview - use calculateHours as single source of truth
   const calculatedHours =
-    status === "arbeit" && hasEndTime
-      ? calculateHours(normalizedFrom, normalizedTo, pauseMinutes)
+    (status === "arbeit" || status === "tagesbefreiung") && hasEndTime
+      ? calculateHours(
+          normalizedFrom,
+          normalizedTo,
+          status === "arbeit" ? pauseMinutes : 0
+        )
       : null;
 
   // Validate form
@@ -84,6 +88,22 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       if (!kommentar.trim()) {
         newErrors.kommentar = t("errors.commentRequired");
       }
+    } else if (status === "tagesbefreiung") {
+      // Day-off exemption:
+      // - full-day allowed (no end time)
+      // - partial-day allowed (time range)
+      if (hasEndTime) {
+        if (!normalizedFrom) {
+          newErrors.from = t("errors.fromRequired");
+        }
+
+        if (normalizedFrom) {
+          const hours = calculateHours(normalizedFrom, normalizedTo, 0);
+          if (hours === null) {
+            newErrors.to = t("errors.endAfterStart");
+          }
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -96,7 +116,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
     if (!validate()) return;
 
     // For work entries, calculatedHours must be a valid number (not null)
-    if (status === "arbeit" && hasEndTime && calculatedHours === null) {
+    if (
+      (status === "arbeit" || status === "tagesbefreiung") &&
+      hasEndTime &&
+      calculatedHours === null
+    ) {
       setErrors((prev) => ({ ...prev, to: t("errors.endAfterStart") }));
       return;
     }
@@ -109,6 +133,13 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         pause: pauseMinutes,
         bauvorhaben: trimmedBauvorhaben,
         taetigkeit: trimmedTaetigkeit,
+        ...(hasEndTime && {
+          to: normalizedTo,
+          hours: calculatedHours ?? undefined,
+        }),
+      }),
+      ...(status === "tagesbefreiung" && {
+        from: normalizedFrom,
         ...(hasEndTime && {
           to: normalizedTo,
           hours: calculatedHours ?? undefined,
@@ -127,8 +158,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       {/* Status Selection */}
       <div>
         <label className="block text-sm font-medium mb-3">{t("status")}</label>
-        <div className="grid grid-cols-3 gap-2">
-          {(["arbeit", "urlaub", "krank"] as DayStatus[]).map((s) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {(["arbeit", "urlaub", "krank", "tagesbefreiung"] as DayStatus[]).map((s) => (
             <button
               key={s}
               type="button"
@@ -147,7 +178,9 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                 ? t("statusOptions.work")
                 : s === "urlaub"
                   ? t("statusOptions.vacation")
-                  : t("statusOptions.sick")}
+                  : s === "krank"
+                    ? t("statusOptions.sick")
+                    : t("statusOptions.dayOff")}
             </button>
           ))}
         </div>
@@ -295,6 +328,72 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               <p className="text-xs text-red-600 mt-1">{errors.taetigkeit}</p>
             )}
           </div>
+        </>
+      )}
+
+      {/* Day-off exemption fields */}
+      {status === "tagesbefreiung" && (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1 sm:max-w-[150px]">
+              <label htmlFor="from" className="block text-sm font-medium mb-1">
+                {t("labels.from")}
+              </label>
+              <input
+                id="from"
+                type="time"
+                value={from}
+                onChange={(e) => {
+                  setFrom(e.target.value);
+                  setErrors((prev) => ({ ...prev, from: "", to: "" }));
+                }}
+                disabled={isAdmin}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.from ? "border-red-500" : "border-border"
+                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              />
+              {errors.from && (
+                <p className="text-xs text-red-600 mt-1">{errors.from}</p>
+              )}
+            </div>
+
+            <div className="flex-1 sm:max-w-[150px]">
+              <label htmlFor="to" className="block text-sm font-medium mb-1">
+                {t("labels.to")}
+              </label>
+              <input
+                id="to"
+                type="time"
+                value={to}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTo(value);
+                  setErrors((prev) => (!value ? { ...prev, to: "" } : { ...prev, to: "" }));
+                }}
+                disabled={isAdmin}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.to ? "border-red-500" : "border-border"
+                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              />
+              {errors.to && (
+                <p className="text-xs text-red-600 mt-1">{errors.to}</p>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("helpText.dayOff")}</p>
+
+          {hasEndTime && calculatedHours !== null && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    {t("preview.dayOffDuration")}: {formatHours(calculatedHours)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 

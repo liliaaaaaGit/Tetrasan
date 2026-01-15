@@ -219,7 +219,11 @@
       "hoursCalculated": "Ore (calcolate)"
     },
     "helpText": {
-      "startOnly": "Puoi salvare per prima l'ora di inizio. Progetto e resoconto servono solo quando inserisci l'ora di fine."
+      "startOnly": "Puoi salvare per prima l'ora di inizio. Progetto e resoconto servono solo quando inserisci l'ora di fine.",
+      "dayOff": "Facoltativo: inserisci un intervallo (es. 08:00–12:30) per una dispensa parziale. Se lo lasci vuoto, vale come giornata intera."
+    },
+    "preview": {
+      "dayOffDuration": "Durata (dispensa)"
     },
     "errors": {
       "fromRequired": "Inserisci l'orario di inizio.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Lavoro",
       "vacation": "Ferie",
-      "sick": "Malattia"
+      "sick": "Malattia",
+      "dayOff": "Dispensa"
     },
     "buttons": {
       "cancel": "Annulla",

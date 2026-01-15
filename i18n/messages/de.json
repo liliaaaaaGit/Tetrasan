@@ -219,7 +219,11 @@
       "hoursCalculated": "Stunden (berechnet)"
     },
     "helpText": {
-      "startOnly": "Du kannst zuerst die Startzeit speichern. Bauvorhaben und Bericht werden erst beim Eintragen der Endzeit benötigt."
+      "startOnly": "Du kannst zuerst die Startzeit speichern. Bauvorhaben und Bericht werden erst beim Eintragen der Endzeit benötigt.",
+      "dayOff": "Optional: Trage eine Zeitspanne ein (z. B. 08:00–12:30) für eine teilweise Tagesbefreiung. Wenn du keine Zeit einträgst, gilt sie als ganzer Tag."
+    },
+    "preview": {
+      "dayOffDuration": "Dauer (Tagesbefreiung)"
     },
     "errors": {
       "fromRequired": "Bitte Startzeit eingeben.",
@@ -232,7 +236,8 @@
     "statusOptions": {
       "work": "Arbeit",
       "vacation": "Urlaub",
-      "sick": "Krank"
+      "sick": "Krank",
+      "dayOff": "Tagesbefreiung"
     },
     "buttons": {
       "cancel": "Abbrechen",

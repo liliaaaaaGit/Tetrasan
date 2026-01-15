@@ -51,7 +51,8 @@ export async function PUT(
     const breakMinutesRaw =
       typeof break_minutes === "number" ? break_minutes : Number(break_minutes ?? 0);
     const breakMinutesValue = Number.isFinite(breakMinutesRaw) ? breakMinutesRaw : 0;
-    const hasEndTime = status === "work" && normalizedTo !== "";
+    const hasEndTime =
+      (status === "work" || status === "day_off") && normalizedTo !== "";
 
     if (!date || !status) {
       return NextResponse.json(
@@ -88,6 +89,21 @@ export async function PUT(
       }
     }
 
+    if (status === "day_off") {
+      // Day-off exemption:
+      // - full-day allowed (no end time)
+      // - partial-day allowed (time range, no break)
+      if (hasEndTime) {
+        const hoursResult = calculateHours(normalizedFrom, normalizedTo, 0);
+        if (hoursResult === null) {
+          return NextResponse.json(
+            { error: "End time must be after start time." },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     if (status === "sick" && !trimmedComment) {
       return NextResponse.json(
         { error: "Für Krank-Tage ist ein Kommentar erforderlich." },
@@ -107,6 +123,14 @@ export async function PUT(
       computedHours = hoursResult;
     }
 
+    if (status === "day_off") {
+      if (hasEndTime) {
+        computedHours = calculateHours(normalizedFrom, normalizedTo, 0) ?? 0;
+      } else {
+        computedHours = 8;
+      }
+    }
+
     const timestamp = new Date().toISOString();
 
     const payload =
@@ -123,6 +147,19 @@ export async function PUT(
             project_name: hasEndTime && trimmedProjectName ? trimmedProjectName : null,
             updated_at: timestamp,
           }
+        : status === "day_off"
+          ? {
+              date,
+              status,
+              time_from: hasEndTime ? normalizedFrom : "00:00",
+              time_to: hasEndTime ? normalizedTo : "00:01",
+              break_minutes: 0,
+              hours_decimal: computedHours,
+              activity_note: null,
+              comment: null,
+              project_name: null,
+              updated_at: timestamp,
+            }
         : {
             date,
             status,
