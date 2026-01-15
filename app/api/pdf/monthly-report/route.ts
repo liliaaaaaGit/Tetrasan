@@ -160,18 +160,34 @@ export async function GET(request: NextRequest) {
     const { data: holidays, error: holidaysError } = await admin
       .from("holidays")
       .select("holiday_date, name")
+      .eq("country", "DE")
       .gte("holiday_date", firstDay.toISOString().split("T")[0])
       .lte("holiday_date", lastDay.toISOString().split("T")[0]);
 
     const holidaysMap: Record<string, string> = {};
     if (!holidaysError && holidays) {
       holidays.forEach((h) => {
-        holidaysMap[h.holiday_date] = h.name;
+        // Normalize holiday_date to YYYY-MM-DD format (handle date objects or strings)
+        let dateISO: string;
+        if (typeof h.holiday_date === 'string') {
+          dateISO = h.holiday_date.split('T')[0]; // Remove time if present
+        } else if (h.holiday_date instanceof Date) {
+          dateISO = h.holiday_date.toISOString().split('T')[0];
+        } else {
+          // Fallback: try to parse as date string
+          dateISO = new Date(h.holiday_date).toISOString().split('T')[0];
+        }
+        holidaysMap[dateISO] = h.name;
       });
     }
 
     // Build effective per-day entries (merge corrections)
     const holidaysSet = new Set(Object.keys(holidaysMap));
+    
+    // Debug: Log holidays for verification (dev only)
+    if (holidaysSet.size > 0) {
+      console.log(`[PDF] Loaded ${holidaysSet.size} holidays for ${year}-${month}:`, Array.from(holidaysSet));
+    }
     const daysInMonth = lastDay.getDate();
     const pad2 = (n: number) => String(n).padStart(2, '0');
     type EffectiveEntry = {
@@ -406,26 +422,34 @@ export async function GET(request: NextRequest) {
           ),
           ...effectiveEntries.map((d) => {
             // Determine Tag column background color with explicit priority rules:
-            // 1. Saturday + Holiday → PINK
-            // 2. Sunday + Holiday → BLUE (Sunday always looks like weekend, even if holiday)
+            // 1. Sunday + Holiday → BLUE (Sunday always looks like weekend, even if holiday)
+            // 2. Saturday + Holiday → PINK
             // 3. Weekday (Mon-Fri) + Holiday → PINK
             // 4. Weekend (Sat/Sun) without Holiday → BLUE
             // 5. Otherwise → default (no background color)
-            const isHolidayDate = isHoliday(d.dateISO, holidaysSet);
-            const isSundayDate = isSunday(d.dateISO);
-            const dayOfWeek = getDayOfWeek(d.dateISO);
+            
+            // Normalize dateISO to ensure consistent format (YYYY-MM-DD)
+            const normalizedDate = d.dateISO.split('T')[0];
+            const isHolidayDate = isHoliday(normalizedDate, holidaysSet);
+            const isSundayDate = isSunday(normalizedDate);
+            const dayOfWeek = getDayOfWeek(normalizedDate);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             const isWeekdayDate = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday = 1-5
+            
+            // Debug: Log first holiday found for verification
+            if (isHolidayDate && effectiveEntries.indexOf(d) === effectiveEntries.findIndex(e => isHoliday(e.dateISO.split('T')[0], holidaysSet))) {
+              console.log(`[PDF] Detected holiday: ${normalizedDate}, isWeekday: ${isWeekdayDate}, isSaturday: ${isSaturdayDate}, isSunday: ${isSundayDate}`);
+            }
             
             // Determine background color for "Tag" cell
             let backgroundColor: string | undefined = undefined;
             
-            if (isSaturdayDate && isHolidayDate) {
-              // Rule 1: Saturday + Holiday → PINK
-              backgroundColor = '#ffc0cb';
-            } else if (isSundayDate) {
-              // Rule 2: Sunday + Holiday → BLUE (Sunday always blue, even if holiday)
+            if (isSundayDate) {
+              // Rule 1: Sunday + Holiday → BLUE (Sunday always blue, even if holiday)
               backgroundColor = '#add8e6';
+            } else if (isSaturdayDate && isHolidayDate) {
+              // Rule 2: Saturday + Holiday → PINK
+              backgroundColor = '#ffc0cb';
             } else if (isWeekdayDate && isHolidayDate) {
               // Rule 3: Weekday (Mon-Fri) + Holiday → PINK
               backgroundColor = '#ffc0cb';
