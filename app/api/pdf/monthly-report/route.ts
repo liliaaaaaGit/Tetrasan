@@ -431,8 +431,16 @@ export async function GET(request: NextRequest) {
       return createCell(content, cellStyle[0], true, columnIndex === columnDefs.length - 1);
     };
 
+    // DEBUG: Add timestamp to confirm PDF regeneration
+    const debugTimestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
+    console.log(`[PDF] 🔵 Generating PDF at ${debugTimestamp} - This confirms code is running`);
+    
     const docElement = React.createElement(Document, null,
       React.createElement(Page, { size: 'A4', style: styles.page },
+        // DEBUG: Add visible timestamp watermark
+        React.createElement(View, { style: { position: 'absolute', top: 10, right: 10, backgroundColor: '#ffff00', padding: 4 } },
+          React.createElement(Text, { style: { fontSize: 8, color: '#000' } }, `DEBUG: ${debugTimestamp}`)
+        ),
         React.createElement(View, { style: styles.header },
           React.createElement(Text, { style: styles.title }, 'Tetrasan – Monatliche Stundenerfassung'),
           React.createElement(Text, { style: styles.subtitle }, `${employee.full_name || employee.email} – ${getMonthName(month - 1)} ${year}`),
@@ -459,37 +467,53 @@ export async function GET(request: NextRequest) {
             
             // DIRECT holiday check - use holidaysSet.has() directly to avoid any function overhead
             // This matches the pattern that works elsewhere in the code (line 257)
+            const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
+            
+            // AGGRESSIVE DEBUG: Always log for day 1-3 to verify code execution
+            console.log(`[PDF] Processing day ${dayNumber}: dateISO="${d.dateISO}", holidaysSet.size=${holidaysSet.size}`);
+            if (dayNumber <= 3) {
+              console.log(`[PDF] Day ${dayNumber} DEBUG: holidaysSet.has("${d.dateISO}") = ${holidaysSet.has(d.dateISO)}`);
+              console.log(`[PDF] Day ${dayNumber} DEBUG: holidaysSet contents:`, Array.from(holidaysSet).slice(0, 5));
+            }
+            
             const isHolidayDate = holidaysSet.has(d.dateISO);
             const isSundayDate = isSunday(d.dateISO);
             const dayOfWeek = getDayOfWeek(d.dateISO);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             
-            // Debug logging for first few days and holidays
-            const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
-            if (dayNumber <= 5 || isHolidayDate) {
-              console.log(`[PDF] Day ${dayNumber} (${d.dateISO}): isHolidayDate=${isHolidayDate}, holidaysSet.has=${holidaysSet.has(d.dateISO)}, isSunday=${isSundayDate}, isSaturday=${isSaturdayDate}`);
-            }
-            
-            // Determine background color for "Tag" cell with EXACT priority rules:
-            // 1. If Sunday → BLUE (even if holiday)
-            // 2. Else if isHoliday → PINK (includes Saturday holiday)
-            // 3. Else if Saturday → BLUE
-            // 4. Else → default (no background)
+            // BINARY TEST: Force day 1 to MAGENTA to verify rendering path works
             let backgroundColor: string | undefined = undefined;
             
-            if (isSundayDate) {
-              // Rule 1: Sunday → BLUE (even if holiday)
-              backgroundColor = '#BFE3F2';
-            } else if (isHolidayDate) {
-              // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
-              backgroundColor = '#F7B6C2';
-              console.log(`[PDF] ✓ Setting PINK for day ${dayNumber} (${d.dateISO}) - isHolidayDate=true`);
-            } else if (isSaturdayDate) {
-              // Rule 3: Saturday (non-holiday) → BLUE
-              backgroundColor = '#BFE3F2';
+            if (dayNumber === 1) {
+              // FORCE MAGENTA for day 1 to verify rendering
+              backgroundColor = '#FF00FF'; // MAGENTA
+              console.log(`[PDF] 🔴🔴🔴 BINARY TEST: Forcing MAGENTA for day 1 to verify rendering path`);
+            } else {
+              // Determine background color for "Tag" cell with EXACT priority rules:
+              // 1. If Sunday → BLUE (even if holiday)
+              // 2. Else if isHoliday → PINK (includes Saturday holiday)
+              // 3. Else if Saturday → BLUE
+              // 4. Else → default (no background)
+              
+              if (isSundayDate) {
+                // Rule 1: Sunday → BLUE (even if holiday)
+                backgroundColor = '#BFE3F2';
+                if (dayNumber <= 3) console.log(`[PDF] Day ${dayNumber}: Setting BLUE (Sunday)`);
+              } else if (isHolidayDate) {
+                // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
+                backgroundColor = '#F7B6C2';
+                console.log(`[PDF] ✓✓✓ Day ${dayNumber} (${d.dateISO}): Setting PINK - isHolidayDate=true`);
+              } else if (isSaturdayDate) {
+                // Rule 3: Saturday (non-holiday) → BLUE
+                backgroundColor = '#BFE3F2';
+                if (dayNumber <= 3) console.log(`[PDF] Day ${dayNumber}: Setting BLUE (Saturday)`);
+              } else {
+                if (dayNumber <= 3) console.log(`[PDF] Day ${dayNumber}: No background (regular weekday)`);
+              }
             }
             
-            const dayText = String(dayNumber);
+            // VISUAL DEBUG: Add asterisk to day 1 text to confirm code is running
+            const dayText = dayNumber === 1 ? `${dayNumber}*` : String(dayNumber);
             
             // MANUAL Tag cell rendering - guaranteed to work like weekend blue
             const tagCellStyle: any = {
@@ -503,6 +527,13 @@ export async function GET(request: NextRequest) {
             // Apply backgroundColor directly (same pattern as weekend blue)
             if (backgroundColor) {
               tagCellStyle.backgroundColor = backgroundColor;
+              if (dayNumber <= 3) {
+                console.log(`[PDF] Day ${dayNumber}: Applied backgroundColor="${backgroundColor}" to tagCellStyle`);
+              }
+            } else {
+              if (dayNumber <= 3) {
+                console.log(`[PDF] Day ${dayNumber}: NO backgroundColor applied`);
+              }
             }
             
             // Render Tag cell manually (NOT using createCell)
