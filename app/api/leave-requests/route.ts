@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession, requireRole } from "@/lib/auth/session";
+import { createTimesheetEntriesFromLeaveRequest } from "./[id]/approve/route";
 
 /**
  * API Routes for Leave Requests
@@ -128,14 +129,14 @@ export async function POST(request: NextRequest) {
     }
 
     // If admin-created and approved, automatically create timesheet entries
+    // Use the same helper function as the approval route to ensure consistency
     if (isAdminCreated && data.status === 'approved') {
-      // Reuse the approval logic from the approve route
-      const { getAdminClient } = await import("@/lib/supabase/admin");
-      const { createTimesheetEntriesFromLeaveRequest } = await import("./[id]/approve/route");
-      const adminClient = getAdminClient();
-      
       try {
-        // Use the same function that the approve route uses
+        const { getAdminClient } = await import("@/lib/supabase/admin");
+        const adminClient = getAdminClient();
+        
+        // Use the same helper function as the approval route
+        // This ensures we use the exact same logic that works for employee-created approved requests
         await createTimesheetEntriesFromLeaveRequest(adminClient, {
           id: data.id,
           employee_id: targetEmployeeId,
@@ -144,11 +145,12 @@ export async function POST(request: NextRequest) {
           period_end,
           comment: requiresComment ? comment : null,
         });
-        console.log(`[LeaveRequests] Created timesheet entries for admin-created ${type} request`);
+        
+        console.log(`[LeaveRequests] Created timesheet entries for admin-created ${type} request ${data.id}`);
       } catch (entryError) {
         console.error("[LeaveRequests] Error creating timesheet entries for admin-created request:", entryError);
-        // Don't fail the request creation, but log the error
-        // The request is still created and approved, entries can be created manually if needed
+        // Don't fail the request creation if entry creation fails, but log it
+        // The request is still created and can be manually approved later if needed
       }
     } else {
       // Create inbox event for admin notification (only for employee-created requests)
