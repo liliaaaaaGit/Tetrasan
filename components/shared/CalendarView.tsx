@@ -628,26 +628,30 @@ export function CalendarView({
                     }
                     className={cn(
                       "aspect-square rounded-lg border-2 transition-all relative",
-                      // Blocked days (Sunday or weekday holiday): disabled, grayed out, no hover
-                      isBlocked && "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60",
+                      // Sunday: always disabled, grayed out, no hover
+                      isSundayDate && "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60",
+                      // Weekday holiday: disabled but keep holiday styling (blue/purple)
+                      isWeekdayHoliday && "cursor-not-allowed",
+                      isWeekdayHoliday && !hasEntry && "!border-brand bg-holiday-fill",
+                      isWeekdayHoliday && hasEntry && "!border-brand bg-holiday-fill/40",
                       // Non-blocked: normal interactions
                       !isBlocked && "hover:border-brand hover:shadow-sm",
                       !isBlocked && "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
-                      // Entry styling first (if there's an entry and not blocked)
+                      // Entry styling first (if there's an entry and not Sunday)
                       // Note: Entries should not exist on blocked days, but handle gracefully
-                      !isBlocked && hasEntry && statusClass,
-                      // Holiday border: ALWAYS show blue border if it's a holiday (overrides entry border, but not blocked)
-                      !isBlocked && isHoliday && "!border-brand",
+                      !isSundayDate && hasEntry && statusClass,
+                      // Holiday border: ALWAYS show blue border if it's a holiday (overrides entry border, but not Sunday)
+                      !isSundayDate && isHoliday && "!border-brand",
                       // Holiday fill: show blue fill if holiday and no entry (more saturated blue)
-                      !isBlocked && isHoliday && !hasEntry && "bg-holiday-fill",
+                      !isSundayDate && !isWeekdayHoliday && isHoliday && !hasEntry && "bg-holiday-fill",
                       // Holiday with entry: show subtle blue tint on top of entry color
-                      !isBlocked && isHoliday && hasEntry && "bg-holiday-fill/40",
-                      // Today styling (if not a holiday and no entry and not blocked)
-                      !isBlocked && isTodayDate && !hasEntry && !isHoliday && "border-brand bg-brand/5 font-bold",
+                      !isSundayDate && !isWeekdayHoliday && isHoliday && hasEntry && "bg-holiday-fill/40",
+                      // Today styling (if not a holiday and no entry and not Sunday)
+                      !isSundayDate && isTodayDate && !hasEntry && !isHoliday && "border-brand bg-brand/5 font-bold",
                       // Today + holiday: apply holiday fill
-                      !isBlocked && isTodayDate && isHoliday && !hasEntry && "bg-holiday-fill font-bold",
-                      // Empty day (no entry, no holiday, not today, not blocked)
-                      !isBlocked && !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
+                      !isSundayDate && isTodayDate && isHoliday && !hasEntry && "bg-holiday-fill font-bold",
+                      // Empty day (no entry, no holiday, not today, not Sunday)
+                      !isSundayDate && !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
                     )}
                   >
                     <span className="text-sm">{day}</span>
