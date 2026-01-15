@@ -412,22 +412,30 @@ export async function GET(request: NextRequest) {
             const isWeekdayDate = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday = 1-5
             
             // Determine background color for "Tag" cell
-            const tagCellBaseStyle: any = { width: columnDefs[0].width, textAlign: columnDefs[0].textAlign };
+            let backgroundColor: string | undefined = undefined;
             
             if (isSaturdayDate && isHolidayDate) {
               // Rule 1: Saturday + Holiday → PINK
-              tagCellBaseStyle.backgroundColor = '#ffc0cb';
+              backgroundColor = '#ffc0cb';
             } else if (isSundayDate) {
               // Rule 2: Sunday + Holiday → BLUE (Sunday always blue, even if holiday)
-              tagCellBaseStyle.backgroundColor = '#add8e6';
+              backgroundColor = '#add8e6';
             } else if (isWeekdayDate && isHolidayDate) {
               // Rule 3: Weekday (Mon-Fri) + Holiday → PINK
-              tagCellBaseStyle.backgroundColor = '#ffc0cb';
+              backgroundColor = '#ffc0cb';
             } else if (isSaturdayDate && !isHolidayDate) {
               // Rule 4: Saturday without Holiday → BLUE
-              tagCellBaseStyle.backgroundColor = '#add8e6';
+              backgroundColor = '#add8e6';
             }
             // Rule 5: Otherwise → default (no background color set)
+            
+            const tagCellBaseStyle: any = { 
+              width: columnDefs[0].width, 
+              textAlign: columnDefs[0].textAlign,
+            };
+            if (backgroundColor) {
+              tagCellBaseStyle.backgroundColor = backgroundColor;
+            }
             
             return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
               createCell(String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate()), tagCellBaseStyle, false, false),
