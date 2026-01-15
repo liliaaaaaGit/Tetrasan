@@ -143,6 +143,9 @@ export default function AdminInboxPage() {
         throw new Error('Failed to update read status');
       }
 
+      // Dispatch custom event to notify layout to refresh badge count
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
+
       // Don't reload - optimistic update is sufficient and reload causes issues with synthetic events
       // The state will be correct on next page load or manual refresh
     } catch (error) {
@@ -227,6 +230,8 @@ export default function AdminInboxPage() {
 
       // Reload inbox to get updated status
       await loadInboxEvents();
+      // Notify layout to refresh badge count
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
       setIsModalOpen(false);
       setSelectedEvent(null);
     } catch (error) {
@@ -252,6 +257,8 @@ export default function AdminInboxPage() {
 
       // Reload inbox to get updated status
       await loadInboxEvents();
+      // Notify layout to refresh badge count
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
       setIsModalOpen(false);
       setSelectedEvent(null);
     } catch (error) {

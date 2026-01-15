@@ -12,6 +12,7 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   label: string;
+  badgeCount?: number; // Optional unread count badge
 }
 
 interface AppHeaderProps {
@@ -51,7 +52,7 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2 py-3 px-4 transition-colors",
+                      "flex items-center gap-2 py-3 px-4 transition-colors relative",
                       isActive
                         ? "bg-muted text-brand rounded-lg"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
@@ -59,6 +60,11 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
                   >
                     <Icon className="h-5 w-5" />
                     <span className="text-sm font-medium">{item.label}</span>
+                    {item.badgeCount !== undefined && item.badgeCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white">
+                        {item.badgeCount > 99 ? '99+' : item.badgeCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -96,7 +102,7 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative",
                     isActive
                       ? "bg-muted text-brand"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -104,6 +110,11 @@ export function AppHeader({ navItems, logoSize = "xl", backgroundColor = "bg-whi
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
+                  {item.badgeCount !== undefined && item.badgeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
+                      {item.badgeCount > 99 ? '99+' : item.badgeCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
