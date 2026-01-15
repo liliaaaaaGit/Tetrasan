@@ -6,6 +6,7 @@ import React from "react";
 import { diffCorrections } from "@/lib/utils/correctionDiff";
 import { computeMonthlySummary } from "@/lib/logic/monthlySummary";
 import { isSunday, isWeekend, isHoliday, holidayPaidHours, getDayOfWeek } from "@/lib/date-utils";
+import { getHolidaysForMonth } from "@/lib/data/holidays";
 
 // Ensure Node.js runtime for PDFKit
 export const runtime = "nodejs";
@@ -39,11 +40,6 @@ interface Correction {
   corrected_hours_decimal?: number;
   note?: string;
   created_at?: string;
-}
-
-interface Holiday {
-  dateISO: string;
-  name: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -157,46 +153,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch holidays for the month
-    const { data: holidays, error: holidaysError } = await admin
-      .from("holidays")
-      .select("holiday_date, name")
-      .eq("country", "DE")
-      .gte("holiday_date", firstDay.toISOString().split("T")[0])
-      .lte("holiday_date", lastDay.toISOString().split("T")[0]);
-
-    const holidaysMap: Record<string, string> = {};
-    if (!holidaysError && holidays) {
-      holidays.forEach((h) => {
-        // Normalize holiday_date to YYYY-MM-DD format (handle date objects or strings)
-        let dateISO: string;
-        if (typeof h.holiday_date === 'string') {
-          dateISO = h.holiday_date.split('T')[0]; // Remove time if present
-        } else if (h.holiday_date instanceof Date) {
-          dateISO = h.holiday_date.toISOString().split('T')[0];
-        } else {
-          // Fallback: try to parse as date string
-          dateISO = new Date(h.holiday_date).toISOString().split('T')[0];
-        }
-        holidaysMap[dateISO] = h.name;
-      });
-    }
-
-    // Build effective per-day entries (merge corrections)
-    const holidaysSet = new Set(Object.keys(holidaysMap));
+    // Fetch holidays for the month using shared function with fallback
+    const holidaysArray = await getHolidaysForMonth(year, month - 1); // month is 1-indexed, function expects 0-indexed
+    const holidaysSet = new Set(holidaysArray.map((h) => h.dateISO));
     
-    // Debug: Log holidays for verification
     console.log(`[PDF] Loaded ${holidaysSet.size} holidays for ${year}-${month}:`, Array.from(holidaysSet).sort());
-    
-    // Hard assertion for January 2026 (dev verification)
-    if (year === 2026 && month === 1) {
-      if (!holidaysSet.has('2026-01-01')) {
-        console.error(`[PDF] ERROR: Expected holiday 2026-01-01 not found in holidaysSet!`);
-        console.error(`[PDF] holidaysSet contains:`, Array.from(holidaysSet));
-      } else {
-        console.log(`[PDF] ✓ Verified: 2026-01-01 is in holidaysSet`);
-      }
-    }
     const daysInMonth = lastDay.getDate();
     const pad2 = (n: number) => String(n).padStart(2, '0');
     type EffectiveEntry = {
@@ -431,16 +392,8 @@ export async function GET(request: NextRequest) {
       return createCell(content, cellStyle[0], true, columnIndex === columnDefs.length - 1);
     };
 
-    // DEBUG: Add timestamp to confirm PDF regeneration
-    const debugTimestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
-    console.log(`[PDF] 🔵 Generating PDF at ${debugTimestamp} - This confirms code is running`);
-    
     const docElement = React.createElement(Document, null,
       React.createElement(Page, { size: 'A4', style: styles.page },
-        // DEBUG: Add visible timestamp watermark
-        React.createElement(View, { style: { position: 'absolute', top: 10, right: 10, backgroundColor: '#ffff00', padding: 4 } },
-          React.createElement(Text, { style: { fontSize: 8, color: '#000' } }, `DEBUG: ${debugTimestamp}`)
-        ),
         React.createElement(View, { style: styles.header },
           React.createElement(Text, { style: styles.title }, 'Tetrasan – Monatliche Stundenerfassung'),
           React.createElement(Text, { style: styles.subtitle }, `${employee.full_name || employee.email} – ${getMonthName(month - 1)} ${year}`),
@@ -465,55 +418,28 @@ export async function GET(request: NextRequest) {
             // 4. Weekend (Sat/Sun) without Holiday → BLUE
             // 5. Otherwise → default (no background color)
             
-            // DIRECT holiday check - use holidaysSet.has() directly to avoid any function overhead
-            // This matches the pattern that works elsewhere in the code (line 257)
             const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
-            
-            // AGGRESSIVE DEBUG: Always log for day 1-3 to verify code execution
-            console.log(`[PDF] Processing day ${dayNumber}: dateISO="${d.dateISO}", holidaysSet.size=${holidaysSet.size}`);
-            if (dayNumber <= 3) {
-              console.log(`[PDF] Day ${dayNumber} DEBUG: holidaysSet.has("${d.dateISO}") = ${holidaysSet.has(d.dateISO)}`);
-              console.log(`[PDF] Day ${dayNumber} DEBUG: holidaysSet contents:`, Array.from(holidaysSet).slice(0, 5));
-            }
-            
             const isHolidayDate = holidaysSet.has(d.dateISO);
             const isSundayDate = isSunday(d.dateISO);
             const dayOfWeek = getDayOfWeek(d.dateISO);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             
-            // BINARY TEST: Force day 1 to MAGENTA to verify rendering path works
+            // Determine background color for "Tag" cell with EXACT priority rules:
+            // 1. If Sunday → BLUE (even if holiday)
+            // 2. Else if isHoliday → PINK (includes Saturday holiday)
+            // 3. Else if Saturday → BLUE
+            // 4. Else → default (no background)
             let backgroundColor: string | undefined = undefined;
             
-            if (dayNumber === 1) {
-              // FORCE MAGENTA for day 1 to verify rendering
-              backgroundColor = '#FF00FF'; // MAGENTA
-              console.log(`[PDF] 🔴🔴🔴 BINARY TEST: Forcing MAGENTA for day 1 to verify rendering path`);
-            } else {
-              // Determine background color for "Tag" cell with EXACT priority rules:
-              // 1. If Sunday → BLUE (even if holiday)
-              // 2. Else if isHoliday → PINK (includes Saturday holiday)
-              // 3. Else if Saturday → BLUE
-              // 4. Else → default (no background)
-              
-              if (isSundayDate) {
-                // Rule 1: Sunday → BLUE (even if holiday)
-                backgroundColor = '#BFE3F2';
-                if (dayNumber <= 3) console.log(`[PDF] Day ${dayNumber}: Setting BLUE (Sunday)`);
-              } else if (isHolidayDate) {
-                // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
-                backgroundColor = '#F7B6C2';
-                console.log(`[PDF] ✓✓✓ Day ${dayNumber} (${d.dateISO}): Setting PINK - isHolidayDate=true`);
-              } else if (isSaturdayDate) {
-                // Rule 3: Saturday (non-holiday) → BLUE
-                backgroundColor = '#BFE3F2';
-                if (dayNumber <= 3) console.log(`[PDF] Day ${dayNumber}: Setting BLUE (Saturday)`);
-              } else {
-                if (dayNumber <= 3) console.log(`[PDF] Day ${dayNumber}: No background (regular weekday)`);
-              }
+            if (isSundayDate) {
+              backgroundColor = '#BFE3F2'; // BLUE
+            } else if (isHolidayDate) {
+              backgroundColor = '#F7B6C2'; // PINK
+            } else if (isSaturdayDate) {
+              backgroundColor = '#BFE3F2'; // BLUE
             }
             
-            // VISUAL DEBUG: Add asterisk to day 1 text to confirm code is running
-            const dayText = dayNumber === 1 ? `${dayNumber}*` : String(dayNumber);
+            const dayText = String(dayNumber);
             
             // MANUAL Tag cell rendering - guaranteed to work like weekend blue
             const tagCellStyle: any = {
@@ -527,13 +453,6 @@ export async function GET(request: NextRequest) {
             // Apply backgroundColor directly (same pattern as weekend blue)
             if (backgroundColor) {
               tagCellStyle.backgroundColor = backgroundColor;
-              if (dayNumber <= 3) {
-                console.log(`[PDF] Day ${dayNumber}: Applied backgroundColor="${backgroundColor}" to tagCellStyle`);
-              }
-            } else {
-              if (dayNumber <= 3) {
-                console.log(`[PDF] Day ${dayNumber}: NO backgroundColor applied`);
-              }
             }
             
             // Render Tag cell manually (NOT using createCell)
