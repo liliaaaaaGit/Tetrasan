@@ -440,11 +440,6 @@ export async function GET(request: NextRequest) {
         ),
         React.createElement(View, { style: styles.divider }),
         React.createElement(Text, { style: styles.sectionTitle }, 'Tageseinträge'),
-        // BINARY TEST: Add pink legend square to verify styling works
-        React.createElement(View, { style: { marginBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 8 } },
-          React.createElement(View, { style: { width: 16, height: 16, backgroundColor: '#F7B6C2', borderWidth: 1, borderColor: '#ccc' } }),
-          React.createElement(Text, { style: { fontSize: 9 } }, 'Test: Pink square should be visible')
-        ),
         React.createElement(View, { style: styles.table },
           React.createElement(View, { style: styles.tableRow },
             createCell('Tag', { width: columnDefs[0].width, textAlign: columnDefs[0].textAlign }, true, false),
