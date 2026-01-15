@@ -144,6 +144,11 @@ export default function AdminInboxPage() {
         throw new Error(errorData.error || 'Failed to update read status');
       }
 
+      // Small delay to ensure database transaction is fully committed and visible
+      // This is especially important for synthetic events that create new inbox_events rows
+      // Supabase should handle this automatically, but a small delay ensures read-after-write consistency
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       // Reload events from database to ensure state matches DB
       // This is important for persistence and handles synthetic events correctly
       await loadInboxEvents();

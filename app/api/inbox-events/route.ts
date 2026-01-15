@@ -108,21 +108,22 @@ export async function GET(request: NextRequest) {
     }).filter(Boolean);
 
     // Backfill: include submitted leave requests that have no inbox event (e.g., legacy rows)
-    // But first, check if any inbox_events exist for these requests (they might have been created via PUT)
+    // Build a set of all request IDs that already have inbox_events (from the initial query)
     const existingReqSet = new Set(reqIds);
     
-    // Get all inbox_events that reference leave_requests (to check for created events)
+    // Also check ALL inbox_events (not just the ones we fetched initially) to catch any newly created ones
+    // This ensures we don't backfill requests that have inbox_events created via PUT
     const { data: allInboxEvents } = await supabase
       .from('inbox_events')
       .select('id, payload, is_read, created_at')
       .not('payload', 'is', null);
     
-    // Build a map of reqId -> is_read from existing inbox_events
-    const reqIdToReadStatus = new Map<string, boolean>();
+    // Build a comprehensive set of all request IDs that have inbox_events
+    const allReqIdsWithEvents = new Set<string>();
     (allInboxEvents || []).forEach((e: any) => {
       const reqId = e.payload?.reqId;
-      if (reqId && !reqIdToReadStatus.has(reqId)) {
-        reqIdToReadStatus.set(reqId, e.is_read || false);
+      if (reqId) {
+        allReqIdsWithEvents.add(reqId);
       }
     });
     
@@ -132,9 +133,9 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
     if (!subReqError && allRequests) {
       for (const r of allRequests) {
-        // Only backfill if there's no inbox_event for this request
-        // Check both the reqIds from events and the reqIdToReadStatus map
-        if (!existingReqSet.has(r.id) && !reqIdToReadStatus.has(r.id)) {
+        // Only backfill if there's NO inbox_event for this request at all
+        // Use the comprehensive set that includes all inbox_events
+        if (!allReqIdsWithEvents.has(r.id)) {
           const emp = employeesById[r.employee_id];
           data.push({
             id: r.id, // synthetic id
