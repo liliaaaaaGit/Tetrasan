@@ -346,9 +346,15 @@ export async function GET(request: NextRequest) {
       }
       
       // Remove right border from last column
+      // Ensure backgroundColor from cellStyle is preserved by applying it last
       const finalStyle = isLast 
         ? [...baseStyle, { borderRightWidth: 0 }]
         : baseStyle;
+      
+      // If cellStyle has backgroundColor, ensure it's applied last (not overridden)
+      if (cellStyle?.backgroundColor) {
+        finalStyle.push({ backgroundColor: cellStyle.backgroundColor });
+      }
       
       if (typeof content === 'string') {
         return React.createElement(Text, { style: finalStyle }, content);
