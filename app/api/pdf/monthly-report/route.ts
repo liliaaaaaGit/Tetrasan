@@ -364,6 +364,14 @@ export async function GET(request: NextRequest) {
       // Extract backgroundColor BEFORE building styles (to avoid conflicts)
       const backgroundColor = cellStyle?.backgroundColor;
       
+      // Debug: Log if Tag cell has backgroundColor (check first 3 days)
+      if (typeof content === 'string' && !isHeader) {
+        const dayNum = parseInt(content.replace('*', ''), 10);
+        if (dayNum <= 3) {
+          console.log(`[PDF] createCell day=${dayNum} content="${content}" backgroundColor=${backgroundColor || 'undefined'} cellStyle=`, JSON.stringify(cellStyle));
+        }
+      }
+      
       // Build base styles WITHOUT backgroundColor
       const baseStyle: any[] = [
         styles.cell, // Base cell style (padding, borders, font) - NO backgroundColor
@@ -398,6 +406,13 @@ export async function GET(request: NextRequest) {
       // Apply backgroundColor LAST so it overrides everything
       if (backgroundColor) {
         baseStyle.push({ backgroundColor });
+        // Debug: Confirm backgroundColor is being added
+        if (typeof content === 'string' && !isHeader) {
+          const dayNum = parseInt(content.replace('*', ''), 10);
+          if (dayNum <= 3) {
+            console.log(`[PDF] createCell day=${dayNum} ✓ Added backgroundColor=${backgroundColor} to baseStyle`);
+          }
+        }
       }
       
       // Always return View as root (never Text as root)
@@ -466,11 +481,6 @@ export async function GET(request: NextRequest) {
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             const isWeekdayDate = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday = 1-5
             
-            // Debug: Log ALL holidays for verification
-            if (isHolidayDate) {
-              console.log(`[PDF] Holiday detected: ${normalizedDate}, dayOfWeek: ${dayOfWeek}, isWeekday: ${isWeekdayDate}, isSaturday: ${isSaturdayDate}, isSunday: ${isSundayDate}`);
-            }
-            
             // Determine background color for "Tag" cell with EXACT priority rules:
             // 1. If Sunday → BLUE (even if holiday)
             // 2. Else if isHoliday → PINK (includes Saturday holiday)
@@ -490,27 +500,22 @@ export async function GET(request: NextRequest) {
             }
             // Rule 4: Otherwise → default (no background color)
             
+            // Debug: Print row info for ALL days to see what's happening
+            const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
+            console.log(`[PDF] row day=${dayNumber} date=${normalizedDate} isHoliday=${isHolidayDate} isSaturday=${isSaturdayDate} isSunday=${isSundayDate} chosenBg=${backgroundColor || 'undefined'} holidaysSet.has=${holidaysSet.has(normalizedDate)}`);
+            
             // Build tag cell style with explicit backgroundColor
             const tagCellBaseStyle: any = { 
               width: columnDefs[0].width, 
               textAlign: columnDefs[0].textAlign,
             };
             
-            // Apply backgroundColor if determined
+            // Apply backgroundColor if determined - ALWAYS set it explicitly
             if (backgroundColor) {
               tagCellBaseStyle.backgroundColor = backgroundColor;
-              // Debug: Log when setting background
-              if (backgroundColor === '#F7B6C2') {
-                console.log(`[PDF] Setting PINK background (#F7B6C2) for ${normalizedDate}`);
-              } else if (backgroundColor === '#BFE3F2') {
-                console.log(`[PDF] Setting BLUE background (#BFE3F2) for ${normalizedDate}`);
-              }
-            }
-            
-            // Debug: Print row info for day 1
-            const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
-            if (dayNumber === 1) {
-              console.log(`[PDF] row day=${dayNumber} date=${normalizedDate} isHoliday=${isHolidayDate} isSaturday=${isSaturdayDate} isSunday=${isSundayDate} chosenBg=${backgroundColor || 'undefined'}`);
+              console.log(`[PDF] ✓ Setting ${backgroundColor === '#F7B6C2' ? 'PINK' : 'BLUE'} background for ${normalizedDate} (day ${dayNumber})`);
+            } else {
+              console.log(`[PDF] ✗ NO background color for ${normalizedDate} (day ${dayNumber})`);
             }
             
             // Visual debug marker for holidays (dev only - remove after verification)
