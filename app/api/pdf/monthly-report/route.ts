@@ -495,21 +495,14 @@ export async function GET(request: NextRequest) {
             }
             // Rule 4: Otherwise → default (no background color)
             
-            // BINARY TEST: Force pink on all Tag cells to verify styling works
-            // TODO: Remove after test
-            const FORCE_PINK_TEST = true;
-            
             // Build tag cell style with explicit backgroundColor
             const tagCellBaseStyle: any = { 
               width: columnDefs[0].width, 
               textAlign: columnDefs[0].textAlign,
             };
             
-            // BINARY TEST: Force pink unconditionally
-            if (FORCE_PINK_TEST) {
-              tagCellBaseStyle.backgroundColor = '#F7B6C2';
-              console.log(`[PDF] FORCED PINK for ${normalizedDate} (day ${new Date(d.dateISO + 'T00:00:00Z').getUTCDate()})`);
-            } else if (backgroundColor) {
+            // Apply backgroundColor if determined
+            if (backgroundColor) {
               tagCellBaseStyle.backgroundColor = backgroundColor;
               // Debug: Log when setting background
               if (backgroundColor === '#F7B6C2') {
