@@ -5,7 +5,7 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet } from "@react-p
 import React from "react";
 import { diffCorrections } from "@/lib/utils/correctionDiff";
 import { computeMonthlySummary } from "@/lib/logic/monthlySummary";
-import { isSunday, isWeekend, isHoliday, holidayPaidHours } from "@/lib/date-utils";
+import { isSunday, isWeekend, isHoliday, holidayPaidHours, getDayOfWeek } from "@/lib/date-utils";
 
 // Ensure Node.js runtime for PDFKit
 export const runtime = "nodejs";
@@ -398,35 +398,35 @@ export async function GET(request: NextRequest) {
             createCell('Notiz', { width: columnDefs[6].width, textAlign: columnDefs[6].textAlign }, true, true),
           ),
           ...effectiveEntries.map((d) => {
-            // Determine day type for background color in "Tag" column
-            // Priority: Sunday always blue, Saturday+holiday = pink, Saturday = blue, weekday+holiday = pink
+            // Determine Tag column background color with explicit priority rules:
+            // 1. Saturday + Holiday → PINK
+            // 2. Sunday + Holiday → BLUE (Sunday always looks like weekend, even if holiday)
+            // 3. Weekday (Mon-Fri) + Holiday → PINK
+            // 4. Weekend (Sat/Sun) without Holiday → BLUE
+            // 5. Otherwise → default (no background color)
             const isHolidayDate = isHoliday(d.dateISO, holidaysSet);
             const isSundayDate = isSunday(d.dateISO);
-            const isWeekendDate = isWeekend(d.dateISO);
+            const dayOfWeek = getDayOfWeek(d.dateISO);
+            const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
+            const isWeekdayDate = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday = 1-5
             
             // Determine background color for "Tag" cell
-            let tagCellStyle = styles.colDay;
-            if (isSundayDate) {
-              // Sunday: always blue (weekend), even if holiday
-              tagCellStyle = styles.colDayWeekend;
-            } else if (isHolidayDate && isWeekendDate) {
-              // Saturday + holiday: pink (holiday takes priority)
-              tagCellStyle = styles.colDayHoliday;
-            } else if (isWeekendDate) {
-              // Saturday (no holiday): blue
-              tagCellStyle = styles.colDayWeekend;
-            } else if (isHolidayDate) {
-              // Weekday + holiday: pink
-              tagCellStyle = styles.colDayHoliday;
-            }
-            
-            // Determine tag cell style (with background color for holidays/weekends)
             const tagCellBaseStyle: any = { width: columnDefs[0].width, textAlign: columnDefs[0].textAlign };
-            if (tagCellStyle === styles.colDayHoliday) {
-              tagCellBaseStyle.backgroundColor = '#ffc0cb'; // Pink for holidays
-            } else if (tagCellStyle === styles.colDayWeekend) {
-              tagCellBaseStyle.backgroundColor = '#add8e6'; // Blue for weekends
+            
+            if (isSaturdayDate && isHolidayDate) {
+              // Rule 1: Saturday + Holiday → PINK
+              tagCellBaseStyle.backgroundColor = '#ffc0cb';
+            } else if (isSundayDate) {
+              // Rule 2: Sunday + Holiday → BLUE (Sunday always blue, even if holiday)
+              tagCellBaseStyle.backgroundColor = '#add8e6';
+            } else if (isWeekdayDate && isHolidayDate) {
+              // Rule 3: Weekday (Mon-Fri) + Holiday → PINK
+              tagCellBaseStyle.backgroundColor = '#ffc0cb';
+            } else if (isSaturdayDate && !isHolidayDate) {
+              // Rule 4: Saturday without Holiday → BLUE
+              tagCellBaseStyle.backgroundColor = '#add8e6';
             }
+            // Rule 5: Otherwise → default (no background color set)
             
             return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
               createCell(String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate()), tagCellBaseStyle, false, false),
