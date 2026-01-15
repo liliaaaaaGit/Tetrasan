@@ -82,7 +82,7 @@ function extractDayOffTimesFromComment(
  *    - If a time window can be parsed from the comment, creates partial day-off entries
  *    - Otherwise, creates full-day day_off entries (8h)
  */
-async function createTimesheetEntriesFromLeaveRequest(
+export async function createTimesheetEntriesFromLeaveRequest(
   supabase: SupabaseClient<any>,
   leaveRequest: {
     id: string;

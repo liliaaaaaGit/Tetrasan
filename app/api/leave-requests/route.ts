@@ -129,64 +129,26 @@ export async function POST(request: NextRequest) {
 
     // If admin-created and approved, automatically create timesheet entries
     if (isAdminCreated && data.status === 'approved') {
-      // Import the approval logic (similar to approve route)
+      // Reuse the approval logic from the approve route
       const { getAdminClient } = await import("@/lib/supabase/admin");
+      const { createTimesheetEntriesFromLeaveRequest } = await import("./[id]/approve/route");
       const adminClient = getAdminClient();
       
-      // Parse dates and create entries for each day in range
-      const start = new Date(period_start);
-      const end = new Date(period_end);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
-
-      const formatDateLocal = (date: Date): string => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      };
-
-      for (let d = new Date(start.getTime()); d <= end; d.setDate(d.getDate() + 1)) {
-        const isoDate = formatDateLocal(d);
-        const status = type === 'vacation' ? 'vacation' : 'day_off';
-        
-        // For day_off, parse time from comment if present
-        let timeFrom = '00:00';
-        let timeTo = '00:01';
-        let hoursDecimal = type === 'vacation' ? 0 : 8;
-        
-        if (type === 'day_off' && comment) {
-          // Try to parse time range from comment (e.g., "Zeit: 09:00 - 13:30")
-          const timeMatch = comment.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/i);
-          if (timeMatch) {
-            timeFrom = `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
-            timeTo = `${timeMatch[3].padStart(2, '0')}:${timeMatch[4]}`;
-            // Calculate hours
-            const fromHours = parseInt(timeMatch[1], 10);
-            const fromMinutes = parseInt(timeMatch[2], 10);
-            const toHours = parseInt(timeMatch[3], 10);
-            const toMinutes = parseInt(timeMatch[4], 10);
-            const totalMinutes = (toHours * 60 + toMinutes) - (fromHours * 60 + fromMinutes);
-            hoursDecimal = totalMinutes / 60;
-          }
-        }
-
-        await adminClient
-          .from('timesheet_entries')
-          .upsert({
-            employee_id: targetEmployeeId,
-            date: isoDate,
-            status,
-            time_from: timeFrom,
-            time_to: timeTo,
-            break_minutes: 0,
-            hours_decimal: hoursDecimal,
-            activity_note: null,
-            project_name: null,
-            comment: type === 'vacation' ? null : comment,
-          }, {
-            onConflict: 'employee_id,date,status'
-          });
+      try {
+        // Use the same function that the approve route uses
+        await createTimesheetEntriesFromLeaveRequest(adminClient, {
+          id: data.id,
+          employee_id: targetEmployeeId,
+          type,
+          period_start,
+          period_end,
+          comment: requiresComment ? comment : null,
+        });
+        console.log(`[LeaveRequests] Created timesheet entries for admin-created ${type} request`);
+      } catch (entryError) {
+        console.error("[LeaveRequests] Error creating timesheet entries for admin-created request:", entryError);
+        // Don't fail the request creation, but log the error
+        // The request is still created and approved, entries can be created manually if needed
       }
     } else {
       // Create inbox event for admin notification (only for employee-created requests)
