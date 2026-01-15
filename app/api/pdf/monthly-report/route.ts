@@ -5,6 +5,7 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet } from "@react-p
 import React from "react";
 import { diffCorrections } from "@/lib/utils/correctionDiff";
 import { computeMonthlySummary } from "@/lib/logic/monthlySummary";
+import { isSunday, isWeekend, isHoliday } from "@/lib/date-utils";
 
 // Ensure Node.js runtime for PDFKit
 export const runtime = "nodejs";
@@ -250,6 +251,8 @@ export async function GET(request: NextRequest) {
       th: { padding: 6, fontSize: 10, fontWeight: 700, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#ccc', backgroundColor: '#f7f7f7' },
       td: { padding: 6, fontSize: 10, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#ddd' },
       colDay: { width: 60 },
+      colDayHoliday: { width: 60, backgroundColor: '#ffc0cb' }, // Pink for holidays
+      colDayWeekend: { width: 60, backgroundColor: '#add8e6' }, // Blue for weekends
       colWork: { width: 100, textAlign: 'right' },
       colVacation: { width: 120, textAlign: 'right' },
       colSick: { width: 120, textAlign: 'right' },
@@ -281,15 +284,37 @@ export async function GET(request: NextRequest) {
             React.createElement(Text, { style: [styles.th, styles.colSick] }, 'Krankheitsstunden'),
             React.createElement(Text, { style: [styles.th, styles.colNote] }, 'Notiz'),
           ),
-          ...effectiveEntries.map((d) => (
-            React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
-              React.createElement(Text, { style: [styles.td, styles.colDay] }, String(new Date(d.dateISO).getDate())),
+          ...effectiveEntries.map((d) => {
+            // Determine day type for background color in "Tag" column
+            // Priority: Sunday always blue, Saturday+holiday = pink, Saturday = blue, weekday+holiday = pink
+            const isHolidayDate = isHoliday(d.dateISO, holidaysSet);
+            const isSundayDate = isSunday(d.dateISO);
+            const isWeekendDate = isWeekend(d.dateISO);
+            
+            // Determine background color for "Tag" cell
+            let tagCellStyle = styles.colDay;
+            if (isSundayDate) {
+              // Sunday: always blue (weekend), even if holiday
+              tagCellStyle = styles.colDayWeekend;
+            } else if (isHolidayDate && isWeekendDate) {
+              // Saturday + holiday: pink (holiday takes priority)
+              tagCellStyle = styles.colDayHoliday;
+            } else if (isWeekendDate) {
+              // Saturday (no holiday): blue
+              tagCellStyle = styles.colDayWeekend;
+            } else if (isHolidayDate) {
+              // Weekday + holiday: pink
+              tagCellStyle = styles.colDayHoliday;
+            }
+            
+            return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
+              React.createElement(Text, { style: [styles.td, tagCellStyle] }, String(new Date(d.dateISO).getDate())),
               React.createElement(Text, { style: [styles.td, styles.colWork] }, d.workHours ? d.workHours.toFixed(1).replace('.', ',') : ''),
               React.createElement(Text, { style: [styles.td, styles.colVacation] }, d.vacationHours ? d.vacationHours.toFixed(1).replace('.', ',') : ''),
               React.createElement(Text, { style: [styles.td, styles.colSick] }, d.sickHours ? d.sickHours.toFixed(1).replace('.', ',') : ''),
               React.createElement(Text, { style: [styles.td, styles.colNote] }, d.note || ''),
-            )
-          ))
+            );
+          })
         ),
         React.createElement(View, { style: styles.divider }),
         React.createElement(Text, { style: styles.sectionTitle }, 'Zusammenfassung'),
