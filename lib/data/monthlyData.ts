@@ -10,7 +10,7 @@ export interface MonthlyData {
   entries: Array<{
     id: string;
     date: string;
-    status: 'work' | 'vacation' | 'sick';
+    status: 'work' | 'vacation' | 'sick' | 'day_off';
     hours_decimal: number;
   }>;
   corrections: Array<{
