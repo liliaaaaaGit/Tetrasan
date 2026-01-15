@@ -486,9 +486,15 @@ export function CalendarView({
   const handleExportPDF = async () => {
     try {
       const monthStr = String(month + 1).padStart(2, '0');
-      const url = `/api/pdf/monthly-report?employeeId=${employeeId}&year=${year}&month=${monthStr}`;
+      // Cache busting: append timestamp to force fresh fetch
+      const url = `/api/pdf/monthly-report?employeeId=${employeeId}&year=${year}&month=${monthStr}&t=${Date.now()}`;
       
-      const response = await fetch(url);
+      const response = await fetch(url, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to generate PDF');
       }
