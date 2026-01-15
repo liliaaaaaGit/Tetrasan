@@ -22,7 +22,13 @@ interface DayEntryFormProps {
  */
 export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = false, isAdmin = false }: DayEntryFormProps) {
   const [status, setStatus] = useState<DayStatus>(initialData?.status || "arbeit");
-  const [from, setFrom] = useState(initialData?.from || "08:00");
+  // Default "from" time:
+  // - Use existing value if present
+  // - For new work entries, default to 08:00
+  // - For other statuses (e.g. Tagesbefreiung), start empty so we don't show 08:00 for full-day entries
+  const [from, setFrom] = useState(
+    initialData?.from || (initialData?.status === "arbeit" || !initialData ? "08:00" : "")
+  );
   const [to, setTo] = useState(initialData?.to || "");
   const [pause, setPause] = useState(initialData?.pause ?? 30);
   const [bauvorhaben, setBauvorhaben] = useState(initialData?.bauvorhaben ?? "");
