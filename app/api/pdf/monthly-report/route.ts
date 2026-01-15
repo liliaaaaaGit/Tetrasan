@@ -362,26 +362,18 @@ export async function GET(request: NextRequest) {
     // CRITICAL: Always return View as root, backgroundColor on root View with borders
     const createCell = (content: React.ReactElement | string, cellStyle: any, isHeader: boolean = false, isLast: boolean = false) => {
       // Extract backgroundColor BEFORE building styles (to avoid conflicts)
-      const backgroundColor = cellStyle?.backgroundColor;
-      
-      // Debug: Log if Tag cell has backgroundColor (check first 3 days)
-      if (typeof content === 'string' && !isHeader) {
-        const dayNum = parseInt(content.replace('*', ''), 10);
-        if (dayNum <= 3) {
-          console.log(`[PDF] createCell day=${dayNum} content="${content}" backgroundColor=${backgroundColor || 'undefined'} cellStyle=`, JSON.stringify(cellStyle));
-        }
-      }
+      let backgroundColor = cellStyle?.backgroundColor;
       
       // Build base styles WITHOUT backgroundColor
       const baseStyle: any[] = [
         styles.cell, // Base cell style (padding, borders, font) - NO backgroundColor
       ];
       
-      // Add column-specific styles (width, textAlign) - keep backgroundColor separate
+      // Add column-specific styles (width, textAlign) but EXCLUDE backgroundColor
       if (cellStyle) {
         const { backgroundColor: bgColor, ...cellStyleWithoutBg } = cellStyle;
-        // If backgroundColor was extracted, use it (will be added last)
-        if (bgColor && !backgroundColor) {
+        // Ensure we capture backgroundColor from cellStyle
+        if (bgColor) {
           backgroundColor = bgColor;
         }
         if (Object.keys(cellStyleWithoutBg).length > 0) {
