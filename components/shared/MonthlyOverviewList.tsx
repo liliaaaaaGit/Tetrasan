@@ -113,6 +113,14 @@ export function MonthlyOverviewList({
     return `${hoursStr}h (${breakMinutes}min Pause)`;
   };
 
+  // Format hours for day-off (no break)
+  const formatDayOffHours = (hours?: number): string => {
+    if (typeof hours !== "number") return "0,0h";
+    // Show with one decimal place, using comma as decimal separator for consistency
+    const hoursStr = hours.toFixed(1).replace(".", ",");
+    return `${hoursStr}h`;
+  };
+
   // Format time range with seconds
   const formatTimeRangeWithSeconds = (from?: string, to?: string): string => {
     if (!from || !to) return "00:00:00 - 00:01:00";
@@ -236,6 +244,18 @@ export function MonthlyOverviewList({
                             )}
                           </div>
                         )}
+                      </div>
+                    </>
+                  )}
+                  {entry.status === "tagesbefreiung" && (
+                    <>
+                      {/* Time Range (optional for partial day-off) */}
+                      <div className="text-sm text-gray-600 mb-1">
+                        {formatTimeRange(entry)}
+                      </div>
+                      {/* Duration for day-off (partial or full day) */}
+                      <div className="text-sm text-gray-600">
+                        Dauer (Tagesbefreiung): {formatDayOffHours(entry.hours)}
                       </div>
                     </>
                   )}
