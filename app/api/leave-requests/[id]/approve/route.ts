@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/session";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { calculateHours } from "@/lib/date-utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -48,15 +49,51 @@ function generateDateRange(startDate: string, endDate: string): string[] {
 }
 
 /**
+ * Try to extract partial day-off times (HH:MM - HH:MM) from the comment text.
+ * This is needed because the original day-off request stores the time window
+ * only inside the localized comment (e.g. "Zeit: 09:00 - 13:30 ...").
+ * We use a language-agnostic regex that only looks for the "HH:MM - HH:MM" part.
+ */
+function extractDayOffTimesFromComment(
+  comment?: string | null
+): { from: string; to: string; hours: number } | null {
+  if (!comment) return null;
+
+  // Look for a time pattern like "09:00 - 13:30" or "09:00–13:30"
+  const match = comment.match(/(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
+  if (!match) return null;
+
+  const from = match[1];
+  const to = match[2];
+
+  const hours = calculateHours(from, to, 0);
+  if (hours === null) {
+    console.warn("[LeaveRequests] Invalid time window in comment:", { comment, from, to });
+    return null;
+  }
+
+  return { from, to, hours };
+}
+
+/**
  * Create timesheet entries from an approved leave request
  * - For vacation: creates vacation entries for each day
- * - For day_off: creates day_off entries for each day (full-day)
+ * - For day_off:
+ *    - If a time window can be parsed from the comment, creates partial day-off entries
+ *    - Otherwise, creates full-day day_off entries (8h)
  */
 async function createTimesheetEntriesFromLeaveRequest(
   supabase: SupabaseClient<any>,
-  leaveRequest: { id: string; employee_id: string; type: string; period_start: string; period_end: string }
+  leaveRequest: {
+    id: string;
+    employee_id: string;
+    type: string;
+    period_start: string;
+    period_end: string;
+    comment?: string | null;
+  }
 ) {
-  const { employee_id, type, period_start, period_end } = leaveRequest;
+  const { employee_id, type, period_start, period_end, comment } = leaveRequest;
   
   // Validate required fields
   if (!employee_id || !type || !period_start || !period_end) {
@@ -70,6 +107,10 @@ async function createTimesheetEntriesFromLeaveRequest(
   
   // Map leave request type to timesheet status
   const timesheetStatus = type === 'vacation' ? 'vacation' : 'day_off';
+
+  // For day_off requests, try to extract a partial time window from the comment
+  const partialDayOffTimes =
+    timesheetStatus === "day_off" ? extractDayOffTimesFromComment(comment) : null;
   
   // Generate all dates in the period
   const dates = generateDateRange(period_start, period_end);
@@ -115,15 +156,21 @@ async function createTimesheetEntriesFromLeaveRequest(
         updated_at: timestamp,
       });
     } else if (timesheetStatus === 'day_off') {
-      // Full-day day_off exemption (8 hours)
+      const isPartial = !!partialDayOffTimes;
+
+      // If partial times are available, use them; otherwise fall back to full-day (8h)
+      const timeFrom = isPartial ? partialDayOffTimes!.from : "00:00";
+      const timeTo = isPartial ? partialDayOffTimes!.to : "00:01";
+      const hoursDecimal = isPartial ? partialDayOffTimes!.hours : 8;
+
       entriesToInsert.push({
         employee_id,
         date,
         status: 'day_off',
-        time_from: '00:00',
-        time_to: '00:01',
+        time_from: timeFrom,
+        time_to: timeTo,
         break_minutes: 0,
-        hours_decimal: 8,
+        hours_decimal: hoursDecimal,
         comment: null,
         activity_note: null,
         project_name: null,
