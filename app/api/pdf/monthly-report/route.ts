@@ -463,9 +463,13 @@ export async function GET(request: NextRequest) {
             const dayOfWeek = getDayOfWeek(d.dateISO);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             
-            // Debug logging (temporary - remove after verification)
-            if (process.env.NODE_ENV === 'development' && isHolidayDate) {
-              console.log(`[PDF] Holiday detected: ${d.dateISO}, isHolidayDate=${isHolidayDate}, holidaysSet.has=${holidaysSet.has(d.dateISO)}`);
+            // COMPREHENSIVE DEBUG LOGGING
+            const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
+            if (dayNumber <= 3 || isHolidayDate) {
+              console.log(`[PDF] Day ${dayNumber} (${d.dateISO}): isHolidayDate=${isHolidayDate}, holidaysSet.has=${holidaysSet.has(d.dateISO)}, isSunday=${isSundayDate}, isSaturday=${isSaturdayDate}, dayOfWeek=${dayOfWeek}`);
+              if (holidaysSet.size > 0) {
+                console.log(`[PDF] Sample holidaysSet entries:`, Array.from(holidaysSet).slice(0, 3));
+              }
             }
             
             // Determine background color for "Tag" cell with EXACT priority rules:
@@ -481,12 +485,18 @@ export async function GET(request: NextRequest) {
             } else if (isHolidayDate) {
               // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
               backgroundColor = '#F7B6C2';
+              console.log(`[PDF] ✓ Setting PINK for day ${dayNumber} (${d.dateISO}) - isHolidayDate=true`);
             } else if (isSaturdayDate) {
               // Rule 3: Saturday (non-holiday) → BLUE
               backgroundColor = '#BFE3F2';
             }
             
-            const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
+            // BINARY TEST: Force pink for day 1 to verify rendering path
+            if (dayNumber === 1) {
+              backgroundColor = '#F7B6C2'; // FORCE PINK for day 1
+              console.log(`[PDF] 🔴 BINARY TEST: Forcing PINK for day 1`);
+            }
+            
             const dayText = String(dayNumber);
             
             // MANUAL Tag cell rendering - guaranteed to work like weekend blue
