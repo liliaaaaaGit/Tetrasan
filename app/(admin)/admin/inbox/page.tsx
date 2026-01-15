@@ -140,14 +140,16 @@ export default function AdminInboxPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update read status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update read status');
       }
+
+      // Reload events from database to ensure state matches DB
+      // This is important for persistence and handles synthetic events correctly
+      await loadInboxEvents();
 
       // Dispatch custom event to notify layout to refresh badge count
       window.dispatchEvent(new CustomEvent('inbox-updated'));
-
-      // Don't reload - optimistic update is sufficient and reload causes issues with synthetic events
-      // The state will be correct on next page load or manual refresh
     } catch (error) {
       // Revert on failure
       console.error('Error updating read status:', error);
@@ -322,11 +324,15 @@ export default function AdminInboxPage() {
             try {
               const res = await fetch(`/api/inbox-events/${eventId}`, { method: 'DELETE' });
               if (!res.ok) throw new Error('Delete failed');
-              // Remove from UI and adjust unread counter
-              setEvents(prev => prev.filter(e => e.id !== eventId));
-              const wasUnread = events.find(e => e.id === eventId)?.isRead === false;
-              if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+              
+              // Reload events from database to ensure state matches DB
+              // This ensures deleted items are properly filtered out
+              await loadInboxEvents();
+
+              // Dispatch custom event to notify layout to refresh badge count
+              window.dispatchEvent(new CustomEvent('inbox-updated'));
             } catch (err) {
+              console.error('Error deleting inbox event:', err);
               alert('Löschen nicht möglich.');
             }
           }}

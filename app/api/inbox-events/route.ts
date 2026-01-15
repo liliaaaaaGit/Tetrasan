@@ -108,20 +108,39 @@ export async function GET(request: NextRequest) {
     }).filter(Boolean);
 
     // Backfill: include submitted leave requests that have no inbox event (e.g., legacy rows)
+    // But first, check if any inbox_events exist for these requests (they might have been created via PUT)
     const existingReqSet = new Set(reqIds);
+    
+    // Get all inbox_events that reference leave_requests (to check for created events)
+    const { data: allInboxEvents } = await supabase
+      .from('inbox_events')
+      .select('id, payload, is_read, created_at')
+      .not('payload', 'is', null);
+    
+    // Build a map of reqId -> is_read from existing inbox_events
+    const reqIdToReadStatus = new Map<string, boolean>();
+    (allInboxEvents || []).forEach((e: any) => {
+      const reqId = e.payload?.reqId;
+      if (reqId && !reqIdToReadStatus.has(reqId)) {
+        reqIdToReadStatus.set(reqId, e.is_read || false);
+      }
+    });
+    
     const { data: allRequests, error: subReqError } = await supabase
       .from('leave_requests')
       .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
       .order('created_at', { ascending: false });
     if (!subReqError && allRequests) {
       for (const r of allRequests) {
-        if (!existingReqSet.has(r.id)) {
+        // Only backfill if there's no inbox_event for this request
+        // Check both the reqIds from events and the reqIdToReadStatus map
+        if (!existingReqSet.has(r.id) && !reqIdToReadStatus.has(r.id)) {
           const emp = employeesById[r.employee_id];
           data.push({
             id: r.id, // synthetic id
             // keep kind consistent with UI label logic
             kind: r.type === 'vacation' ? 'leave_request_submitted' : 'day_off_request_submitted',
-            is_read: false,
+            is_read: false, // New backfilled events are always unread
             created_at: r.created_at,
             request: {
               id: r.id,
