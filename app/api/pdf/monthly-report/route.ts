@@ -277,6 +277,17 @@ export async function GET(request: NextRequest) {
     // Generate PDF via @react-pdf/renderer (avoids font file issues)
     console.log("[PDF] Starting PDF generation (react-pdf)");
 
+    // Centralized column definitions - used for both header and body rows
+    const columnDefs = [
+      { width: 50, key: 'day', textAlign: 'left' as const },
+      { width: 90, key: 'work', textAlign: 'right' as const },
+      { width: 90, key: 'vacation', textAlign: 'right' as const },
+      { width: 90, key: 'sick', textAlign: 'right' as const },
+      { width: 90, key: 'holiday', textAlign: 'right' as const },
+      { width: 100, key: 'dayOff', textAlign: 'right' as const },
+      { width: 180, key: 'note', textAlign: 'left' as const },
+    ];
+
     const styles = StyleSheet.create({
       page: { padding: 32, fontSize: 10 },
       header: { marginBottom: 12 },
@@ -286,17 +297,31 @@ export async function GET(request: NextRequest) {
       divider: { height: 1, backgroundColor: '#999', marginVertical: 8 },
       table: { display: 'flex', flexDirection: 'column', borderWidth: 1, borderColor: '#ccc' },
       tableRow: { display: 'flex', flexDirection: 'row' },
-      th: { padding: 6, fontSize: 10, fontWeight: 700, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#ccc', backgroundColor: '#f7f7f7' },
-      td: { padding: 6, fontSize: 10, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#ddd' },
-      colDay: { width: 50 },
-      colDayHoliday: { width: 50, backgroundColor: '#ffc0cb' }, // Pink for holidays
-      colDayWeekend: { width: 50, backgroundColor: '#add8e6' }, // Blue for weekends
-      colWork: { width: 90, textAlign: 'right' },
-      colVacation: { width: 90, textAlign: 'right' },
-      colSick: { width: 90, textAlign: 'right' },
-      colHoliday: { width: 90, textAlign: 'right' },
-      colDayOff: { width: 100, textAlign: 'right' },
-      colNote: { width: 180 },
+      // Unified cell style - same for header and body
+      cell: { 
+        padding: 6, 
+        fontSize: 10, 
+        borderRightWidth: 1, 
+        borderBottomWidth: 1, 
+        borderColor: '#ccc', // Same color for all borders
+      },
+      th: { 
+        fontWeight: 700, 
+        backgroundColor: '#f7f7f7',
+      },
+      td: { 
+        // Body cells inherit base cell style
+      },
+      // Column-specific styles (widths and alignment)
+      colDay: { width: columnDefs[0].width },
+      colDayHoliday: { width: columnDefs[0].width, backgroundColor: '#ffc0cb' }, // Pink for holidays
+      colDayWeekend: { width: columnDefs[0].width, backgroundColor: '#add8e6' }, // Blue for weekends
+      colWork: { width: columnDefs[1].width, textAlign: columnDefs[1].textAlign },
+      colVacation: { width: columnDefs[2].width, textAlign: columnDefs[2].textAlign },
+      colSick: { width: columnDefs[3].width, textAlign: columnDefs[3].textAlign },
+      colHoliday: { width: columnDefs[4].width, textAlign: columnDefs[4].textAlign },
+      colDayOff: { width: columnDefs[5].width, textAlign: columnDefs[5].textAlign },
+      colNote: { width: columnDefs[6].width, textAlign: columnDefs[6].textAlign },
       summaryRow: { display: 'flex', flexDirection: 'row', marginTop: 10 },
       cellLabel: { width: 160, color: '#333' },
       cellValue: { width: 140 },
@@ -308,28 +333,50 @@ export async function GET(request: NextRequest) {
       return `${h} h ${m} min`;
     };
 
-    // Helper to create multi-line header text with explicit line breaks
-    const createMultiLineHeader = (line1: string, line2: string, styleArray: any[]) => {
-      // Find textAlign from column style (e.g., colWork has textAlign: 'right')
-      const columnStyle = styleArray.find((s: any) => s?.textAlign);
-      const textAlign = columnStyle?.textAlign || 'center';
+    // Helper to create a cell with consistent styling
+    const createCell = (content: React.ReactElement | string, cellStyle: any, isHeader: boolean = false, isLast: boolean = false) => {
+      const baseStyle = [
+        styles.cell, // Base cell style (padding, borders, font)
+        cellStyle, // Column-specific style (width, textAlign, background)
+      ];
       
-      // Merge all styles for the container View
-      const containerStyle = [
-        styles.th, // Base header style (padding, borders, background)
-        ...styleArray.filter((s: any) => s !== styles.th && !s?.textAlign), // Column width styles
-        {
+      if (isHeader) {
+        baseStyle.push(styles.th); // Header-specific (bold, background)
+      }
+      
+      // Remove right border from last column
+      const finalStyle = isLast 
+        ? [...baseStyle, { borderRightWidth: 0 }]
+        : baseStyle;
+      
+      if (typeof content === 'string') {
+        return React.createElement(Text, { style: finalStyle }, content);
+      }
+      return React.createElement(View, { style: finalStyle }, content);
+    };
+
+    // Helper to create multi-line header text with explicit line breaks
+    const createMultiLineHeader = (line1: string, line2: string, columnIndex: number) => {
+      const colDef = columnDefs[columnIndex];
+      const textAlign = colDef.textAlign;
+      
+      const cellStyle = [
+        { width: colDef.width, textAlign },
+      ];
+      
+      const content = React.createElement(View, {
+        style: {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: textAlign === 'right' ? 'flex-end' : textAlign === 'left' ? 'flex-start' : 'center',
         }
-      ];
-      
-      return React.createElement(View, { style: containerStyle },
+      },
         React.createElement(Text, { style: { fontSize: 10, fontWeight: 700, textAlign } }, line1),
         React.createElement(Text, { style: { fontSize: 10, fontWeight: 700, textAlign } }, line2)
       );
+      
+      return createCell(content, cellStyle[0], true, columnIndex === columnDefs.length - 1);
     };
 
     const docElement = React.createElement(Document, null,
@@ -342,13 +389,13 @@ export async function GET(request: NextRequest) {
         React.createElement(Text, { style: styles.sectionTitle }, 'Tageseinträge'),
         React.createElement(View, { style: styles.table },
           React.createElement(View, { style: styles.tableRow },
-            React.createElement(Text, { style: [styles.th, styles.colDay] }, 'Tag'),
-            createMultiLineHeader('Arbeits-', 'stunden', [styles.th, styles.colWork]),
-            createMultiLineHeader('Urlaubs-', 'stunden', [styles.th, styles.colVacation]),
-            createMultiLineHeader('Krankheits-', 'stunden', [styles.th, styles.colSick]),
-            createMultiLineHeader('Feiertags-', 'stunden', [styles.th, styles.colHoliday]),
-            createMultiLineHeader('Tages-', 'befreiung', [styles.th, styles.colDayOff]),
-            React.createElement(Text, { style: [styles.th, styles.colNote] }, 'Notiz'),
+            createCell('Tag', { width: columnDefs[0].width, textAlign: columnDefs[0].textAlign }, true, false),
+            createMultiLineHeader('Arbeits-', 'stunden', 1),
+            createMultiLineHeader('Urlaubs-', 'stunden', 2),
+            createMultiLineHeader('Krankheits-', 'stunden', 3),
+            createMultiLineHeader('Feiertags-', 'stunden', 4),
+            createMultiLineHeader('Tages-', 'befreiung', 5),
+            createCell('Notiz', { width: columnDefs[6].width, textAlign: columnDefs[6].textAlign }, true, true),
           ),
           ...effectiveEntries.map((d) => {
             // Determine day type for background color in "Tag" column
@@ -373,14 +420,22 @@ export async function GET(request: NextRequest) {
               tagCellStyle = styles.colDayHoliday;
             }
             
+            // Determine tag cell style (with background color for holidays/weekends)
+            const tagCellBaseStyle: any = { width: columnDefs[0].width, textAlign: columnDefs[0].textAlign };
+            if (tagCellStyle === styles.colDayHoliday) {
+              tagCellBaseStyle.backgroundColor = '#ffc0cb'; // Pink for holidays
+            } else if (tagCellStyle === styles.colDayWeekend) {
+              tagCellBaseStyle.backgroundColor = '#add8e6'; // Blue for weekends
+            }
+            
             return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
-              React.createElement(Text, { style: [styles.td, tagCellStyle] }, String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate())),
-              React.createElement(Text, { style: [styles.td, styles.colWork] }, d.workHours ? d.workHours.toFixed(1).replace('.', ',') : ''),
-              React.createElement(Text, { style: [styles.td, styles.colVacation] }, d.vacationHours ? d.vacationHours.toFixed(1).replace('.', ',') : ''),
-              React.createElement(Text, { style: [styles.td, styles.colSick] }, d.sickHours ? d.sickHours.toFixed(1).replace('.', ',') : ''),
-              React.createElement(Text, { style: [styles.td, styles.colHoliday] }, d.holidayHours ? d.holidayHours.toFixed(1).replace('.', ',') : ''),
-              React.createElement(Text, { style: [styles.td, styles.colDayOff] }, d.dayOffHours ? d.dayOffHours.toFixed(1).replace('.', ',') : ''),
-              React.createElement(Text, { style: [styles.td, styles.colNote] }, d.note || ''),
+              createCell(String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate()), tagCellBaseStyle, false, false),
+              createCell(d.workHours ? d.workHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[1].width, textAlign: columnDefs[1].textAlign }, false, false),
+              createCell(d.vacationHours ? d.vacationHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[2].width, textAlign: columnDefs[2].textAlign }, false, false),
+              createCell(d.sickHours ? d.sickHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[3].width, textAlign: columnDefs[3].textAlign }, false, false),
+              createCell(d.holidayHours ? d.holidayHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[4].width, textAlign: columnDefs[4].textAlign }, false, false),
+              createCell(d.dayOffHours ? d.dayOffHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[5].width, textAlign: columnDefs[5].textAlign }, false, false),
+              createCell(d.note || '', { width: columnDefs[6].width, textAlign: columnDefs[6].textAlign }, false, true),
             );
           })
         ),
