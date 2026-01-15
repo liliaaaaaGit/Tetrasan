@@ -457,19 +457,17 @@ export async function GET(request: NextRequest) {
             // 4. Weekend (Sat/Sun) without Holiday → BLUE
             // 5. Otherwise → default (no background color)
             
-            // Use isHoliday() function like the old working code - handles date normalization internally
-            const isHolidayDate = isHoliday(d.dateISO, holidaysSet);
+            // DIRECT holiday check - use holidaysSet.has() directly to avoid any function overhead
+            // This matches the pattern that works elsewhere in the code (line 257)
+            const isHolidayDate = holidaysSet.has(d.dateISO);
             const isSundayDate = isSunday(d.dateISO);
             const dayOfWeek = getDayOfWeek(d.dateISO);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             
-            // COMPREHENSIVE DEBUG LOGGING
+            // Debug logging for first few days and holidays
             const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
-            if (dayNumber <= 3 || isHolidayDate) {
-              console.log(`[PDF] Day ${dayNumber} (${d.dateISO}): isHolidayDate=${isHolidayDate}, holidaysSet.has=${holidaysSet.has(d.dateISO)}, isSunday=${isSundayDate}, isSaturday=${isSaturdayDate}, dayOfWeek=${dayOfWeek}`);
-              if (holidaysSet.size > 0) {
-                console.log(`[PDF] Sample holidaysSet entries:`, Array.from(holidaysSet).slice(0, 3));
-              }
+            if (dayNumber <= 5 || isHolidayDate) {
+              console.log(`[PDF] Day ${dayNumber} (${d.dateISO}): isHolidayDate=${isHolidayDate}, holidaysSet.has=${holidaysSet.has(d.dateISO)}, isSunday=${isSundayDate}, isSaturday=${isSaturdayDate}`);
             }
             
             // Determine background color for "Tag" cell with EXACT priority rules:
@@ -489,12 +487,6 @@ export async function GET(request: NextRequest) {
             } else if (isSaturdayDate) {
               // Rule 3: Saturday (non-holiday) → BLUE
               backgroundColor = '#BFE3F2';
-            }
-            
-            // BINARY TEST: Force pink for day 1 to verify rendering path
-            if (dayNumber === 1) {
-              backgroundColor = '#F7B6C2'; // FORCE PINK for day 1
-              console.log(`[PDF] 🔴 BINARY TEST: Forcing PINK for day 1`);
             }
             
             const dayText = String(dayNumber);
