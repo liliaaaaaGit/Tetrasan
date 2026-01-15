@@ -21,6 +21,8 @@ interface DayEntryFormProps {
  * Handles validation and conditional required fields based on status
  */
 export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = false, isAdmin = false }: DayEntryFormProps) {
+  // Allow admins to create new entries (when initialData is undefined), but keep read-only for viewing existing entries
+  const isReadOnly = isAdmin && !!initialData;
   const [status, setStatus] = useState<DayStatus>(initialData?.status || "arbeit");
   // Default "from" time:
   // - Use existing value if present
@@ -205,12 +207,12 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                   setVacationEndDate(initialData?.date || date);
                 }
               }}
-              disabled={isAdmin}
+              disabled={isReadOnly}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 status === s
                   ? "bg-brand text-white"
                   : "bg-secondary text-foreground hover:bg-secondary/80"
-              } ${isAdmin ? "cursor-not-allowed opacity-60" : ""}`}
+              } ${isReadOnly ? "cursor-not-allowed opacity-60" : ""}`}
             >
               {s === "arbeit"
                 ? t("statusOptions.work")
@@ -240,11 +242,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                 setBauvorhaben(e.target.value);
                 setErrors((prev) => ({ ...prev, bauvorhaben: "" }));
               }}
-              disabled={isAdmin}
+              disabled={isReadOnly}
               rows={2}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
                 errors.bauvorhaben ? "border-red-500" : "border-border"
-              } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               placeholder={t("placeholders.project")}
             />
             {errors.bauvorhaben && (
@@ -266,10 +268,10 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                   setFrom(e.target.value);
                   setErrors((prev) => ({ ...prev, from: "", to: "" }));
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.from ? "border-red-500" : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
               {errors.from && (
                 <p className="text-xs text-red-600 mt-1">{errors.from}</p>
@@ -293,10 +295,10 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                       : { ...prev, to: "" }
                   );
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.to ? "border-red-500" : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
               {errors.to && (
                 <p className="text-xs text-red-600 mt-1">{errors.to}</p>
@@ -319,10 +321,10 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                   setPause(parseInt(e.target.value, 10) || 0);
                   setErrors((prev) => ({ ...prev, pause: "" }));
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.pause ? "border-red-500" : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
             {errors.pause && (
               <p className="text-xs text-red-600 mt-1">{errors.pause}</p>
@@ -355,11 +357,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                 setTaetigkeit(e.target.value);
                 setErrors((prev) => ({ ...prev, taetigkeit: "" }));
               }}
-              disabled={isAdmin}
+              disabled={isReadOnly}
               rows={3}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
                 errors.taetigkeit ? "border-red-500" : "border-border"
-              } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               placeholder={t("placeholders.activity")}
             />
             {errors.taetigkeit && (
@@ -393,12 +395,12 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                     vacationDateRange: "",
                   }));
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.vacationStartDate || errors.vacationDateRange
                     ? "border-red-500"
                     : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
               {errors.vacationStartDate && (
                 <p className="mt-1 text-xs text-red-600" role="alert">
@@ -427,12 +429,12 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                     vacationDateRange: "",
                   }));
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.vacationEndDate || errors.vacationDateRange
                     ? "border-red-500"
                     : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
               {errors.vacationEndDate && (
                 <p className="mt-1 text-xs text-red-600" role="alert">
@@ -468,10 +470,10 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                   setFrom(e.target.value);
                   setErrors((prev) => ({ ...prev, from: "", to: "" }));
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.from ? "border-red-500" : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
               {errors.from && (
                 <p className="text-xs text-red-600 mt-1">{errors.from}</p>
@@ -491,10 +493,10 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
                   setTo(value);
                   setErrors((prev) => (!value ? { ...prev, to: "" } : { ...prev, to: "" }));
                 }}
-                disabled={isAdmin}
+                disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                   errors.to ? "border-red-500" : "border-border"
-                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
               />
               {errors.to && (
                 <p className="text-xs text-red-600 mt-1">{errors.to}</p>
@@ -531,11 +533,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               setKommentar(e.target.value);
               setErrors((prev) => ({ ...prev, kommentar: "" }));
             }}
-            disabled={isAdmin}
+                disabled={isReadOnly}
             rows={3}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
               errors.kommentar ? "border-red-500" : "border-border"
-            } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+            } ${isReadOnly ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
             placeholder={t("placeholders.commentSick")}
           />
           {errors.kommentar && (
@@ -544,8 +546,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         </div>
       )}
 
-      {/* Buttons - Hidden for admin view */}
-      {!isAdmin && (
+      {/* Buttons - Show for non-admin or when admin is creating new entry */}
+      {!isReadOnly && (
         <div className="flex gap-3 justify-end pt-4 border-t">
           <button
             type="button"
