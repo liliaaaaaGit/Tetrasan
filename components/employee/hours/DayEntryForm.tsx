@@ -36,6 +36,13 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const [kommentar, setKommentar] = useState(initialData?.kommentar ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const t = useTranslations("dayEntryForm");
+  // Vacation (Urlaub) date range – default to the clicked day when opening the modal
+  const [vacationStartDate, setVacationStartDate] = useState<string>(
+    (initialData?.rangeStart as string | undefined) || initialData?.date || date
+  );
+  const [vacationEndDate, setVacationEndDate] = useState<string>(
+    (initialData?.rangeEnd as string | undefined) || initialData?.date || date
+  );
 
   // Normalize time strings (handle HH:MM:SS format from HTML time inputs)
   const normalizeTime = (time: string): string => {
@@ -89,6 +96,21 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           }
         }
       }
+    } else if (status === "urlaub") {
+      // Vacation: validate date range (Von/Bis)
+      if (!vacationStartDate) {
+        newErrors.vacationStartDate = t("errors.startDateRequired");
+      }
+      if (!vacationEndDate) {
+        newErrors.vacationEndDate = t("errors.endDateRequired");
+      }
+      if (vacationStartDate && vacationEndDate) {
+        const start = new Date(vacationStartDate);
+        const end = new Date(vacationEndDate);
+        if (start > end) {
+          newErrors.vacationDateRange = t("errors.dateRangeInvalid");
+        }
+      }
     } else if (status === "krank") {
       // Sick day: comment required
       if (!kommentar.trim()) {
@@ -132,7 +154,8 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
     }
 
     const entry: DayEntry = {
-      date,
+      // For Urlaub we keep the clicked date for display but also pass the explicit range
+      date: status === "urlaub" && vacationStartDate ? vacationStartDate : date,
       status,
       ...(status === "arbeit" && {
         from: normalizedFrom,
@@ -154,6 +177,10 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       ...(status === "krank" && {
         kommentar,
       }),
+      ...(status === "urlaub" && {
+        rangeStart: vacationStartDate,
+        rangeEnd: vacationEndDate,
+      }),
     };
 
     onSave(entry);
@@ -172,6 +199,11 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               onClick={() => {
                 setStatus(s);
                 setErrors({});
+                // When switching to Urlaub, initialize range to the currently selected day
+                if (s === "urlaub") {
+                  setVacationStartDate(initialData?.date || date);
+                  setVacationEndDate(initialData?.date || date);
+                }
               }}
               disabled={isAdmin}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -334,6 +366,89 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
               <p className="text-xs text-red-600 mt-1">{errors.taetigkeit}</p>
             )}
           </div>
+        </>
+      )}
+
+      {/* Vacation (Urlaub) date range fields */}
+      {status === "urlaub" && (
+        <>
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="vacationStartDate"
+                className="block text-sm font-medium mb-1.5 text-foreground"
+              >
+                {t("labels.from")}
+              </label>
+              <input
+                id="vacationStartDate"
+                type="date"
+                value={vacationStartDate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setVacationStartDate(value);
+                  setErrors((prev) => ({
+                    ...prev,
+                    vacationStartDate: "",
+                    vacationDateRange: "",
+                  }));
+                }}
+                disabled={isAdmin}
+                className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.vacationStartDate || errors.vacationDateRange
+                    ? "border-red-500"
+                    : "border-border"
+                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              />
+              {errors.vacationStartDate && (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {errors.vacationStartDate}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="vacationEndDate"
+                className="block text-sm font-medium mb-1.5 text-foreground"
+              >
+                {t("labels.to")}
+              </label>
+              <input
+                id="vacationEndDate"
+                type="date"
+                value={vacationEndDate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setVacationEndDate(value);
+                  setErrors((prev) => ({
+                    ...prev,
+                    vacationEndDate: "",
+                    vacationDateRange: "",
+                  }));
+                }}
+                disabled={isAdmin}
+                className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.vacationEndDate || errors.vacationDateRange
+                    ? "border-red-500"
+                    : "border-border"
+                } ${isAdmin ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+              />
+              {errors.vacationEndDate && (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {errors.vacationEndDate}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {errors.vacationDateRange && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs text-red-600" role="alert">
+                {errors.vacationDateRange}
+              </p>
+            </div>
+          )}
         </>
       )}
 

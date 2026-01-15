@@ -251,77 +251,130 @@ function HoursPageContent() {
   const handleSaveEntry = async (entry: DayEntry) => {
     try {
       setIsSaving(true);
-      
-      // Convert DayEntry to database format
-      const status =
-        entry.status === "arbeit"
-          ? "work"
-          : entry.status === "urlaub"
-            ? "vacation"
-            : entry.status === "tagesbefreiung"
-              ? "day_off"
-              : "sick";
-      const projectName = (entry.bauvorhaben || '').trim();
-      const activityNote = (entry.note ?? entry.taetigkeit ?? '').trim();
-      
-      const dbEntry = {
-        date: entry.date,
-        status,
-        // For work status, include time fields
-        ...(status === 'work' && {
-          time_from: entry.from,
-          time_to: entry.to ?? null,
-          break_minutes: entry.pause ?? 0,
-          hours_decimal: entry.hours ?? 0,
-          activity_note: activityNote || null,
-          project_name: projectName || null,
-        }),
-        // For day_off, allow optional time range and store 8h if full-day
-        ...(status === "day_off" && {
-          time_from: entry.to ? entry.from : "00:00",
-          time_to: entry.to ? entry.to : "00:01",
-          break_minutes: 0,
-          hours_decimal: entry.to ? (entry.hours ?? 0) : 8,
-          activity_note: null,
-          project_name: null,
-          comment: null,
-        }),
-        // For vacation/sick status, include comment
-        ...((status === 'vacation' || status === 'sick') && {
-          comment: entry.comment || entry.kommentar || '',
-          // Set default values for required fields (time_to must be > time_from)
-          time_from: '00:00',
-          time_to: '00:01',
-          break_minutes: 0,
-          hours_decimal: 0,
-          project_name: null,
-        }),
+      const projectName = (entry.bauvorhaben || "").trim();
+      const activityNote = (entry.note ?? entry.taetigkeit ?? "").trim();
+
+      // Helper to map a single DayEntry + date to the API payload
+      const buildDbEntryForDate = (singleDate: string) => {
+        const status =
+          entry.status === "arbeit"
+            ? "work"
+            : entry.status === "urlaub"
+              ? "vacation"
+              : entry.status === "tagesbefreiung"
+                ? "day_off"
+                : "sick";
+
+        return {
+          date: singleDate,
+          status,
+          // For work status, include time fields
+          ...(status === "work" && {
+            time_from: entry.from,
+            time_to: entry.to ?? null,
+            break_minutes: entry.pause ?? 0,
+            hours_decimal: entry.hours ?? 0,
+            activity_note: activityNote || null,
+            project_name: projectName || null,
+          }),
+          // For day_off, allow optional time range and store 8h if full-day
+          ...(status === "day_off" && {
+            time_from: entry.to ? entry.from : "00:00",
+            time_to: entry.to ? entry.to : "00:01",
+            break_minutes: 0,
+            hours_decimal: entry.to ? (entry.hours ?? 0) : 8,
+            activity_note: null,
+            project_name: null,
+            comment: null,
+          }),
+          // For vacation/sick status, include comment
+          ...((status === "vacation" || status === "sick") && {
+            comment: entry.comment || entry.kommentar || "",
+            // Set default values for required fields (time_to must be > time_from)
+            time_from: "00:00",
+            time_to: "00:01",
+            break_minutes: 0,
+            hours_decimal: 0,
+            project_name: null,
+          }),
+        };
       };
 
-      let response;
-      if (entry.id) {
-        // Update existing entry
-        response = await fetch(`/api/timesheet-entries/${entry.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dbEntry),
-        });
+      // Special handling: Urlaub created from the Stunden modal can be a date range.
+      // In that case, create/update one vacation entry per day in the range.
+      if (
+        entry.status === "urlaub" &&
+        entry.rangeStart &&
+        entry.rangeEnd &&
+        !entry.id
+      ) {
+        const start = new Date(entry.rangeStart);
+        const end = new Date(entry.rangeEnd);
+
+        // Normalise times to midnight to avoid DST issues
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+
+        if (start > end) {
+          throw new Error("Invalid vacation date range");
+        }
+
+        for (
+          let d = new Date(start.getTime());
+          d <= end;
+          d.setDate(d.getDate() + 1)
+        ) {
+          const isoDate = d.toISOString().slice(0, 10); // YYYY-MM-DD
+          const dbEntryForDay = buildDbEntryForDate(isoDate);
+          const response = await fetch("/api/timesheet-entries", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dbEntryForDay),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("API Error (vacation range):", errorData);
+            throw new Error(
+              `Failed to save vacation entry: ${
+                errorData.details || errorData.error || response.statusText
+              }`
+            );
+          }
+        }
       } else {
-        // Create new entry
-        response = await fetch('/api/timesheet-entries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dbEntry),
-        });
-      }
+        // Default behaviour: single-day entry (work, sick, day_off, or existing Urlaub)
+        const dbEntry = buildDbEntryForDate(entry.date);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(`Failed to save timesheet entry: ${errorData.details || errorData.error}`);
-      }
+        let response;
+        if (entry.id) {
+          // Update existing entry
+          response = await fetch(`/api/timesheet-entries/${entry.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dbEntry),
+          });
+        } else {
+          // Create new entry
+          response = await fetch("/api/timesheet-entries", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dbEntry),
+          });
+        }
 
-      const { data } = await response.json();
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("API Error:", errorData);
+          throw new Error(
+            `Failed to save timesheet entry: ${
+              errorData.details || errorData.error
+            }`
+          );
+        }
+
+        await response.json();
+      }
       
       showToast(tTimesheet("saveSuccess"));
       
