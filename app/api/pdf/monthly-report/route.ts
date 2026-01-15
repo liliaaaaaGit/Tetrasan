@@ -308,6 +308,30 @@ export async function GET(request: NextRequest) {
       return `${h} h ${m} min`;
     };
 
+    // Helper to create multi-line header text with explicit line breaks
+    const createMultiLineHeader = (line1: string, line2: string, styleArray: any[]) => {
+      // Find textAlign from column style (e.g., colWork has textAlign: 'right')
+      const columnStyle = styleArray.find((s: any) => s?.textAlign);
+      const textAlign = columnStyle?.textAlign || 'center';
+      
+      // Merge all styles for the container View
+      const containerStyle = [
+        styles.th, // Base header style (padding, borders, background)
+        ...styleArray.filter((s: any) => s !== styles.th && !s?.textAlign), // Column width styles
+        {
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: textAlign === 'right' ? 'flex-end' : textAlign === 'left' ? 'flex-start' : 'center',
+        }
+      ];
+      
+      return React.createElement(View, { style: containerStyle },
+        React.createElement(Text, { style: { fontSize: 10, fontWeight: 700, textAlign } }, line1),
+        React.createElement(Text, { style: { fontSize: 10, fontWeight: 700, textAlign } }, line2)
+      );
+    };
+
     const docElement = React.createElement(Document, null,
       React.createElement(Page, { size: 'A4', style: styles.page },
         React.createElement(View, { style: styles.header },
@@ -319,11 +343,11 @@ export async function GET(request: NextRequest) {
         React.createElement(View, { style: styles.table },
           React.createElement(View, { style: styles.tableRow },
             React.createElement(Text, { style: [styles.th, styles.colDay] }, 'Tag'),
-            React.createElement(Text, { style: [styles.th, styles.colWork] }, 'Arbeitsstunden'),
-            React.createElement(Text, { style: [styles.th, styles.colVacation] }, 'Urlaubsstunden'),
-            React.createElement(Text, { style: [styles.th, styles.colSick] }, 'Krankheitsstunden'),
-            React.createElement(Text, { style: [styles.th, styles.colHoliday] }, 'Feiertagsstunden'),
-            React.createElement(Text, { style: [styles.th, styles.colDayOff] }, 'Tagesbefreiungsstunden'),
+            createMultiLineHeader('Arbeits-', 'stunden', [styles.th, styles.colWork]),
+            createMultiLineHeader('Urlaubs-', 'stunden', [styles.th, styles.colVacation]),
+            createMultiLineHeader('Krankheits-', 'stunden', [styles.th, styles.colSick]),
+            createMultiLineHeader('Feiertags-', 'stunden', [styles.th, styles.colHoliday]),
+            createMultiLineHeader('Tages-', 'befreiung', [styles.th, styles.colDayOff]),
             React.createElement(Text, { style: [styles.th, styles.colNote] }, 'Notiz'),
           ),
           ...effectiveEntries.map((d) => {
