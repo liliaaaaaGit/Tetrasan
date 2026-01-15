@@ -457,13 +457,16 @@ export async function GET(request: NextRequest) {
             // 4. Weekend (Sat/Sun) without Holiday → BLUE
             // 5. Otherwise → default (no background color)
             
-            // Normalize dateISO to ensure consistent format (YYYY-MM-DD)
-            const normalizedDate = d.dateISO.split('T')[0];
-            // DIRECT check - bypass isHoliday function to avoid any issues
-            const isHolidayDate = holidaysSet.has(normalizedDate);
-            const isSundayDate = isSunday(normalizedDate);
-            const dayOfWeek = getDayOfWeek(normalizedDate);
+            // Use isHoliday() function like the old working code - handles date normalization internally
+            const isHolidayDate = isHoliday(d.dateISO, holidaysSet);
+            const isSundayDate = isSunday(d.dateISO);
+            const dayOfWeek = getDayOfWeek(d.dateISO);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
+            
+            // Debug logging (temporary - remove after verification)
+            if (process.env.NODE_ENV === 'development' && isHolidayDate) {
+              console.log(`[PDF] Holiday detected: ${d.dateISO}, isHolidayDate=${isHolidayDate}, holidaysSet.has=${holidaysSet.has(d.dateISO)}`);
+            }
             
             // Determine background color for "Tag" cell with EXACT priority rules:
             // 1. If Sunday → BLUE (even if holiday)
