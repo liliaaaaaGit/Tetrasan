@@ -132,10 +132,26 @@ export function MonthlyOverviewList({
     return `${normFrom} - ${normTo}`;
   };
 
-  // Format time range for display (original)
+  // Format time range for display
   const formatTimeRange = (entry: DayEntry): string => {
-    if ((entry.status === "arbeit" || entry.status === "tagesbefreiung") && entry.from && entry.to) {
+    if (entry.status === "arbeit" && entry.from && entry.to) {
       return formatTimeRangeWithSeconds(entry.from, entry.to);
+    }
+    if (entry.status === "tagesbefreiung") {
+      // For day-off: only show time range if it's a partial day (not full-day with 00:00-00:01)
+      // Normalize time strings (remove seconds if present) for comparison
+      const normalizedFrom = entry.from?.substring(0, 5) || "";
+      const normalizedTo = entry.to?.substring(0, 5) || "";
+      // Check if it's a full-day entry (8 hours with default placeholder times)
+      const isFullDay = normalizedFrom === "00:00" && normalizedTo === "00:01" && 
+                        typeof entry.hours === "number" && Math.abs(entry.hours - 8) < 0.01;
+      
+      if (!isFullDay && entry.from && entry.to) {
+        // Partial day-off: show actual time range
+        return formatTimeRangeWithSeconds(entry.from, entry.to);
+      }
+      // Full day-off: return empty string (will be hidden in display)
+      return "";
     }
     return "00:00:00 - 00:01:00";
   };
@@ -249,10 +265,12 @@ export function MonthlyOverviewList({
                   )}
                   {entry.status === "tagesbefreiung" && (
                     <>
-                      {/* Time Range (optional for partial day-off) */}
-                      <div className="text-sm text-gray-600 mb-1">
-                        {formatTimeRange(entry)}
-                      </div>
+                      {/* Time Range (only for partial day-off) */}
+                      {formatTimeRange(entry) && (
+                        <div className="text-sm text-gray-600 mb-1">
+                          {formatTimeRange(entry)}
+                        </div>
+                      )}
                       {/* Duration for day-off (partial or full day) */}
                       <div className="text-sm text-gray-600">
                         Dauer (Tagesbefreiung): {formatDayOffHours(entry.hours)}
