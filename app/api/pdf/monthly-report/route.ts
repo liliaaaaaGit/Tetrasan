@@ -483,26 +483,29 @@ export async function GET(request: NextRequest) {
             }
             
             const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
+            const dayText = String(dayNumber);
             
-            // Build tag cell style - ALWAYS include backgroundColor if set
-            const tagCellBaseStyle: any = { 
-              width: columnDefs[0].width, 
+            // MANUAL Tag cell rendering - guaranteed to work like weekend blue
+            const tagCellStyle: any = {
+              ...styles.cell, // Base: padding, borders, font
+              width: columnDefs[0].width,
               textAlign: columnDefs[0].textAlign,
+              minHeight: 24,
+              justifyContent: 'center',
             };
             
-            // CRITICAL: Set backgroundColor directly on the style object
+            // Apply backgroundColor directly (same pattern as weekend blue)
             if (backgroundColor) {
-              tagCellBaseStyle.backgroundColor = backgroundColor;
+              tagCellStyle.backgroundColor = backgroundColor;
             }
             
-            // Visual debug marker for holidays (dev only - remove after verification)
-            let dayText = String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate());
-            if (isHolidayDate && process.env.NODE_ENV === 'development') {
-              dayText = `${dayText}*`; // Add asterisk marker for holidays in dev
-            }
+            // Render Tag cell manually (NOT using createCell)
+            const tagCell = React.createElement(View, { style: tagCellStyle },
+              React.createElement(Text, { style: { fontSize: 10 } }, dayText)
+            );
             
             return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
-              createCell(dayText, tagCellBaseStyle, false, false),
+              tagCell,
               createCell(d.workHours ? d.workHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[1].width, textAlign: columnDefs[1].textAlign }, false, false),
               createCell(d.vacationHours ? d.vacationHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[2].width, textAlign: columnDefs[2].textAlign }, false, false),
               createCell(d.sickHours ? d.sickHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[3].width, textAlign: columnDefs[3].textAlign }, false, false),
