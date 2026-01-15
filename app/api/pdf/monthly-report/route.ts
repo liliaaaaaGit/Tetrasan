@@ -359,44 +359,53 @@ export async function GET(request: NextRequest) {
     };
 
     // Helper to create a cell with consistent styling
-    // IMPORTANT: backgroundColor must be on a View container, not Text element
+    // CRITICAL: Always return View as root, backgroundColor on root View with borders
     const createCell = (content: React.ReactElement | string, cellStyle: any, isHeader: boolean = false, isLast: boolean = false) => {
-      const baseStyle = [
-        styles.cell, // Base cell style (padding, borders, font)
-        cellStyle, // Column-specific style (width, textAlign, background)
+      // Extract backgroundColor BEFORE building styles (to avoid conflicts)
+      const backgroundColor = cellStyle?.backgroundColor;
+      
+      // Build base styles WITHOUT backgroundColor
+      const baseStyle: any[] = [
+        styles.cell, // Base cell style (padding, borders, font) - NO backgroundColor
       ];
       
+      // Add column-specific styles (width, textAlign) but EXCLUDE backgroundColor
+      if (cellStyle) {
+        const { backgroundColor: _, ...cellStyleWithoutBg } = cellStyle;
+        if (Object.keys(cellStyleWithoutBg).length > 0) {
+          baseStyle.push(cellStyleWithoutBg);
+        }
+      }
+      
+      // Add header styles (but remove its backgroundColor if we have a custom one)
       if (isHeader) {
-        baseStyle.push(styles.th); // Header-specific (bold, background)
+        if (backgroundColor) {
+          // If we have custom backgroundColor, use th style but override its background
+          baseStyle.push({ fontWeight: 700 }); // Just the bold, no background
+        } else {
+          baseStyle.push(styles.th); // Header-specific (bold, default background)
+        }
       }
       
       // Remove right border from last column
-      const borderStyle = isLast 
-        ? { borderRightWidth: 0 }
-        : {};
-      
-      // Extract backgroundColor if present - must be applied to View container
-      const backgroundColor = cellStyle?.backgroundColor;
-      
-      // Build final style without backgroundColor (will be applied to View)
-      const finalStyle = [...baseStyle, borderStyle];
-      
-      // If we have backgroundColor, wrap content in a View with the background
-      // Otherwise, render directly
-      if (backgroundColor) {
-        // Wrap in View with backgroundColor, then Text inside
-        const viewStyle = [...finalStyle, { backgroundColor }];
-        const textContent = typeof content === 'string' 
-          ? React.createElement(Text, { style: { fontSize: 10 } }, content)
-          : content;
-        return React.createElement(View, { style: viewStyle }, textContent);
-      } else {
-        // No background color - render normally
-        if (typeof content === 'string') {
-          return React.createElement(Text, { style: finalStyle }, content);
-        }
-        return React.createElement(View, { style: finalStyle }, content);
+      if (isLast) {
+        baseStyle.push({ borderRightWidth: 0 });
       }
+      
+      // Ensure height for background visibility
+      baseStyle.push({ minHeight: 24, justifyContent: 'center' as const });
+      
+      // Apply backgroundColor LAST so it overrides everything
+      if (backgroundColor) {
+        baseStyle.push({ backgroundColor });
+      }
+      
+      // Always return View as root (never Text as root)
+      const textContent = typeof content === 'string' 
+        ? React.createElement(Text, { style: { fontSize: 10 } }, content)
+        : content;
+      
+      return React.createElement(View, { style: baseStyle }, textContent);
     };
 
     // Helper to create multi-line header text with explicit line breaks
@@ -471,13 +480,13 @@ export async function GET(request: NextRequest) {
             
             if (isSundayDate) {
               // Rule 1: Sunday → BLUE (even if holiday)
-              backgroundColor = '#add8e6';
+              backgroundColor = '#BFE3F2'; // Explicit blue hex
             } else if (isHolidayDate) {
               // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
-              backgroundColor = '#ffc0cb';
+              backgroundColor = '#F7B6C2'; // Explicit pink hex
             } else if (isSaturdayDate) {
               // Rule 3: Saturday (non-holiday) → BLUE
-              backgroundColor = '#add8e6';
+              backgroundColor = '#BFE3F2'; // Explicit blue hex
             }
             // Rule 4: Otherwise → default (no background color)
             
@@ -488,9 +497,11 @@ export async function GET(request: NextRequest) {
             };
             if (backgroundColor) {
               tagCellBaseStyle.backgroundColor = backgroundColor;
-              // Debug: Log when setting pink background
-              if (backgroundColor === '#ffc0cb') {
-                console.log(`[PDF] Setting PINK background for ${normalizedDate}`);
+              // Debug: Log when setting background
+              if (backgroundColor === '#F7B6C2') {
+                console.log(`[PDF] Setting PINK background (#F7B6C2) for ${normalizedDate}`);
+              } else if (backgroundColor === '#BFE3F2') {
+                console.log(`[PDF] Setting BLUE background (#BFE3F2) for ${normalizedDate}`);
               }
             }
             
