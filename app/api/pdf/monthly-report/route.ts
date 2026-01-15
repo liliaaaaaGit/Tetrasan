@@ -431,17 +431,8 @@ export async function GET(request: NextRequest) {
       return createCell(content, cellStyle[0], true, columnIndex === columnDefs.length - 1);
     };
 
-    // Generate build marker with commit hash and timestamp
-    const buildMarker = `PINKTEST-${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'LOCAL'}-${Date.now()}`;
-    console.log(`[PDF] Build marker: ${buildMarker}`);
-    
     const docElement = React.createElement(Document, null,
       React.createElement(Page, { size: 'A4', style: styles.page },
-        // WATERMARK: Build marker and magenta rectangle (PROOF OF NEW PDF)
-        React.createElement(View, { style: { marginBottom: 8, padding: 8, backgroundColor: '#fff', borderWidth: 2, borderColor: '#FF00FF' } },
-          React.createElement(Text, { style: { fontSize: 20, color: '#FF00FF', fontWeight: 'bold', marginBottom: 4 } }, `PDF BUILD MARKER: ${buildMarker}`),
-          React.createElement(View, { style: { width: 80, height: 20, backgroundColor: '#FF00FF' } }),
-        ),
         React.createElement(View, { style: styles.header },
           React.createElement(Text, { style: styles.title }, 'Tetrasan – Monatliche Stundenerfassung'),
           React.createElement(Text, { style: styles.subtitle }, `${employee.full_name || employee.email} – ${getMonthName(month - 1)} ${year}`),
@@ -474,28 +465,23 @@ export async function GET(request: NextRequest) {
             const dayOfWeek = getDayOfWeek(normalizedDate);
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             
-            // TEMPORARY TEST: Force magenta for ALL Tag cells to prove rendering works
-            // TODO: Restore conditional logic after confirming magenta appears
-            let backgroundColor: string | undefined = '#FF00FF'; // FORCE MAGENTA FOR ALL DAYS
+            // Determine background color for "Tag" cell with EXACT priority rules:
+            // 1. If Sunday → BLUE (even if holiday)
+            // 2. Else if isHoliday → PINK (includes Saturday holiday)
+            // 3. Else if Saturday → BLUE
+            // 4. Else → default (no background)
+            let backgroundColor: string | undefined = undefined;
             
-            // ORIGINAL LOGIC (commented out for testing):
-            // // Determine background color for "Tag" cell with EXACT priority rules:
-            // // 1. If Sunday → BLUE (even if holiday)
-            // // 2. Else if isHoliday → PINK (includes Saturday holiday)
-            // // 3. Else if Saturday → BLUE
-            // // 4. Else → default (no background)
-            // let backgroundColor: string | undefined = undefined;
-            // 
-            // if (isSundayDate) {
-            //   // Rule 1: Sunday → BLUE (even if holiday)
-            //   backgroundColor = '#BFE3F2';
-            // } else if (isHolidayDate) {
-            //   // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
-            //   backgroundColor = '#F7B6C2';
-            // } else if (isSaturdayDate) {
-            //   // Rule 3: Saturday (non-holiday) → BLUE
-            //   backgroundColor = '#BFE3F2';
-            // }
+            if (isSundayDate) {
+              // Rule 1: Sunday → BLUE (even if holiday)
+              backgroundColor = '#BFE3F2';
+            } else if (isHolidayDate) {
+              // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
+              backgroundColor = '#F7B6C2';
+            } else if (isSaturdayDate) {
+              // Rule 3: Saturday (non-holiday) → BLUE
+              backgroundColor = '#BFE3F2';
+            }
             
             const dayNumber = new Date(d.dateISO + 'T00:00:00Z').getUTCDate();
             const dayText = String(dayNumber);
