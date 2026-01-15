@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession, requireRole } from "@/lib/auth/session";
-import { createTimesheetEntriesFromLeaveRequest } from "./[id]/approve/route";
+import { createTimesheetEntriesFromLeaveRequest, generateDateRange } from "./[id]/approve/route";
+import { isSunday } from "@/lib/date-utils";
 
 /**
  * API Routes for Leave Requests
@@ -103,6 +104,16 @@ export async function POST(request: NextRequest) {
       }
       targetEmployeeId = employee_id;
       isAdminCreated = true;
+    }
+
+    // Validate that the date range contains at least one non-Sunday day
+    // Generate dates excluding Sundays to check if any valid days exist
+    const validDates = generateDateRange(period_start, period_end);
+    if (validDates.length === 0) {
+      return NextResponse.json(
+        { error: "Keine gültigen Tage im Zeitraum. Sonntage sind immer frei und können nicht als Urlaub oder Tagesbefreiung markiert werden." },
+        { status: 400 }
+      );
     }
 
     // Create new leave request

@@ -12,6 +12,7 @@ import {
   isToday,
   formatDateISO,
   formatHours,
+  isSunday,
 } from "@/lib/date-utils";
 import { ChevronLeft, ChevronRight, Loader2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -298,6 +299,10 @@ export function CalendarView({
   // Handle day click
   const handleDayClick = (day: number) => {
     const dateStr = formatDateISO(year, month, day);
+    // Block Sunday clicks - Sundays are always free
+    if (isSunday(dateStr)) {
+      return;
+    }
     setSelectedDate(dateStr);
   };
 
@@ -576,6 +581,7 @@ export function CalendarView({
                 const isTodayDate = isToday(year, month, day);
                 const hasEntry = dayEntries.length > 0;
                 const isHoliday = !!holiday;
+                const isSundayDate = isSunday(dateStr);
                 const statusClass =
                   hasDayOff
                     ? "bg-blue-100 border-blue-500 text-blue-900"
@@ -604,25 +610,35 @@ export function CalendarView({
                     key={dayIdx}
                     id={`day-${dateStr}`}
                     onClick={() => handleDayClick(day)}
-                    title={isHoliday ? tHours("holidayTooltip", { name: holiday.name }) : undefined}
+                    disabled={isSundayDate}
+                    title={
+                      isSundayDate
+                        ? "Sonntage sind immer frei; Einträge sind nicht erlaubt."
+                        : isHoliday
+                          ? tHours("holidayTooltip", { name: holiday.name })
+                          : undefined
+                    }
                     className={cn(
                       "aspect-square rounded-lg border-2 transition-all relative",
-                      "hover:border-brand hover:shadow-sm",
-                      "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
-                      // Entry styling first (if there's an entry)
-                      hasEntry && statusClass,
-                      // Holiday border: ALWAYS show blue border if it's a holiday (overrides entry border)
-                      isHoliday && "!border-brand",
+                      // Sunday: always disabled, grayed out, no hover
+                      isSundayDate && "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60",
+                      // Non-Sunday: normal interactions
+                      !isSundayDate && "hover:border-brand hover:shadow-sm",
+                      !isSundayDate && "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
+                      // Entry styling first (if there's an entry and not Sunday)
+                      !isSundayDate && hasEntry && statusClass,
+                      // Holiday border: ALWAYS show blue border if it's a holiday (overrides entry border, but not Sunday)
+                      !isSundayDate && isHoliday && "!border-brand",
                       // Holiday fill: show blue fill if holiday and no entry (more saturated blue)
-                      isHoliday && !hasEntry && "bg-holiday-fill",
+                      !isSundayDate && isHoliday && !hasEntry && "bg-holiday-fill",
                       // Holiday with entry: show subtle blue tint on top of entry color
-                      isHoliday && hasEntry && "bg-holiday-fill/40",
-                      // Today styling (if not a holiday and no entry)
-                      isTodayDate && !hasEntry && !isHoliday && "border-brand bg-brand/5 font-bold",
+                      !isSundayDate && isHoliday && hasEntry && "bg-holiday-fill/40",
+                      // Today styling (if not a holiday and no entry and not Sunday)
+                      !isSundayDate && isTodayDate && !hasEntry && !isHoliday && "border-brand bg-brand/5 font-bold",
                       // Today + holiday: apply holiday fill
-                      isTodayDate && isHoliday && !hasEntry && "bg-holiday-fill font-bold",
-                      // Empty day (no entry, no holiday, not today)
-                      !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
+                      !isSundayDate && isTodayDate && isHoliday && !hasEntry && "bg-holiday-fill font-bold",
+                      // Empty day (no entry, no holiday, not today, not Sunday)
+                      !isSundayDate && !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
                     )}
                   >
                     <span className="text-sm">{day}</span>

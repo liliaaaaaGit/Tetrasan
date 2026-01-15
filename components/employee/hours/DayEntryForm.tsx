@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import { DayEntry, DayStatus } from "./types";
-import { calculateHours, formatHours } from "@/lib/date-utils";
+import { calculateHours, formatHours, isSunday } from "@/lib/date-utils";
 import { Info } from "lucide-react";
 
 interface DayEntryFormProps {
@@ -76,6 +76,13 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Block entries on Sundays - Sundays are always free
+    if (isSunday(date)) {
+      newErrors.date = "Sonntage sind immer frei; Einträge sind nicht erlaubt.";
+      setErrors(newErrors);
+      return false;
+    }
+
     if (status === "arbeit") {
       if (!normalizedFrom) {
         newErrors.from = t("errors.fromRequired");
@@ -111,6 +118,21 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
         const end = new Date(vacationEndDate);
         if (start > end) {
           newErrors.vacationDateRange = t("errors.dateRangeInvalid");
+        }
+        // Check if range contains at least one non-Sunday day
+        let hasValidDay = false;
+        for (let d = new Date(start.getTime()); d <= end; d.setDate(d.getDate() + 1)) {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          const dateStr = `${year}-${month}-${day}`;
+          if (!isSunday(dateStr)) {
+            hasValidDay = true;
+            break;
+          }
+        }
+        if (!hasValidDay) {
+          newErrors.vacationDateRange = "Keine gültigen Tage im Zeitraum. Sonntage sind immer frei und können nicht als Urlaub markiert werden.";
         }
       }
     } else if (status === "krank") {

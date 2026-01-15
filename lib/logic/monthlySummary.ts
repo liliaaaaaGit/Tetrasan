@@ -3,6 +3,8 @@
  * Pure functions for calculating monthly summaries from timesheet entries
  */
 
+import { holidayPaidHours } from "@/lib/date-utils";
+
 export type SummaryInput = {
   year: number;
   month: number; // 1-12 (1-indexed)
@@ -119,6 +121,27 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
       // Day-off exemptions (Tagesbefreiung):
       // Use the effective hours so partial-day exemptions contribute proportionally.
       dayOffMinutes += effectiveMinutes;
+    }
+  });
+
+  // Add default paid hours for holidays that don't have work entries
+  // Business rule: Mon-Fri holidays = 8h paid, Saturday holidays = 0h, Sunday holidays = 0h (and blocked)
+  holidays.forEach((holidayDate) => {
+    // Check if there's already a work entry for this holiday
+    const hasWorkEntry = entries.some(
+      (e) => e.date === holidayDate && e.status === "work"
+    );
+
+    // Only add default hours if there's no work entry
+    // (If there's a work entry, it's already counted above)
+    if (!hasWorkEntry) {
+      const paidHours = holidayPaidHours(holidayDate, holidays);
+      const paidMinutes = Math.floor(paidHours * 60);
+      holidayMinutes += paidMinutes;
+      
+      if (paidMinutes > 0) {
+        console.log(`[computeMonthlySummary] Added default ${paidMinutes} minutes (${paidHours}h) for holiday ${holidayDate} without work entry`);
+      }
     }
   });
 

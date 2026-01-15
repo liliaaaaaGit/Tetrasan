@@ -175,6 +175,95 @@ export function formatHours(hours: number): string {
 }
 
 /**
+ * Check if a date (YYYY-MM-DD string or Date object) is a Sunday
+ * Sunday = day of week 0 (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+ */
+export function isSunday(date: string | Date): boolean {
+  const d = typeof date === 'string' ? new Date(date + 'T00:00:00Z') : date;
+  // Use UTC to avoid timezone issues
+  return d.getUTCDay() === 0;
+}
+
+/**
+ * Check if a date is a weekend (Saturday or Sunday)
+ */
+export function isWeekend(date: string | Date): boolean {
+  const d = typeof date === 'string' ? new Date(date + 'T00:00:00Z') : date;
+  const day = d.getUTCDay();
+  return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
+}
+
+/**
+ * Check if a date is a weekday (Monday-Friday)
+ */
+export function isWeekday(date: string | Date): boolean {
+  return !isWeekend(date);
+}
+
+/**
+ * Get day of week for a date (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+ */
+export function getDayOfWeek(date: string | Date): number {
+  const d = typeof date === 'string' ? new Date(date + 'T00:00:00Z') : date;
+  return d.getUTCDay();
+}
+
+/**
+ * Check if a date is a holiday
+ * @param date - Date string (YYYY-MM-DD) or Date object
+ * @param holidays - Set of holiday date strings (YYYY-MM-DD) or Map/Record of holidays
+ */
+export function isHoliday(
+  date: string | Date,
+  holidays: Set<string> | Record<string, any> | Map<string, any>
+): boolean {
+  const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
+  
+  if (holidays instanceof Set) {
+    return holidays.has(dateStr);
+  } else if (holidays instanceof Map) {
+    return holidays.has(dateStr);
+  } else if (typeof holidays === 'object' && holidays !== null) {
+    return dateStr in holidays;
+  }
+  
+  return false;
+}
+
+/**
+ * Calculate paid hours for a holiday based on business rules:
+ * - Mon-Fri holiday: 8h paid
+ * - Saturday holiday: 0h paid
+ * - Sunday: 0h (and blocked anyway, but included for completeness)
+ * @param date - Date string (YYYY-MM-DD) or Date object
+ * @param holidays - Set/Map/Record of holiday dates
+ * @returns Paid hours (0 or 8), or 0 if not a holiday
+ */
+export function holidayPaidHours(
+  date: string | Date,
+  holidays: Set<string> | Record<string, any> | Map<string, any>
+): number {
+  if (!isHoliday(date, holidays)) {
+    return 0;
+  }
+  
+  const dayOfWeek = getDayOfWeek(date);
+  
+  // Sunday: 0h (blocked anyway)
+  if (dayOfWeek === 0) {
+    return 0;
+  }
+  
+  // Saturday: 0h
+  if (dayOfWeek === 6) {
+    return 0;
+  }
+  
+  // Monday-Friday: 8h
+  return 8;
+}
+
+/**
  * Get calendar grid for a month
  * Returns array of weeks, each week has 7 days (some may be null for padding)
  */

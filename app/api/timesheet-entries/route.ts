@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
-import { calculateHours } from "@/lib/date-utils";
+import { calculateHours, isSunday } from "@/lib/date-utils";
 
 /**
  * API Routes for Timesheet Entries
@@ -128,6 +128,14 @@ export async function POST(request: NextRequest) {
     if (!date || !status) {
       return NextResponse.json(
         { error: "Datum und Status sind Pflichtfelder." },
+        { status: 400 }
+      );
+    }
+
+    // Block entries on Sundays - Sundays are always free
+    if (isSunday(date)) {
+      return NextResponse.json(
+        { error: "Sonntage sind immer frei; Einträge sind nicht erlaubt." },
         { status: 400 }
       );
     }
