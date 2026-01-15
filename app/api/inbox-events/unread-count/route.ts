@@ -27,43 +27,51 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
 
-    // Count unread inbox events
-    const { count, error: countError } = await admin
+    // Load inbox events (same logic as main route)
+    const { data: events, error: eventsError } = await admin
       .from('inbox_events')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_read', false);
-
-    if (countError) {
-      console.error('[InboxEvents] Error counting unread events:', countError);
-      return NextResponse.json({ error: 'Fehler beim Zählen der ungelesenen Nachrichten.' }, { status: 500 });
+      .select('id, kind, payload, is_read, created_at')
+      .order('created_at', { ascending: false });
+    
+    if (eventsError) {
+      console.error('[InboxEvents] Error fetching events:', eventsError.message);
+      return NextResponse.json({ error: 'Fehler beim Laden der Benachrichtigungen.' }, { status: 500 });
     }
 
-    // Also check for backfilled events (leave_requests without inbox_events)
-    // This matches the logic in the main inbox-events route
+    // Collect request IDs from events
+    const reqIds = (events || []).map((e: any) => {
+      const p = e.payload || {};
+      return p.reqId || p.requestId || p.leaveRequestId || null;
+    }).filter(Boolean);
+
+    // Filter out soft-deleted events and count unread (matching main route logic)
+    const validUnreadEvents = (events || []).filter((e: any) => {
+      // Skip soft-deleted events
+      if (e.payload && e.payload.deleted === true) {
+        return false;
+      }
+      return e.is_read === false;
+    });
+
+    // Backfill: include submitted leave requests that have no inbox event (matching main route)
+    const existingReqSet = new Set(reqIds);
     const { data: allRequests, error: reqError } = await admin
       .from('leave_requests')
-      .select('id')
+      .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
       .order('created_at', { ascending: false });
 
     let backfilledUnreadCount = 0;
-    if (!reqError && allRequests && allRequests.length > 0) {
-      // Get all existing inbox event reqIds
-      const { data: existingEvents } = await admin
-        .from('inbox_events')
-        .select('payload')
-        .not('payload', 'is', null);
-
-      const existingReqIds = new Set(
-        (existingEvents || [])
-          .map((e: any) => e.payload?.reqId)
-          .filter(Boolean)
-      );
-
-      // Count requests that don't have inbox events (these are considered unread)
-      backfilledUnreadCount = allRequests.filter((r: any) => !existingReqIds.has(r.id)).length;
+    if (!reqError && allRequests) {
+      for (const r of allRequests) {
+        // Only count requests that don't have inbox events (backfilled)
+        // These are always considered unread (is_read: false in main route)
+        if (!existingReqSet.has(r.id)) {
+          backfilledUnreadCount++;
+        }
+      }
     }
 
-    const totalUnread = (count || 0) + backfilledUnreadCount;
+    const totalUnread = validUnreadEvents.length + backfilledUnreadCount;
 
     return NextResponse.json({ count: totalUnread });
   } catch (error) {
