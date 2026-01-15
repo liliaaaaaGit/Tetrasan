@@ -139,24 +139,50 @@ export function CalendarView({
       const entriesMap: Record<string, DayEntry[]> = {};
       data.forEach((entry: any) => {
         const dateStr = entry.date;
+
+        // Normalize base fields from database
+        let from: string | undefined = entry.time_from || undefined;
+        let to: string | undefined = entry.time_to || undefined;
+        const rawHours =
+          typeof entry.hours_decimal === "number" && entry.hours_decimal > 0
+            ? entry.hours_decimal
+            : undefined;
+
+        // Detect full-day day_off entries that use 00:00–00:01 as a technical placeholder.
+        // For those, we hide the times in the UI but keep the hours (usually 8h).
+        const isDayOff = entry.status === "day_off";
+        const normalizedFrom = typeof from === "string" ? from.substring(0, 5) : "";
+        const normalizedTo = typeof to === "string" ? to.substring(0, 5) : "";
+        const isFullDayDayOff =
+          isDayOff &&
+          normalizedFrom === "00:00" &&
+          normalizedTo === "00:01" &&
+          typeof rawHours === "number" &&
+          Math.abs(rawHours - 8) < 0.01;
+
+        if (isFullDayDayOff) {
+          from = undefined;
+          to = undefined;
+        }
+
         const mappedEntry: DayEntry = {
           id: entry.id,
           date: dateStr,
-          from: entry.time_from,
-          to: entry.time_to,
+          from,
+          to,
           pause: entry.break_minutes || 0,
-          hours: entry.hours_decimal,
+          hours: rawHours,
           status:
-            entry.status === 'work'
-              ? 'arbeit'
-              : entry.status === 'vacation'
-                ? 'urlaub'
-                : entry.status === 'day_off'
-                  ? 'tagesbefreiung'
-                  : 'krank',
+            entry.status === "work"
+              ? "arbeit"
+              : entry.status === "vacation"
+                ? "urlaub"
+                : entry.status === "day_off"
+                  ? "tagesbefreiung"
+                  : "krank",
           note: entry.activity_note,
           comment: entry.comment,
-          bauvorhaben: entry.project_name || '',
+          bauvorhaben: entry.project_name || "",
           taetigkeit: entry.activity_note,
           kommentar: entry.comment,
         };
