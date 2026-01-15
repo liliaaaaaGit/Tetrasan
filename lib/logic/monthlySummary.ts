@@ -9,7 +9,8 @@ export type SummaryInput = {
   entries: Array<{
     id: string;
     date: string; // ISO yyyy-mm-dd
-    status: 'work' | 'vacation' | 'sick';
+    // Include 'day_off' so Tagesbefreiung is part of the monthly summary
+    status: 'work' | 'vacation' | 'sick' | 'day_off';
     hours_decimal: number; // original stored value
   }>;
   corrections: Array<{
