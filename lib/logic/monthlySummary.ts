@@ -26,6 +26,7 @@ export type SummaryOutput = {
   sickMinutes: number;
   vacationMinutes: number;
   holidayMinutes: number;
+  dayOffMinutes: number;
 };
 
 /**
@@ -62,6 +63,7 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
   let sickMinutes = 0;
   let vacationMinutes = 0;
   let holidayMinutes = 0;
+  let dayOffMinutes = 0;
 
   // Debug: Count entries by status
   const sickEntries = entries.filter((e) => e.status === 'sick');
@@ -109,6 +111,9 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
       // Vacation days: always 8h = 480 minutes per entry
       // Each entry represents one vacation day
       vacationMinutes += 480;
+    } else if (entry.status === 'day_off') {
+      // Tagesbefreiung (day_off): respect the stored hours (can be full-day or partial)
+      dayOffMinutes += effectiveMinutes;
     }
   });
 
@@ -117,11 +122,17 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
     sickMinutes,
     vacationMinutes,
     holidayMinutes,
-    totalMinutes: workMinutes + sickMinutes + vacationMinutes + holidayMinutes,
+    dayOffMinutes,
+    totalMinutes:
+      workMinutes +
+      sickMinutes +
+      vacationMinutes +
+      holidayMinutes +
+      dayOffMinutes,
   });
 
   const totalMinutes =
-    workMinutes + sickMinutes + vacationMinutes + holidayMinutes;
+    workMinutes + sickMinutes + vacationMinutes + holidayMinutes + dayOffMinutes;
 
   return {
     totalMinutes,
@@ -129,6 +140,7 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
     sickMinutes,
     vacationMinutes,
     holidayMinutes,
+    dayOffMinutes,
   };
 }
 

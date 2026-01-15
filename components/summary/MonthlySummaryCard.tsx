@@ -47,11 +47,19 @@ export function MonthlySummaryCard({
     return null;
   }
 
-  const { totalMinutes, workMinutes, sickMinutes, vacationMinutes, holidayMinutes } =
-    summary;
+  const {
+    totalMinutes,
+    workMinutes,
+    sickMinutes,
+    vacationMinutes,
+    holidayMinutes,
+    dayOffMinutes,
+  } = summary;
 
-  const categories = [
+  // First row: Arbeit – Feiertag – Krank
+  const topRow = [
     {
+      key: "work",
       label: tLegend("work"),
       minutes: workMinutes,
       borderColor: "border-green-500",
@@ -59,24 +67,39 @@ export function MonthlySummaryCard({
       textColor: "text-green-900",
     },
     {
+      key: "holiday",
+      label: tLegend("holiday"),
+      minutes: holidayMinutes,
+      borderColor: "border-brand",
+      bgColor: "bg-brand/10",
+      textColor: "text-brand",
+    },
+    {
+      key: "sick",
       label: tLegend("sick"),
       minutes: sickMinutes,
       borderColor: "border-red-500",
       bgColor: "bg-red-100",
       textColor: "text-red-900",
     },
+  ];
+
+  // Second row: Tagesbefreiung – Urlaub
+  const bottomRow = [
     {
+      key: "dayOff",
+      label: tLegend("dayOff"),
+      minutes: dayOffMinutes,
+      borderColor: "border-blue-500",
+      bgColor: "bg-blue-100",
+      textColor: "text-blue-900",
+    },
+    {
+      key: "vacation",
       label: tLegend("vacation"),
       minutes: vacationMinutes,
       borderColor: "border-vacation-border",
       bgColor: "bg-vacation-fill",
-      textColor: "text-brand",
-    },
-    {
-      label: tLegend("holiday"),
-      minutes: holidayMinutes,
-      borderColor: "border-brand",
-      bgColor: "bg-brand/10",
       textColor: "text-brand",
     },
   ];
@@ -103,24 +126,58 @@ export function MonthlySummaryCard({
       </div>
 
       {/* Category Tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {categories.map((category) => (
-          <div
-            key={category.label}
-            className={cn(
-              "rounded-lg border-2 p-3 md:p-4",
-              category.borderColor,
-              category.bgColor
-            )}
-          >
-            <div className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
-              {category.label}
+      <div className="space-y-3 md:space-y-4">
+        {/* Top row: Arbeit – Feiertag – Krank */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          {topRow.map((category) => (
+            <div
+              key={category.key}
+              className={cn(
+                "rounded-lg border-2 p-3 md:p-4",
+                category.borderColor,
+                category.bgColor
+              )}
+            >
+              <div className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
+                {category.label}
+              </div>
+              <div
+                className={cn(
+                  "text-lg md:text-xl font-semibold",
+                  category.textColor
+                )}
+              >
+                {formatDuration(category.minutes)}
+              </div>
             </div>
-            <div className={cn("text-lg md:text-xl font-semibold", category.textColor)}>
-              {formatDuration(category.minutes)}
+          ))}
+        </div>
+
+        {/* Bottom row: Tagesbefreiung – Urlaub */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          {bottomRow.map((category) => (
+            <div
+              key={category.key}
+              className={cn(
+                "rounded-lg border-2 p-3 md:p-4",
+                category.borderColor,
+                category.bgColor
+              )}
+            >
+              <div className="text-xs md:text-sm font-medium text-muted-foreground mb-1">
+                {category.label}
+              </div>
+              <div
+                className={cn(
+                  "text-lg md:text-xl font-semibold",
+                  category.textColor
+                )}
+              >
+                {formatDuration(category.minutes)}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

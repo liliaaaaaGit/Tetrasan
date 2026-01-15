@@ -59,7 +59,8 @@ export async function loadMonthlyData(
     entriesData?.map((e) => ({
       id: e.id,
       date: e.date,
-      status: e.status as 'work' | 'vacation' | 'sick',
+      // Include day_off so Tagesbefreiung hours are part of the monthly summary
+      status: e.status as 'work' | 'vacation' | 'sick' | 'day_off',
       hours_decimal: e.hours_decimal || 0,
     })) || [];
 
