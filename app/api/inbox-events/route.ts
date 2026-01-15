@@ -113,14 +113,22 @@ export async function GET(request: NextRequest) {
     
     // Also check ALL inbox_events (not just the ones we fetched initially) to catch any newly created ones
     // This ensures we don't backfill requests that have inbox_events created via PUT
-    const { data: allInboxEvents } = await supabase
+    // IMPORTANT: Use admin client to ensure we see ALL events, including ones just created by PUT handler
+    // The user client might have RLS restrictions that prevent seeing newly created rows
+    const admin = getAdminClient();
+    const { data: allInboxEvents } = await admin
       .from('inbox_events')
       .select('id, payload, is_read, created_at')
       .not('payload', 'is', null);
     
-    // Build a comprehensive set of all request IDs that have inbox_events
+    // Build a comprehensive set of all request IDs that have NON-DELETED inbox_events
+    // Soft-deleted events should not prevent backfilling (they're hidden from UI)
     const allReqIdsWithEvents = new Set<string>();
     (allInboxEvents || []).forEach((e: any) => {
+      // Skip soft-deleted events - they shouldn't prevent backfilling
+      if (e.payload && e.payload.deleted === true) {
+        return;
+      }
       const reqId = e.payload?.reqId;
       if (reqId) {
         allReqIdsWithEvents.add(reqId);
