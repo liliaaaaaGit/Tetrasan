@@ -135,6 +135,7 @@ export async function GET(request: NextRequest) {
     // Fetch corrections for these entries
     const entryIds = entries?.map((e) => e.id) || [];
     let correctionsMap: Record<string, Correction> = {};
+    let allCorrections: Correction[] = [];
 
     if (entryIds.length > 0) {
       const { data: corrections, error: correctionsError } = await admin
@@ -144,7 +145,10 @@ export async function GET(request: NextRequest) {
         .order("created_at", { ascending: false });
 
       if (!correctionsError && corrections) {
-        // Group by entry_id, keeping only the latest
+        // Store all corrections for computeMonthlySummary (it will find the latest itself)
+        allCorrections = corrections;
+        
+        // Also build map for use in effectiveEntries (for table display)
         corrections.forEach((corr) => {
           if (!correctionsMap[corr.entry_id]) {
             correctionsMap[corr.entry_id] = corr;
@@ -251,15 +255,24 @@ export async function GET(request: NextRequest) {
       effectiveEntries.push(effective);
     }
 
-    // Compute summary from effective entries
-    const summary = {
-      totalMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + (d.workHours + d.vacationHours + d.sickHours) * 60, 0)),
-      workMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.workHours * 60, 0)),
-      sickMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.sickHours * 60, 0)),
-      vacationMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.vacationHours * 60, 0)),
-      holidayMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + (d.isHolidayWork ? d.workHours * 60 : 0), 0)),
-      dayOffMinutes: Math.round(effectiveEntries.reduce((acc, d) => acc + d.dayOffHours * 60, 0)),
-    };
+    // Compute summary using shared function (same logic as UI)
+    // This ensures holiday hours are calculated correctly (includes default paid hours for holidays without work entries)
+    const summary = computeMonthlySummary({
+      year,
+      month, // Already 1-indexed
+      entries: (entries || []).map((e) => ({
+        id: e.id,
+        date: e.date,
+        status: e.status,
+        hours_decimal: e.hours_decimal ?? 0,
+      })),
+      corrections: allCorrections.map((c) => ({
+        entry_id: c.entry_id,
+        corrected_hours_decimal: c.corrected_hours_decimal ?? null,
+        created_at: c.created_at || new Date().toISOString(),
+      })),
+      holidays: holidaysSet,
+    });
 
     // Generate PDF via @react-pdf/renderer (avoids font file issues)
     console.log("[PDF] Starting PDF generation (react-pdf)");
@@ -473,7 +486,6 @@ export async function GET(request: NextRequest) {
         ),
         React.createElement(View, { style: styles.divider }),
         React.createElement(Text, { style: styles.sectionTitle }, 'Zusammenfassung'),
-        React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Gesamtstunden:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.totalMinutes || 0))),
         React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Arbeit:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.workMinutes || 0))),
         React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Krank:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.sickMinutes || 0))),
         React.createElement(View, { style: styles.summaryRow }, React.createElement(Text, { style: styles.cellLabel }, 'Urlaub:'), React.createElement(Text, { style: styles.cellValue }, formatMinutes(summary.vacationMinutes || 0))),
