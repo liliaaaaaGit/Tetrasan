@@ -5,7 +5,7 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet } from "@react-p
 import React from "react";
 import { diffCorrections } from "@/lib/utils/correctionDiff";
 import { computeMonthlySummary } from "@/lib/logic/monthlySummary";
-import { isSunday, isWeekend, isHoliday } from "@/lib/date-utils";
+import { isSunday, isWeekend, isHoliday, holidayPaidHours } from "@/lib/date-utils";
 
 // Ensure Node.js runtime for PDFKit
 export const runtime = "nodejs";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 interface TimesheetEntry {
   id: string;
   date: string;
-  status: "work" | "vacation" | "sick";
+  status: "work" | "vacation" | "sick" | "day_off";
   time_from?: string;
   time_to?: string;
   break_minutes?: number;
@@ -177,16 +177,23 @@ export async function GET(request: NextRequest) {
     type EffectiveEntry = {
       dateISO: string;
       note: string;
-      status: 'work' | 'vacation' | 'sick' | 'none';
+      status: 'work' | 'vacation' | 'sick' | 'day_off' | 'none';
       workHours: number; // decimal hours
       vacationHours: number; // decimal hours
       sickHours: number; // decimal hours
+      holidayHours: number; // decimal hours (paid holiday hours)
+      dayOffHours: number; // decimal hours (Tagesbefreiung)
       isHolidayWork: boolean;
     };
 
     // Build quick lookup by date for entries and corrections (latest)
-    const entryByDate = new Map<string, TimesheetEntry>();
-    (entries || []).forEach((e) => entryByDate.set(e.date, e));
+    // Note: Multiple entries per date are possible (e.g., Arbeit + Tagesbefreiung)
+    const entriesByDate = new Map<string, TimesheetEntry[]>();
+    (entries || []).forEach((e) => {
+      const existing = entriesByDate.get(e.date) || [];
+      existing.push(e);
+      entriesByDate.set(e.date, existing);
+    });
 
     const latestCorrectionByEntryId = new Map<string, Correction>();
     Object.values(correctionsMap).forEach((c) => {
@@ -201,27 +208,58 @@ export async function GET(request: NextRequest) {
     const effectiveEntries: EffectiveEntry[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
       const dateISO = `${year}-${pad2(month)}-${pad2(day)}`;
-      const entry = entryByDate.get(dateISO);
-      const correction = entry ? latestCorrectionByEntryId.get(entry.id) : undefined;
+      const dayEntries = entriesByDate.get(dateISO) || [];
+      
+      // Process all entries for this day
+      let workHours = 0;
+      let vacationHours = 0;
+      let sickHours = 0;
+      let dayOffHours = 0;
+      let noteParts: string[] = [];
+      let isHolidayWork = false;
 
-      const status = (entry?.status as any) || 'none';
-      const correctedHours = correction?.corrected_hours_decimal ?? undefined;
-      const hoursDecimal = status === 'work' ? (correctedHours ?? entry?.hours_decimal ?? 0) : 0;
-      const project = entry?.project_name ? `Bauvorhaben: ${entry.project_name}` : '';
-      const baseNote = correction?.note || entry?.activity_note || entry?.comment || '';
-      const noteParts = [project, baseNote].filter((part) => part && part.trim().length > 0);
-      const note = noteParts.join('\n');
+      for (const entry of dayEntries) {
+        const correction = latestCorrectionByEntryId.get(entry.id);
+        const correctedHours = correction?.corrected_hours_decimal ?? undefined;
+        const hoursDecimal = correctedHours ?? entry?.hours_decimal ?? 0;
+        
+        if (entry.status === 'work') {
+          workHours += hoursDecimal;
+          const project = entry?.project_name ? `Bauvorhaben: ${entry.project_name}` : '';
+          const baseNote = correction?.note || entry?.activity_note || entry?.comment || '';
+          if (project) noteParts.push(project);
+          if (baseNote) noteParts.push(baseNote);
+          const isHoliday = holidaysSet.has(dateISO);
+          if (isHoliday && hoursDecimal > 0) {
+            isHolidayWork = true;
+          }
+        } else if (entry.status === 'vacation') {
+          vacationHours = 8.0; // Full day vacation
+        } else if (entry.status === 'sick') {
+          sickHours = 8.0; // Full day sick
+        } else if (entry.status === 'day_off') {
+          dayOffHours += hoursDecimal; // Can be partial or full day
+          const baseNote = correction?.note || entry?.activity_note || entry?.comment || '';
+          if (baseNote) noteParts.push(baseNote);
+        }
+      }
 
-      const isHoliday = holidaysSet.has(dateISO);
-      const isHolidayWork = isHoliday && status === 'work' && (hoursDecimal || 0) > 0;
+      // Calculate holiday paid hours (8h for Mon-Fri holidays, 0h for Sat/Sun holidays)
+      // This shows the paid hours for holidays, regardless of whether there's work or not
+      const holidayHours = holidayPaidHours(dateISO, holidaysSet);
+
+      const note = noteParts.filter((part) => part && part.trim().length > 0).join('\n');
+      const primaryStatus = dayEntries.length > 0 ? (dayEntries[0].status as any) : 'none';
 
       const effective: EffectiveEntry = {
         dateISO,
         note,
-        status: (status || 'none') as any,
-        workHours: status === 'work' ? (hoursDecimal || 0) : 0,
-        vacationHours: status === 'vacation' ? 8.0 : 0,
-        sickHours: status === 'sick' ? 8.0 : 0,
+        status: primaryStatus,
+        workHours,
+        vacationHours,
+        sickHours,
+        holidayHours,
+        dayOffHours,
         isHolidayWork,
       };
       effectiveEntries.push(effective);
@@ -250,13 +288,15 @@ export async function GET(request: NextRequest) {
       tableRow: { display: 'flex', flexDirection: 'row' },
       th: { padding: 6, fontSize: 10, fontWeight: 700, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#ccc', backgroundColor: '#f7f7f7' },
       td: { padding: 6, fontSize: 10, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#ddd' },
-      colDay: { width: 60 },
-      colDayHoliday: { width: 60, backgroundColor: '#ffc0cb' }, // Pink for holidays
-      colDayWeekend: { width: 60, backgroundColor: '#add8e6' }, // Blue for weekends
-      colWork: { width: 100, textAlign: 'right' },
-      colVacation: { width: 120, textAlign: 'right' },
-      colSick: { width: 120, textAlign: 'right' },
-      colNote: { width: 220 },
+      colDay: { width: 50 },
+      colDayHoliday: { width: 50, backgroundColor: '#ffc0cb' }, // Pink for holidays
+      colDayWeekend: { width: 50, backgroundColor: '#add8e6' }, // Blue for weekends
+      colWork: { width: 90, textAlign: 'right' },
+      colVacation: { width: 90, textAlign: 'right' },
+      colSick: { width: 90, textAlign: 'right' },
+      colHoliday: { width: 90, textAlign: 'right' },
+      colDayOff: { width: 100, textAlign: 'right' },
+      colNote: { width: 180 },
       summaryRow: { display: 'flex', flexDirection: 'row', marginTop: 10 },
       cellLabel: { width: 160, color: '#333' },
       cellValue: { width: 140 },
@@ -282,6 +322,8 @@ export async function GET(request: NextRequest) {
             React.createElement(Text, { style: [styles.th, styles.colWork] }, 'Arbeitsstunden'),
             React.createElement(Text, { style: [styles.th, styles.colVacation] }, 'Urlaubsstunden'),
             React.createElement(Text, { style: [styles.th, styles.colSick] }, 'Krankheitsstunden'),
+            React.createElement(Text, { style: [styles.th, styles.colHoliday] }, 'Feiertagsstunden'),
+            React.createElement(Text, { style: [styles.th, styles.colDayOff] }, 'Tagesbefreiungsstunden'),
             React.createElement(Text, { style: [styles.th, styles.colNote] }, 'Notiz'),
           ),
           ...effectiveEntries.map((d) => {
@@ -308,10 +350,12 @@ export async function GET(request: NextRequest) {
             }
             
             return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
-              React.createElement(Text, { style: [styles.td, tagCellStyle] }, String(new Date(d.dateISO).getDate())),
+              React.createElement(Text, { style: [styles.td, tagCellStyle] }, String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate())),
               React.createElement(Text, { style: [styles.td, styles.colWork] }, d.workHours ? d.workHours.toFixed(1).replace('.', ',') : ''),
               React.createElement(Text, { style: [styles.td, styles.colVacation] }, d.vacationHours ? d.vacationHours.toFixed(1).replace('.', ',') : ''),
               React.createElement(Text, { style: [styles.td, styles.colSick] }, d.sickHours ? d.sickHours.toFixed(1).replace('.', ',') : ''),
+              React.createElement(Text, { style: [styles.td, styles.colHoliday] }, d.holidayHours ? d.holidayHours.toFixed(1).replace('.', ',') : ''),
+              React.createElement(Text, { style: [styles.td, styles.colDayOff] }, d.dayOffHours ? d.dayOffHours.toFixed(1).replace('.', ',') : ''),
               React.createElement(Text, { style: [styles.td, styles.colNote] }, d.note || ''),
             );
           })
