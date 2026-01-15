@@ -18,6 +18,7 @@ import {
   Copy,
   CheckCircle2,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -92,6 +93,9 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
     password: null,
   });
   const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
+  const [showCreateVacationModal, setShowCreateVacationModal] = useState(false);
+  const [showCreateDayOffModal, setShowCreateDayOffModal] = useState(false);
+  const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const tAdminNotifications = useTranslations("notifications.admin");
   const tLeave = useTranslations("leavePage");
   const tDayOff = useTranslations("dayOffPage");
@@ -323,6 +327,71 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
     }
   };
 
+  const handleCreateVacationRequest = async (formData: { startDate: string; endDate: string }) => {
+    try {
+      setIsCreatingRequest(true);
+      const response = await fetch('/api/leave-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'vacation',
+          period_start: formData.startDate,
+          period_end: formData.endDate,
+          employee_id: params.id, // Admin creating for this employee
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create vacation request');
+      }
+
+      setShowCreateVacationModal(false);
+      await loadEmployeeData();
+      showToast('Urlaubsantrag erfolgreich erstellt', 'success');
+    } catch (error) {
+      console.error('Error creating vacation request:', error);
+      showToast(error instanceof Error ? error.message : 'Fehler beim Erstellen des Antrags', 'error');
+    } finally {
+      setIsCreatingRequest(false);
+    }
+  };
+
+  const handleCreateDayOffRequest = async (formData: any) => {
+    try {
+      setIsCreatingRequest(true);
+      const comment = formData.mode === 'partial' && formData.timeFrom && formData.timeTo
+        ? `${formData.comment} (Zeit: ${formData.timeFrom} - ${formData.timeTo})`
+        : formData.comment;
+
+      const response = await fetch('/api/leave-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'day_off',
+          period_start: formData.date,
+          period_end: formData.date, // Same day for day-off
+          comment,
+          employee_id: params.id, // Admin creating for this employee
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create day-off request');
+      }
+
+      setShowCreateDayOffModal(false);
+      await loadEmployeeData();
+      showToast('Tagesbefreiungsantrag erfolgreich erstellt', 'success');
+    } catch (error) {
+      console.error('Error creating day-off request:', error);
+      showToast(error instanceof Error ? error.message : 'Fehler beim Erstellen des Antrags', 'error');
+    } finally {
+      setIsCreatingRequest(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -426,6 +495,15 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
       {/* Day Off Tab */}
       {activeTab === "dayoff" && (
         <div>
+          <div className="mb-4 flex justify-end">
+            <button
+              onClick={() => setShowCreateDayOffModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-sm font-medium">Tagesbefreiungsantrag erstellen</span>
+            </button>
+          </div>
           {leaveRequests.filter(r => r.type === 'day_off').length > 0 ? (
             <div className="space-y-4">
               {leaveRequests
@@ -516,6 +594,15 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
       {/* Leave Tab */}
       {activeTab === "leave" && (
         <div>
+          <div className="mb-4 flex justify-end">
+            <button
+              onClick={() => setShowCreateVacationModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-sm font-medium">Urlaubsantrag erstellen</span>
+            </button>
+          </div>
           {leaveRequests.filter(r => r.type === 'vacation').length > 0 ? (
             <div className="space-y-4">
               {leaveRequests
@@ -730,6 +817,297 @@ export default function AdminEmployeeDetailPage({ params }: { params: { id: stri
           </div>
         </div>
       )}
+
+      {/* Create Vacation Request Modal */}
+      {showCreateVacationModal && (
+        <AdminLeaveRequestForm
+          type="vacation"
+          onClose={() => setShowCreateVacationModal(false)}
+          onSubmit={handleCreateVacationRequest}
+          isLoading={isCreatingRequest}
+        />
+      )}
+
+      {/* Create Day-Off Request Modal */}
+      {showCreateDayOffModal && (
+        <AdminDayOffRequestForm
+          onClose={() => setShowCreateDayOffModal(false)}
+          onSubmit={handleCreateDayOffRequest}
+          isLoading={isCreatingRequest}
+        />
+      )}
+    </div>
+  );
+}
+
+// Admin Leave Request Form Component (for vacation)
+function AdminLeaveRequestForm({
+  type,
+  onClose,
+  onSubmit,
+  isLoading,
+}: {
+  type: 'vacation';
+  onClose: () => void;
+  onSubmit: (data: { startDate: string; endDate: string }) => void;
+  isLoading: boolean;
+}) {
+  const tForm = useTranslations("leavePage.form");
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [errors, setErrors] = useState<{ startDate?: string; endDate?: string; dateRange?: string }>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    if (!startDate) {
+      newErrors.startDate = tForm("startRequired");
+    }
+
+    if (!endDate) {
+      newErrors.endDate = tForm("endRequired");
+    }
+
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      newErrors.dateRange = tForm("dateRange");
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    onSubmit({ startDate, endDate });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-6">Urlaubsantrag erstellen</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="startDate" className="block text-sm font-medium mb-1.5 text-foreground">
+                {tForm("startLabel")}
+              </label>
+              <input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setErrors(prev => ({ ...prev, startDate: undefined, dateRange: undefined }));
+                }}
+                className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.startDate || errors.dateRange ? "border-red-500" : "border-border"
+                }`}
+              />
+              {errors.startDate && <p className="mt-1 text-sm text-red-600" role="alert">{errors.startDate}</p>}
+            </div>
+            <div>
+              <label htmlFor="endDate" className="block text-sm font-medium mb-1.5 text-foreground">
+                {tForm("endLabel")}
+              </label>
+              <input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setErrors(prev => ({ ...prev, endDate: undefined, dateRange: undefined }));
+                }}
+                className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.endDate || errors.dateRange ? "border-red-500" : "border-border"
+                }`}
+              />
+              {errors.endDate && <p className="mt-1 text-sm text-red-600" role="alert">{errors.endDate}</p>}
+            </div>
+            {errors.dateRange && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600" role="alert">{errors.dateRange}</p>
+              </div>
+            )}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
+              >
+                {tForm("cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? tForm("submitting") : tForm("submit")}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Admin Day-Off Request Form Component
+function AdminDayOffRequestForm({
+  onClose,
+  onSubmit,
+  isLoading,
+}: {
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+  isLoading: boolean;
+}) {
+  const tForm = useTranslations("dayOffPage.form");
+  const [date, setDate] = useState('');
+  const [comment, setComment] = useState('');
+  const [mode, setMode] = useState<'full' | 'partial'>('full');
+  const [timeFrom, setTimeFrom] = useState('');
+  const [timeTo, setTimeTo] = useState('');
+  const [errors, setErrors] = useState<{ date?: string; comment?: string; timeFrom?: string; timeTo?: string }>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+    if (!date) newErrors.date = tForm("dateRequired");
+    if (!comment.trim()) newErrors.comment = tForm("commentRequired");
+    if (mode === 'partial') {
+      if (!timeFrom) newErrors.timeFrom = tForm("timeFromRequired");
+      if (!timeTo) newErrors.timeTo = tForm("timeToRequired");
+      if (timeFrom && timeTo && timeFrom >= timeTo) {
+        newErrors.timeTo = tForm("timeOrder");
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    onSubmit({ date, comment, mode, timeFrom: mode === 'partial' ? timeFrom : undefined, timeTo: mode === 'partial' ? timeTo : undefined });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-6">Tagesbefreiungsantrag erstellen</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="date" className="block text-sm font-medium mb-1.5 text-foreground">
+                {tForm("dateLabel")}
+              </label>
+              <input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setErrors(prev => ({ ...prev, date: undefined }));
+                }}
+                className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                  errors.date ? "border-red-500" : "border-border"
+                }`}
+              />
+              {errors.date && <p className="mt-1 text-sm text-red-600" role="alert">{errors.date}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-foreground">{tForm("typeLabel")}</label>
+              <div className="flex items-center gap-4">
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="dayoff-mode" value="full" checked={mode === 'full'} onChange={() => setMode('full')} />
+                  <span>{tForm("typeFull")}</span>
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="dayoff-mode" value="partial" checked={mode === 'partial'} onChange={() => setMode('partial')} />
+                  <span>{tForm("typePartial")}</span>
+                </label>
+              </div>
+            </div>
+            {mode === 'partial' && (
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div>
+                  <label htmlFor="timeFrom" className="block text-sm font-medium mb-1.5 text-foreground">
+                    {tForm("timeFromLabel")}
+                  </label>
+                  <input
+                    id="timeFrom"
+                    type="time"
+                    value={timeFrom}
+                    onChange={(e) => {
+                      setTimeFrom(e.target.value);
+                      setErrors(prev => ({ ...prev, timeFrom: undefined }));
+                    }}
+                    className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                      errors.timeFrom ? "border-red-500" : "border-border"
+                    }`}
+                  />
+                  {errors.timeFrom && <p className="mt-1 text-sm text-red-600" role="alert">{errors.timeFrom}</p>}
+                </div>
+                <div>
+                  <label htmlFor="timeTo" className="block text-sm font-medium mb-1.5 text-foreground">
+                    {tForm("timeToLabel")}
+                  </label>
+                  <input
+                    id="timeTo"
+                    type="time"
+                    value={timeTo}
+                    onChange={(e) => {
+                      setTimeTo(e.target.value);
+                      setErrors(prev => ({ ...prev, timeTo: undefined }));
+                    }}
+                    className={`w-[180px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+                      errors.timeTo ? "border-red-500" : "border-border"
+                    }`}
+                  />
+                  {errors.timeTo && <p className="mt-1 text-sm text-red-600" role="alert">{errors.timeTo}</p>}
+                </div>
+              </div>
+            )}
+            <div>
+              <label htmlFor="comment" className="block text-sm font-medium mb-1.5 text-foreground">
+                {tForm("commentLabel")}
+              </label>
+              <textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  setErrors(prev => ({ ...prev, comment: undefined }));
+                }}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none ${
+                  errors.comment ? "border-red-500" : "border-border"
+                }`}
+                rows={4}
+                placeholder={tForm("commentPlaceholder")}
+              />
+              {errors.comment && <p className="mt-1 text-sm text-red-600" role="alert">{errors.comment}</p>}
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
+              >
+                {tForm("cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? tForm("submitting") : tForm("submit")}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
