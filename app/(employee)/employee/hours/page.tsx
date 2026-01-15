@@ -42,7 +42,8 @@ function HoursPageContent() {
   const tHours = useTranslations("hoursPage");
   const tLegend = useTranslations("hoursPage.legend");
   const { year, month, goToPreviousMonth, goToNextMonth } = useMonthState();
-  const [entries, setEntries] = useState<Record<string, DayEntry>>({});
+  // Multiple entries (work, vacation, sick, day-off) can exist on the same date.
+  const [entries, setEntries] = useState<Record<string, DayEntry[]>>({});
   const [holidays, setHolidays] = useState<Record<string, Holiday>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -51,32 +52,36 @@ function HoursPageContent() {
   const [monthlySummary, setMonthlySummary] = useState<SummaryOutput | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
-  // Calculate monthly summary
-  const summary: MonthSummary = Object.values(entries).reduce(
-    (acc, entry) => {
-      // Check if entry is in current month
-      const entryDate = new Date(entry.date);
-      if (entryDate.getFullYear() !== year || entryDate.getMonth() !== month) {
-        return acc;
-      }
+  // Calculate monthly summary (day-off entries are not counted in totals for now).
+  const summary: MonthSummary = Object.values(entries)
+    .flat()
+    .reduce(
+      (acc, entry) => {
+        // Check if entry is in current month
+        const entryDate = new Date(entry.date);
+        if (entryDate.getFullYear() !== year || entryDate.getMonth() !== month) {
+          return acc;
+        }
 
-      if (entry.status === "arbeit" && entry.hours) {
-        acc.totalHours += entry.hours;
-      } else if (entry.status === "urlaub") {
-        acc.vacationDays += 1;
-      } else if (entry.status === "krank") {
-        acc.sickDays += 1;
-      }
-      return acc;
-    },
-    { totalHours: 0, vacationDays: 0, sickDays: 0 }
-  );
+        if (entry.status === "arbeit" && entry.hours) {
+          acc.totalHours += entry.hours;
+        } else if (entry.status === "urlaub") {
+          acc.vacationDays += 1;
+        } else if (entry.status === "krank") {
+          acc.sickDays += 1;
+        }
+        return acc;
+      },
+      { totalHours: 0, vacationDays: 0, sickDays: 0 }
+    );
 
   // Check if current month has any entries
-  const hasEntriesThisMonth = Object.keys(entries).some((date) => {
-    const entryDate = new Date(date);
-    return entryDate.getFullYear() === year && entryDate.getMonth() === month;
-  });
+  const hasEntriesThisMonth = Object.values(entries).some((dayEntries) =>
+    dayEntries.some((entry) => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getFullYear() === year && entryDate.getMonth() === month;
+    })
+  );
 
   // Load timesheet entries, holidays, and monthly summary from database
   useEffect(() => {
@@ -106,8 +111,10 @@ function HoursPageContent() {
       
       const { data } = await response.json();
       
-      // Convert database entries to DayEntry format
-      const entriesMap: Record<string, DayEntry> = {};
+      // Convert database entries to DayEntry format.
+      // Multiple entries per date are stored in an array so that e.g.
+      // work + day-off can coexist.
+      const entriesMap: Record<string, DayEntry[]> = {};
       data.forEach((entry: any) => {
         const dateStr = entry.date;
         const sanitizedTimeTo = entry.time_to || undefined;
@@ -115,20 +122,29 @@ function HoursPageContent() {
           typeof entry.hours_decimal === "number" && entry.hours_decimal > 0
             ? entry.hours_decimal
             : undefined;
-        entriesMap[dateStr] = {
+        const mappedEntry: DayEntry = {
           id: entry.id,
           date: dateStr,
           from: entry.time_from,
           to: sanitizedTimeTo,
           pause: entry.break_minutes || 0,
           hours: sanitizedHours,
-          status: entry.status === 'work' ? 'arbeit' : entry.status === 'vacation' ? 'urlaub' : 'krank',
+          status:
+            entry.status === "work"
+              ? "arbeit"
+              : entry.status === "vacation"
+                ? "urlaub"
+                : entry.status === "day_off"
+                  ? "tagesbefreiung"
+                  : "krank",
           note: entry.activity_note,
           comment: entry.comment,
           bauvorhaben: entry.project_name || '',
           taetigkeit: entry.activity_note, // Keep both for compatibility
           kommentar: entry.comment, // Keep both for compatibility
         };
+
+        entriesMap[dateStr] = [...(entriesMap[dateStr] || []), mappedEntry];
       });
       
       setEntries(entriesMap);
@@ -215,7 +231,14 @@ function HoursPageContent() {
       setIsSaving(true);
       
       // Convert DayEntry to database format
-      const status = entry.status === 'arbeit' ? 'work' : entry.status === 'urlaub' ? 'vacation' : 'sick';
+      const status =
+        entry.status === "arbeit"
+          ? "work"
+          : entry.status === "urlaub"
+            ? "vacation"
+            : entry.status === "tagesbefreiung"
+              ? "day_off"
+              : "sick";
       const projectName = (entry.bauvorhaben || '').trim();
       const activityNote = (entry.note ?? entry.taetigkeit ?? '').trim();
       
@@ -230,6 +253,16 @@ function HoursPageContent() {
           hours_decimal: entry.hours ?? 0,
           activity_note: activityNote || null,
           project_name: projectName || null,
+        }),
+        // For day_off, allow optional time range and store 8h if full-day
+        ...(status === "day_off" && {
+          time_from: entry.to ? entry.from : "00:00",
+          time_to: entry.to ? entry.to : "00:01",
+          break_minutes: 0,
+          hours_decimal: entry.to ? (entry.hours ?? 0) : 8,
+          activity_note: null,
+          project_name: null,
+          comment: null,
         }),
         // For vacation/sick status, include comment
         ...((status === 'vacation' || status === 'sick') && {
@@ -286,12 +319,14 @@ function HoursPageContent() {
 
   // Handle delete entry
   const handleDeleteEntry = async () => {
-    if (!selectedDate || !entries[selectedDate]?.id) return;
+    const dayEntries = selectedDate ? entries[selectedDate] || [] : [];
+    const targetEntry = dayEntries[0];
+    if (!selectedDate || !targetEntry?.id) return;
     
     try {
       setIsSaving(true);
       
-      const response = await fetch(`/api/timesheet-entries/${entries[selectedDate].id}`, {
+      const response = await fetch(`/api/timesheet-entries/${targetEntry.id}`, {
         method: 'DELETE',
       });
 
@@ -299,12 +334,8 @@ function HoursPageContent() {
         throw new Error('Failed to delete timesheet entry');
       }
 
-      // Update local state
-      setEntries((prev) => {
-        const newEntries = { ...prev };
-        delete newEntries[selectedDate!];
-        return newEntries;
-      });
+      // Reload entries from database so all statuses (work, vacation, day-off) stay in sync
+      await loadTimesheetEntries();
       
       showToast(tTimesheet("deleteSuccess"));
       // Reload summary after deleting
@@ -321,17 +352,6 @@ function HoursPageContent() {
   const showToast = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(null), 3000);
-  };
-
-  // Get status badge color for a day
-  const getDayStatusClass = (dateStr: string) => {
-    const entry = entries[dateStr];
-    if (!entry) return "";
-
-    if (entry.status === "arbeit") return "bg-green-100 border-green-500 text-green-900";
-    if (entry.status === "urlaub") return "bg-vacation-fill border-vacation-border text-brand";
-    if (entry.status === "krank") return "bg-red-100 border-red-500 text-red-900";
-    return "";
   };
 
   return (
@@ -385,20 +405,33 @@ function HoursPageContent() {
                 }
 
                 const dateStr = formatDateISO(year, month, day);
-                const entry = entries[dateStr];
+                const dayEntries = entries[dateStr] || [];
+                const workEntry = dayEntries.find((e) => e.status === "arbeit");
+                const hasVacation = dayEntries.some((e) => e.status === "urlaub");
+                const hasSick = dayEntries.some((e) => e.status === "krank");
+                const hasDayOff = dayEntries.some((e) => e.status === "tagesbefreiung");
                 const holiday = holidays[dateStr];
                 const isTodayDate = isToday(year, month, day);
-                const hasEntry = !!entry;
+                const hasEntry = dayEntries.length > 0;
                 const isHoliday = !!holiday;
-                const statusClass = getDayStatusClass(dateStr);
-                const hasEndTime = !!entry?.to;
+                const statusClass =
+                  hasDayOff
+                    ? "bg-blue-100 border-blue-500 text-blue-900"
+                    : hasVacation
+                      ? "bg-vacation-fill border-vacation-border text-brand"
+                      : hasSick
+                        ? "bg-red-100 border-red-500 text-red-900"
+                        : workEntry
+                          ? "bg-green-100 border-green-500 text-green-900"
+                          : "";
+                const hasEndTime = !!workEntry?.to;
                 const showWorkHours =
                   hasEntry &&
-                  entry?.status === "arbeit" &&
+                  !!workEntry &&
                   hasEndTime &&
-                  typeof entry?.hours === "number" &&
-                  entry.hours > 0;
-                const workHoursValue = showWorkHours ? (entry?.hours as number) : null;
+                  typeof workEntry?.hours === "number" &&
+                  workEntry.hours > 0;
+                const workHoursValue = showWorkHours ? (workEntry?.hours as number) : null;
                 
 
                 return (
@@ -478,6 +511,10 @@ function HoursPageContent() {
             <span className="text-muted-foreground">{tLegend("sick")}</span>
           </div>
           <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 border-2 border-blue-500 bg-blue-100 rounded" />
+            <span className="text-muted-foreground">{tLegend("dayOff")}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-holiday-fill rounded" />
             <span className="text-muted-foreground">{tLegend("holiday")}</span>
           </div>
@@ -500,9 +537,9 @@ function HoursPageContent() {
           open={!!selectedDate}
           onOpenChange={(open) => !open && setSelectedDate(null)}
           date={selectedDate}
-          initialData={entries[selectedDate]}
+          initialData={(selectedDate ? entries[selectedDate] || [] : [])[0]}
           onSave={handleSaveEntry}
-          onDelete={entries[selectedDate] ? handleDeleteEntry : undefined}
+          onDelete={(selectedDate && (entries[selectedDate] || []).length > 0) ? handleDeleteEntry : undefined}
           isLoading={isSaving}
         />
       )}

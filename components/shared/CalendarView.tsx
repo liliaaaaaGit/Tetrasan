@@ -76,7 +76,8 @@ export function CalendarView({
   const { year, month, goToPreviousMonth, goToNextMonth } = useMonthState(
     isAdmin ? '' : '/employee/hours'
   );
-  const [entries, setEntries] = useState<Record<string, DayEntry>>({});
+  // Multiple entries (work, vacation, sick, day-off) can exist on the same date.
+  const [entries, setEntries] = useState<Record<string, DayEntry[]>>({});
   const [corrections, setCorrections] = useState<Record<string, Correction>>({});
   const [holidays, setHolidays] = useState<Record<string, Holiday>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -132,24 +133,34 @@ export function CalendarView({
       
       const { data } = await response.json();
       
-      // Convert database entries to DayEntry format
-      const entriesMap: Record<string, DayEntry> = {};
+      // Convert database entries to DayEntry format.
+      // Multiple entries per date are stored in an array so that, for example,
+      // work + day-off can coexist on the same day.
+      const entriesMap: Record<string, DayEntry[]> = {};
       data.forEach((entry: any) => {
         const dateStr = entry.date;
-        entriesMap[dateStr] = {
+        const mappedEntry: DayEntry = {
           id: entry.id,
           date: dateStr,
           from: entry.time_from,
           to: entry.time_to,
           pause: entry.break_minutes || 0,
           hours: entry.hours_decimal,
-          status: entry.status === 'work' ? 'arbeit' : entry.status === 'vacation' ? 'urlaub' : 'krank',
+          status:
+            entry.status === 'work'
+              ? 'arbeit'
+              : entry.status === 'vacation'
+                ? 'urlaub'
+                : entry.status === 'day_off'
+                  ? 'tagesbefreiung'
+                  : 'krank',
           note: entry.activity_note,
           comment: entry.comment,
           bauvorhaben: entry.project_name || '',
           taetigkeit: entry.activity_note,
           kommentar: entry.comment,
         };
+        entriesMap[dateStr] = [...(entriesMap[dateStr] || []), mappedEntry];
       });
       
       setEntries(entriesMap);
@@ -270,7 +281,14 @@ export function CalendarView({
       setIsSaving(true);
       
       // Convert DayEntry to database format
-      const status = entry.status === 'arbeit' ? 'work' : entry.status === 'urlaub' ? 'vacation' : 'sick';
+      const status =
+        entry.status === 'arbeit'
+          ? 'work'
+          : entry.status === 'urlaub'
+            ? 'vacation'
+            : entry.status === 'tagesbefreiung'
+              ? 'day_off'
+              : 'sick';
       const projectName = (entry.bauvorhaben || '').trim();
       
       const dbEntry = {
@@ -291,6 +309,15 @@ export function CalendarView({
           break_minutes: 0,
           hours_decimal: 0,
           project_name: null,
+        }),
+        ...(status === 'day_off' && {
+          time_from: entry.to ? entry.from : '00:00',
+          time_to: entry.to ? entry.to : '00:01',
+          break_minutes: 0,
+          hours_decimal: entry.to ? (entry.hours ?? 0) : 8,
+          activity_note: null,
+          project_name: null,
+          comment: null,
         }),
       };
 
@@ -318,23 +345,18 @@ export function CalendarView({
         throw new Error(`Failed to save timesheet entry: ${errorData.details || errorData.error}`);
       }
 
-      const { data } = await response.json();
-      
-      // Update local state
-      setEntries((prev) => ({
-        ...prev,
-        [entry.date]: {
-          ...entry,
-          id: data.id,
-        },
-      }));
-      
-      showToast(tTimesheet("saveSuccess"));
-      loadMonthlySummary();
+      await response.json();
+
+      // Reload from database so local state (including multiple entries / corrections)
+      // stays fully in sync.
+      await loadTimesheetEntries();
+      await loadMonthlySummary();
       if (isAdmin) {
-        loadCorrections();
+        await loadCorrections();
       }
-      
+
+      showToast(tTimesheet("saveSuccess"));
+
       if (onEntrySave) {
         onEntrySave(entry);
       }
@@ -348,12 +370,14 @@ export function CalendarView({
 
   // Handle delete entry
   const handleDeleteEntry = async () => {
-    if (!selectedDate || !entries[selectedDate]?.id) return;
+    const dayEntries = selectedDate ? entries[selectedDate] || [] : [];
+    const targetEntry = dayEntries[0];
+    if (!selectedDate || !targetEntry?.id) return;
     
     try {
       setIsSaving(true);
       
-      const response = await fetch(`/api/timesheet-entries/${entries[selectedDate].id}`, {
+      const response = await fetch(`/api/timesheet-entries/${targetEntry.id}`, {
         method: 'DELETE',
       });
 
@@ -361,21 +385,16 @@ export function CalendarView({
         throw new Error('Failed to delete timesheet entry');
       }
 
-      // Update local state
-      setEntries((prev) => {
-        const newEntries = { ...prev };
-        delete newEntries[selectedDate!];
-        return newEntries;
-      });
-      
+      // Reload from database to keep multiple entries and corrections in sync
+      await loadTimesheetEntries();
+      await loadMonthlySummary();
       showToast(tTimesheet("deleteSuccess"));
-      loadMonthlySummary();
       if (isAdmin) {
         loadCorrections();
       }
       
       if (onEntryDelete) {
-        onEntryDelete(entries[selectedDate].id);
+        onEntryDelete(targetEntry.id);
       }
     } catch (error) {
       console.error('Error deleting timesheet entry:', error);
@@ -463,22 +482,13 @@ export function CalendarView({
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Get status badge color for a day
-  const getDayStatusClass = (dateStr: string) => {
-    const entry = entries[dateStr];
-    if (!entry) return "";
-
-    if (entry.status === "arbeit") return "bg-green-100 border-green-500 text-green-900";
-    if (entry.status === "urlaub") return "bg-vacation-fill border-vacation-border text-brand";
-    if (entry.status === "krank") return "bg-red-100 border-red-500 text-red-900";
-    return "";
-  };
-
   // Check if current month has any entries
-  const hasEntriesThisMonth = Object.keys(entries).some((date) => {
-    const entryDate = new Date(date);
-    return entryDate.getFullYear() === year && entryDate.getMonth() === month;
-  });
+  const hasEntriesThisMonth = Object.values(entries).some((dayEntries) =>
+    dayEntries.some((entry) => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getFullYear() === year && entryDate.getMonth() === month;
+    })
+  );
 
   return (
     <div>
@@ -531,21 +541,37 @@ export function CalendarView({
                 }
 
                 const dateStr = formatDateISO(year, month, day);
-                const entry = entries[dateStr];
+                const dayEntries = entries[dateStr] || [];
+                const workEntry = dayEntries.find((e) => e.status === "arbeit");
+                const hasVacation = dayEntries.some((e) => e.status === "urlaub");
+                const hasSick = dayEntries.some((e) => e.status === "krank");
+                const hasDayOff = dayEntries.some((e) => e.status === "tagesbefreiung");
                 const holiday = holidays[dateStr];
                 const isTodayDate = isToday(year, month, day);
-                const hasEntry = !!entry;
+                const hasEntry = dayEntries.length > 0;
                 const isHoliday = !!holiday;
-                const statusClass = getDayStatusClass(dateStr);
-                const correction = entry?.id ? corrections[entry.id] : undefined;
-                const hasEndTime = !!entry?.to;
+                const statusClass =
+                  hasDayOff
+                    ? "bg-blue-100 border-blue-500 text-blue-900"
+                    : hasVacation
+                      ? "bg-vacation-fill border-vacation-border text-brand"
+                      : hasSick
+                        ? "bg-red-100 border-red-500 text-red-900"
+                        : workEntry
+                          ? "bg-green-100 border-green-500 text-green-900"
+                          : "";
+                const correctionSource = workEntry ?? dayEntries[0];
+                const correction = correctionSource?.id
+                  ? corrections[correctionSource.id]
+                  : undefined;
+                const hasEndTime = !!workEntry?.to;
                 const showWorkHours =
                   hasEntry &&
-                  entry?.status === "arbeit" &&
+                  !!workEntry &&
                   hasEndTime &&
-                  typeof entry?.hours === "number" &&
-                  entry.hours > 0;
-                const workHoursValue = showWorkHours ? (entry?.hours as number) : null;
+                  typeof workEntry?.hours === "number" &&
+                  workEntry.hours > 0;
+                const workHoursValue = showWorkHours ? (workEntry?.hours as number) : null;
 
                 return (
                   <button
@@ -624,6 +650,10 @@ export function CalendarView({
             <div className="w-4 h-4 border-2 border-red-500 bg-red-100 rounded" />
             <span className="text-muted-foreground">{tLegend("sick")}</span>
           </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 border-2 border-blue-500 bg-blue-100 rounded" />
+          <span className="text-muted-foreground">{tLegend("dayOff")}</span>
+        </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 border-2 border-brand bg-holiday-fill rounded" />
             <span className="text-muted-foreground">{tLegend("holiday")}</span>
@@ -683,15 +713,21 @@ export function CalendarView({
           open={!!selectedDate}
           onOpenChange={(open) => !open && setSelectedDate(null)}
           date={selectedDate}
-          initialData={entries[selectedDate]}
-          correction={entries[selectedDate]?.id ? corrections[entries[selectedDate].id] : undefined}
+          initialData={(selectedDate ? entries[selectedDate] || [] : [])[0]}
+          correction={(() => {
+            const dayEntries = selectedDate ? entries[selectedDate] || [] : [];
+            const workEntry = dayEntries.find((e) => e.status === "arbeit") ?? dayEntries[0];
+            return workEntry?.id ? corrections[workEntry.id] : undefined;
+          })()}
           isAdmin={isAdmin}
           onSave={handleSaveEntry}
-          onDelete={entries[selectedDate] ? handleDeleteEntry : undefined}
+          onDelete={(selectedDate && (entries[selectedDate] || []).length > 0) ? handleDeleteEntry : undefined}
           onCorrectionClick={() => {
-            if (entries[selectedDate]?.id) {
-              setSelectedCorrectionEntryId(entries[selectedDate].id);
-            }
+            const dayEntries = selectedDate ? entries[selectedDate] || [] : [];
+            const workEntry = dayEntries.find((e) => e.status === "arbeit") ?? dayEntries[0];
+            if (workEntry?.id) {
+              setSelectedCorrectionEntryId(workEntry.id);
+            }            
           }}
           isLoading={isSaving}
         />
@@ -699,7 +735,9 @@ export function CalendarView({
 
       {/* Admin Correction Dialog */}
       {isAdmin && selectedCorrectionEntryId && (() => {
-        const entryForCorrection = Object.values(entries).find(e => e.id === selectedCorrectionEntryId);
+        const entryForCorrection = Object.values(entries)
+          .flat()
+          .find(e => e.id === selectedCorrectionEntryId);
         return entryForCorrection ? (
           <AdminCorrectionDialog
             open={!!selectedCorrectionEntryId}

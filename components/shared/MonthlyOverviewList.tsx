@@ -32,7 +32,8 @@ interface MonthlyOverviewListProps {
   month: number;
   employeeId?: string;
   isAdmin?: boolean;
-  entries: Record<string, DayEntry>;
+  // Multiple entries (work, vacation, sick, day-off) per day
+  entries: Record<string, DayEntry[]>;
   corrections: Record<string, Correction>;
   holidays: Record<string, Holiday>;
   onCorrectionSave?: (correction: any) => Promise<void>;
@@ -61,6 +62,7 @@ export function MonthlyOverviewList({
 
   // Get all entries for the current month, sorted by date
   const monthEntries = Object.values(entries)
+    .flat()
     .filter((entry) => {
       const entryDate = new Date(entry.date);
       return (
@@ -89,6 +91,8 @@ export function MonthlyOverviewList({
         return { label: "Urlaub", color: "text-yellow-600" };
       case "krank":
         return { label: "Krank", color: "text-red-600" };
+      case "tagesbefreiung":
+        return { label: "Tagesbefreiung", color: "text-blue-600" };
       default:
         return { label: "Arbeit", color: "text-gray-700" };
     }
@@ -122,7 +126,7 @@ export function MonthlyOverviewList({
 
   // Format time range for display (original)
   const formatTimeRange = (entry: DayEntry): string => {
-    if (entry.status === "arbeit" && entry.from && entry.to) {
+    if ((entry.status === "arbeit" || entry.status === "tagesbefreiung") && entry.from && entry.to) {
       return formatTimeRangeWithSeconds(entry.from, entry.to);
     }
     return "00:00:00 - 00:01:00";
