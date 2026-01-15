@@ -123,47 +123,6 @@ export default function AdminInboxPage() {
     }
   };
 
-  const toggleReadStatus = async (eventId: string) => {
-    const target = events.find(e => e.id === eventId);
-    if (!target) return;
-
-    // Optimistic UI update
-    const nextIsRead = !target.isRead;
-    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, isRead: nextIsRead } : e));
-    setUnreadCount(prev => nextIsRead ? Math.max(0, prev - 1) : prev + 1);
-
-    try {
-      const response = await fetch('/api/inbox-events', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventIds: [eventId], isRead: nextIsRead }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update read status');
-      }
-
-      // Small delay to ensure database transaction is fully committed and visible
-      // This is especially important for synthetic events that create new inbox_events rows
-      // Supabase should handle this automatically, but a small delay ensures read-after-write consistency
-      // Increased delay to account for potential replication lag
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Reload events from database to ensure state matches DB
-      // This is important for persistence and handles synthetic events correctly
-      await loadInboxEvents();
-
-      // Dispatch custom event to notify layout to refresh badge count
-      window.dispatchEvent(new CustomEvent('inbox-updated'));
-    } catch (error) {
-      // Revert on failure
-      console.error('Error updating read status:', error);
-      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, isRead: !nextIsRead } : e));
-      setUnreadCount(prev => nextIsRead ? prev + 1 : Math.max(0, prev - 1));
-      alert('Fehler beim Aktualisieren des Gelesen-Status.');
-    }
-  };
 
   // Filter and sort events
   const filteredEvents = events
@@ -324,21 +283,16 @@ export default function AdminInboxPage() {
       ) : filteredEvents.length > 0 ? (
         <InboxTable
           events={filteredEvents}
-          onToggleRead={toggleReadStatus}
           onOpen={handleOpenRequest}
           onDelete={async (eventId) => {
             try {
               const res = await fetch(`/api/inbox-events/${eventId}`, { method: 'DELETE' });
               if (!res.ok) throw new Error('Delete failed');
-              
-              // Reload events from database to ensure state matches DB
-              // This ensures deleted items are properly filtered out
-              await loadInboxEvents();
-
-              // Dispatch custom event to notify layout to refresh badge count
-              window.dispatchEvent(new CustomEvent('inbox-updated'));
+              // Remove from UI and adjust unread counter
+              setEvents(prev => prev.filter(e => e.id !== eventId));
+              const wasUnread = events.find(e => e.id === eventId)?.isRead === false;
+              if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
             } catch (err) {
-              console.error('Error deleting inbox event:', err);
               alert('Löschen nicht möglich.');
             }
           }}

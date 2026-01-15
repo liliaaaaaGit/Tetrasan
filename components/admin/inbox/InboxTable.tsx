@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 // InboxEvent interface and helper functions moved inline
-import { ExternalLink, Eye, EyeOff, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateTimeDe } from "@/lib/date-utils";
 
@@ -22,7 +22,6 @@ interface InboxEvent {
 
 interface InboxTableProps {
   events: InboxEvent[];
-  onToggleRead: (eventId: string) => void;
   onOpen?: (event: InboxEvent) => void;
   onDelete?: (eventId: string) => void;
 }
@@ -49,7 +48,7 @@ function getEventDeepLink(event: InboxEvent): string {
  * InboxTable Component
  * Displays inbox events with actions
  */
-export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTableProps) {
+export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
   const router = useRouter();
 
   const formatDate = (isoDate: string) => formatDateTimeDe(isoDate);
@@ -132,17 +131,6 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
-                    <button type="button"
-                      onClick={() => onToggleRead(event.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition-colors"
-                      aria-label={event.isRead ? "Als ungelesen markieren" : "Als gelesen markieren"}
-                    >
-                      {event.isRead ? (
-                        <EyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <Eye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -184,17 +172,15 @@ export function InboxTable({ events, onToggleRead, onOpen, onDelete }: InboxTabl
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span>Öffnen</span>
               </button>
-              <button type="button"
-                onClick={() => onToggleRead(event.id)}
-                className="flex items-center justify-center px-3 py-2 text-sm bg-secondary text-foreground rounded-md hover:bg-secondary/80 transition-colors"
-                aria-label={event.isRead ? "Als ungelesen markieren" : "Als gelesen markieren"}
-              >
-                {event.isRead ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
+              {onDelete && (
+                <button type="button"
+                  onClick={() => onDelete(event.id)}
+                  className="flex items-center justify-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                  title="Nachricht löschen"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}

@@ -27,11 +27,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
 
-    // Load inbox events using admin client to ensure we see ALL events
-    // This is important because newly created inbox_events rows (from PUT) might not be visible
-    // to the user client due to RLS policies or timing issues
-    const admin = getAdminClient();
-    const { data: events, error: eventsError } = await admin
+    // Load inbox events
+    const { data: events, error: eventsError } = await supabase
       .from('inbox_events')
       .select('id, kind, payload, is_read, created_at')
       .order('created_at', { ascending: false });
@@ -50,10 +47,10 @@ export async function GET(request: NextRequest) {
       return p.employeeId || p.employee_id || null;
     }).filter(Boolean);
 
-    // Load related leave requests with full details using admin client
+    // Load related leave requests with full details
     let requestsById: Record<string, any> = {};
     if (reqIds.length > 0) {
-      const { data: requests, error: reqError } = await admin
+      const { data: requests, error: reqError } = await supabase
         .from('leave_requests')
         .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
         .in('id', reqIds as string[]);
@@ -64,14 +61,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Load related employee profiles (from events and from requests) using admin client
+    // Load related employee profiles (from events and from requests)
     let employeesById: Record<string, any> = {};
     let empIds = Array.from(new Set(empIdsFromEvents));
     // also include employee ids from related requests (covers events missing employeeId)
     empIds.push(...Object.values(requestsById).map((r: any) => r.employee_id));
     empIds = Array.from(new Set(empIds.filter(Boolean)));
     if (empIds.length > 0) {
-      const { data: employees, error: empError } = await admin
+      const { data: employees, error: empError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .in('id', empIds as string[]);
@@ -83,8 +80,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Compose response objects tailored for UI
-    // Track which request IDs already have real inbox_events rows to prevent duplicates
-    const reqIdsInData = new Set<string>();
     const data = (events || []).map((e: any) => {
       const reqId = e.payload?.reqId;
       const request = reqId ? requestsById[reqId] : undefined;
@@ -93,10 +88,6 @@ export async function GET(request: NextRequest) {
       // Skip soft-deleted events
       if (e.payload && e.payload.deleted === true) {
         return null;
-      }
-      // Track this request ID as having a real inbox_events row
-      if (reqId) {
-        reqIdsInData.add(reqId);
       }
       return {
         id: e.id,
@@ -117,48 +108,20 @@ export async function GET(request: NextRequest) {
     }).filter(Boolean);
 
     // Backfill: include submitted leave requests that have no inbox event (e.g., legacy rows)
-    // Build a set of all request IDs that already have inbox_events (from the initial query)
     const existingReqSet = new Set(reqIds);
-    
-    // Also check ALL inbox_events (not just the ones we fetched initially) to catch any newly created ones
-    // This ensures we don't backfill requests that have inbox_events created via PUT
-    // Since we're already using admin client above, we can reuse it here
-    const { data: allInboxEvents } = await admin
-      .from('inbox_events')
-      .select('id, payload, is_read, created_at')
-      .not('payload', 'is', null);
-    
-    // Build a comprehensive set of all request IDs that have NON-DELETED inbox_events
-    // Soft-deleted events should not prevent backfilling (they're hidden from UI)
-    const allReqIdsWithEvents = new Set<string>();
-    (allInboxEvents || []).forEach((e: any) => {
-      // Skip soft-deleted events - they shouldn't prevent backfilling
-      if (e.payload && e.payload.deleted === true) {
-        return;
-      }
-      const reqId = e.payload?.reqId;
-      if (reqId) {
-        allReqIdsWithEvents.add(reqId);
-      }
-    });
-    
-    const { data: allRequests, error: subReqError } = await admin
+    const { data: allRequests, error: subReqError } = await supabase
       .from('leave_requests')
       .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
       .order('created_at', { ascending: false });
     if (!subReqError && allRequests) {
       for (const r of allRequests) {
-        // Only backfill if:
-        // 1. There's NO inbox_event in the database for this request (allReqIdsWithEvents check)
-        // 2. AND there's NO inbox_event already in the data array (reqIdsInData check)
-        // This prevents duplicates when we have both real and synthetic events
-        if (!allReqIdsWithEvents.has(r.id) && !reqIdsInData.has(r.id)) {
+        if (!existingReqSet.has(r.id)) {
           const emp = employeesById[r.employee_id];
           data.push({
             id: r.id, // synthetic id
             // keep kind consistent with UI label logic
             kind: r.type === 'vacation' ? 'leave_request_submitted' : 'day_off_request_submitted',
-            is_read: false, // New backfilled events are always unread
+            is_read: false,
             created_at: r.created_at,
             request: {
               id: r.id,
