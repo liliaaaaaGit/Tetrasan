@@ -83,9 +83,6 @@ export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
               <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
                 Status
               </th>
-              <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                Gelesen
-              </th>
               <th className="text-right px-4 py-3 text-sm font-medium text-muted-foreground w-[280px]">
                 Aktionen
               </th>
@@ -109,9 +106,6 @@ export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant="outline">{event.status}</Badge>
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  <span className={cn("text-sm", event.isRead ? "text-muted-foreground" : "text-foreground")}>{event.isRead ? "Gelesen" : "Ungelesen"}</span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
@@ -149,12 +143,9 @@ export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
               !event.isRead && "bg-blue-50/50"
             )}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="font-medium text-sm mb-1">{event.employeeName}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(event.createdAt)}</p>
-              </div>
-              <span className={cn("text-xs", event.isRead ? "text-muted-foreground" : "text-foreground")}>{event.isRead ? "Gelesen" : "Ungelesen"}</span>
+            <div className="mb-3">
+              <p className="font-medium text-sm mb-1">{event.employeeName}</p>
+              <p className="text-xs text-muted-foreground">{formatDate(event.createdAt)}</p>
             </div>
             
             <div className="flex gap-2 mb-3">
