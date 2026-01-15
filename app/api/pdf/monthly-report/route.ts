@@ -364,51 +364,38 @@ export async function GET(request: NextRequest) {
       // Extract backgroundColor BEFORE building styles (to avoid conflicts)
       let backgroundColor = cellStyle?.backgroundColor;
       
-      // Build base styles WITHOUT backgroundColor
-      const baseStyle: any[] = [
-        styles.cell, // Base cell style (padding, borders, font) - NO backgroundColor
-      ];
+      // Build merged style OBJECT (not array) to ensure backgroundColor wins
+      const finalStyle: any = {
+        ...styles.cell, // Base: padding, borders, font
+      };
       
-      // Add column-specific styles (width, textAlign) but EXCLUDE backgroundColor
+      // Add column-specific styles (width, textAlign) but NOT backgroundColor
       if (cellStyle) {
-        const { backgroundColor: bgColor, ...cellStyleWithoutBg } = cellStyle;
-        // Ensure we capture backgroundColor from cellStyle
-        if (bgColor) {
-          backgroundColor = bgColor;
-        }
-        if (Object.keys(cellStyleWithoutBg).length > 0) {
-          baseStyle.push(cellStyleWithoutBg);
-        }
+        const { backgroundColor: _, ...cellStyleWithoutBg } = cellStyle;
+        Object.assign(finalStyle, cellStyleWithoutBg);
       }
       
-      // Add header styles (but remove its backgroundColor if we have a custom one)
+      // Add header styles (but exclude its backgroundColor if we have custom one)
       if (isHeader) {
         if (backgroundColor) {
-          // If we have custom backgroundColor, use th style but override its background
-          baseStyle.push({ fontWeight: 700 }); // Just the bold, no background
+          finalStyle.fontWeight = 700; // Just bold, no background
         } else {
-          baseStyle.push(styles.th); // Header-specific (bold, default background)
+          Object.assign(finalStyle, styles.th); // Header with default background
         }
       }
       
       // Remove right border from last column
       if (isLast) {
-        baseStyle.push({ borderRightWidth: 0 });
+        finalStyle.borderRightWidth = 0;
       }
       
       // Ensure height for background visibility
-      baseStyle.push({ minHeight: 24, justifyContent: 'center' as const });
+      finalStyle.minHeight = 24;
+      finalStyle.justifyContent = 'center';
       
-      // Apply backgroundColor LAST so it overrides everything
+      // CRITICAL: Apply backgroundColor LAST as direct property assignment
       if (backgroundColor) {
-        baseStyle.push({ backgroundColor });
-        // Debug: Confirm backgroundColor is being added
-        if (typeof content === 'string' && !isHeader) {
-          const dayNum = parseInt(content.replace('*', ''), 10);
-          if (dayNum <= 3) {
-            console.log(`[PDF] createCell day=${dayNum} ✓ Added backgroundColor=${backgroundColor} to baseStyle`);
-          }
-        }
+        finalStyle.backgroundColor = backgroundColor;
       }
       
       // Always return View as root (never Text as root)
@@ -416,7 +403,7 @@ export async function GET(request: NextRequest) {
         ? React.createElement(Text, { style: { fontSize: 10 } }, content)
         : content;
       
-      return React.createElement(View, { style: baseStyle }, textContent);
+      return React.createElement(View, { style: finalStyle }, textContent);
     };
 
     // Helper to create multi-line header text with explicit line breaks
