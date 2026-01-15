@@ -184,9 +184,17 @@ export async function GET(request: NextRequest) {
     // Build effective per-day entries (merge corrections)
     const holidaysSet = new Set(Object.keys(holidaysMap));
     
-    // Debug: Log holidays for verification (dev only)
-    if (holidaysSet.size > 0) {
-      console.log(`[PDF] Loaded ${holidaysSet.size} holidays for ${year}-${month}:`, Array.from(holidaysSet));
+    // Debug: Log holidays for verification
+    console.log(`[PDF] Loaded ${holidaysSet.size} holidays for ${year}-${month}:`, Array.from(holidaysSet).sort());
+    
+    // Hard assertion for January 2026 (dev verification)
+    if (year === 2026 && month === 1) {
+      if (!holidaysSet.has('2026-01-01')) {
+        console.error(`[PDF] ERROR: Expected holiday 2026-01-01 not found in holidaysSet!`);
+        console.error(`[PDF] holidaysSet contains:`, Array.from(holidaysSet));
+      } else {
+        console.log(`[PDF] ✓ Verified: 2026-01-01 is in holidaysSet`);
+      }
     }
     const daysInMonth = lastDay.getDate();
     const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -351,6 +359,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Helper to create a cell with consistent styling
+    // IMPORTANT: backgroundColor must be on a View container, not Text element
     const createCell = (content: React.ReactElement | string, cellStyle: any, isHeader: boolean = false, isLast: boolean = false) => {
       const baseStyle = [
         styles.cell, // Base cell style (padding, borders, font)
@@ -362,20 +371,32 @@ export async function GET(request: NextRequest) {
       }
       
       // Remove right border from last column
-      // Ensure backgroundColor from cellStyle is preserved by applying it last
-      const finalStyle = isLast 
-        ? [...baseStyle, { borderRightWidth: 0 }]
-        : baseStyle;
+      const borderStyle = isLast 
+        ? { borderRightWidth: 0 }
+        : {};
       
-      // If cellStyle has backgroundColor, ensure it's applied last (not overridden)
-      if (cellStyle?.backgroundColor) {
-        finalStyle.push({ backgroundColor: cellStyle.backgroundColor });
-      }
+      // Extract backgroundColor if present - must be applied to View container
+      const backgroundColor = cellStyle?.backgroundColor;
       
-      if (typeof content === 'string') {
-        return React.createElement(Text, { style: finalStyle }, content);
+      // Build final style without backgroundColor (will be applied to View)
+      const finalStyle = [...baseStyle, borderStyle];
+      
+      // If we have backgroundColor, wrap content in a View with the background
+      // Otherwise, render directly
+      if (backgroundColor) {
+        // Wrap in View with backgroundColor, then Text inside
+        const viewStyle = [...finalStyle, { backgroundColor }];
+        const textContent = typeof content === 'string' 
+          ? React.createElement(Text, { style: { fontSize: 10 } }, content)
+          : content;
+        return React.createElement(View, { style: viewStyle }, textContent);
+      } else {
+        // No background color - render normally
+        if (typeof content === 'string') {
+          return React.createElement(Text, { style: finalStyle }, content);
+        }
+        return React.createElement(View, { style: finalStyle }, content);
       }
-      return React.createElement(View, { style: finalStyle }, content);
     };
 
     // Helper to create multi-line header text with explicit line breaks
@@ -436,39 +457,51 @@ export async function GET(request: NextRequest) {
             const isSaturdayDate = dayOfWeek === 6; // Saturday = 6
             const isWeekdayDate = dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday = 1-5
             
-            // Debug: Log first holiday found for verification
-            if (isHolidayDate && effectiveEntries.indexOf(d) === effectiveEntries.findIndex(e => isHoliday(e.dateISO.split('T')[0], holidaysSet))) {
-              console.log(`[PDF] Detected holiday: ${normalizedDate}, isWeekday: ${isWeekdayDate}, isSaturday: ${isSaturdayDate}, isSunday: ${isSundayDate}`);
+            // Debug: Log ALL holidays for verification
+            if (isHolidayDate) {
+              console.log(`[PDF] Holiday detected: ${normalizedDate}, dayOfWeek: ${dayOfWeek}, isWeekday: ${isWeekdayDate}, isSaturday: ${isSaturdayDate}, isSunday: ${isSundayDate}`);
             }
             
-            // Determine background color for "Tag" cell
+            // Determine background color for "Tag" cell with EXACT priority rules:
+            // 1. If Sunday → BLUE (even if holiday)
+            // 2. Else if isHoliday → PINK (includes Saturday holiday)
+            // 3. Else if Saturday → BLUE
+            // 4. Else → default (no background)
             let backgroundColor: string | undefined = undefined;
             
             if (isSundayDate) {
-              // Rule 1: Sunday + Holiday → BLUE (Sunday always blue, even if holiday)
+              // Rule 1: Sunday → BLUE (even if holiday)
               backgroundColor = '#add8e6';
-            } else if (isSaturdayDate && isHolidayDate) {
-              // Rule 2: Saturday + Holiday → PINK
+            } else if (isHolidayDate) {
+              // Rule 2: Holiday (Mon-Sat) → PINK (includes Saturday holiday)
               backgroundColor = '#ffc0cb';
-            } else if (isWeekdayDate && isHolidayDate) {
-              // Rule 3: Weekday (Mon-Fri) + Holiday → PINK
-              backgroundColor = '#ffc0cb';
-            } else if (isSaturdayDate && !isHolidayDate) {
-              // Rule 4: Saturday without Holiday → BLUE
+            } else if (isSaturdayDate) {
+              // Rule 3: Saturday (non-holiday) → BLUE
               backgroundColor = '#add8e6';
             }
-            // Rule 5: Otherwise → default (no background color set)
+            // Rule 4: Otherwise → default (no background color)
             
+            // Build tag cell style with explicit backgroundColor
             const tagCellBaseStyle: any = { 
               width: columnDefs[0].width, 
               textAlign: columnDefs[0].textAlign,
             };
             if (backgroundColor) {
               tagCellBaseStyle.backgroundColor = backgroundColor;
+              // Debug: Log when setting pink background
+              if (backgroundColor === '#ffc0cb') {
+                console.log(`[PDF] Setting PINK background for ${normalizedDate}`);
+              }
+            }
+            
+            // Visual debug marker for holidays (dev only - remove after verification)
+            let dayText = String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate());
+            if (isHolidayDate && process.env.NODE_ENV === 'development') {
+              dayText = `${dayText}*`; // Add asterisk marker for holidays in dev
             }
             
             return React.createElement(View, { key: d.dateISO, style: d.isHolidayWork ? [styles.tableRow, { backgroundColor: '#f1f3f5' }] : styles.tableRow },
-              createCell(String(new Date(d.dateISO + 'T00:00:00Z').getUTCDate()), tagCellBaseStyle, false, false),
+              createCell(dayText, tagCellBaseStyle, false, false),
               createCell(d.workHours ? d.workHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[1].width, textAlign: columnDefs[1].textAlign }, false, false),
               createCell(d.vacationHours ? d.vacationHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[2].width, textAlign: columnDefs[2].textAlign }, false, false),
               createCell(d.sickHours ? d.sickHours.toFixed(1).replace('.', ',') : '', { width: columnDefs[3].width, textAlign: columnDefs[3].textAlign }, false, false),
