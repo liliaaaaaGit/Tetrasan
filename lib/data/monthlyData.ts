@@ -10,6 +10,7 @@ export interface MonthlyData {
   entries: Array<{
     id: string;
     date: string;
+    // Include day_off so Tagesbefreiungen are part of the monthly summary
     status: 'work' | 'vacation' | 'sick' | 'day_off';
     hours_decimal: number;
   }>;
@@ -59,7 +60,6 @@ export async function loadMonthlyData(
     entriesData?.map((e) => ({
       id: e.id,
       date: e.date,
-      // Include day_off so Tagesbefreiung hours are part of the monthly summary
       status: e.status as 'work' | 'vacation' | 'sick' | 'day_off',
       hours_decimal: e.hours_decimal || 0,
     })) || [];

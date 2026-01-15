@@ -9,7 +9,7 @@ export type SummaryInput = {
   entries: Array<{
     id: string;
     date: string; // ISO yyyy-mm-dd
-    // Include 'day_off' so Tagesbefreiung is part of the monthly summary
+    // Include day_off so Tagesbefreiungen can be summarized
     status: 'work' | 'vacation' | 'sick' | 'day_off';
     hours_decimal: number; // original stored value
   }>;
@@ -27,6 +27,7 @@ export type SummaryOutput = {
   sickMinutes: number;
   vacationMinutes: number;
   holidayMinutes: number;
+  // New: minutes for day-off exemptions (Tagesbefreiung)
   dayOffMinutes: number;
 };
 
@@ -67,15 +68,17 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
   let dayOffMinutes = 0;
 
   // Debug: Count entries by status
-  const sickEntries = entries.filter((e) => e.status === 'sick');
-  const vacationEntries = entries.filter((e) => e.status === 'vacation');
-  const workEntries = entries.filter((e) => e.status === 'work');
+  const sickEntries = entries.filter((e) => e.status === "sick");
+  const vacationEntries = entries.filter((e) => e.status === "vacation");
+  const workEntries = entries.filter((e) => e.status === "work");
+  const dayOffEntries = entries.filter((e) => e.status === "day_off");
 
   console.log('[computeMonthlySummary] Input:', {
     totalEntries: entries.length,
     sick: sickEntries.length,
     vacation: vacationEntries.length,
     work: workEntries.length,
+    dayOff: dayOffEntries.length,
     holidaysCount: holidays.size,
     holidays: Array.from(holidays),
     workEntryDates: workEntries.map((e) => e.date),
@@ -95,7 +98,7 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
       console.log(`[computeMonthlySummary] Work entry on holiday: ${entry.date}, hours: ${effectiveHours}, minutes: ${effectiveMinutes}`);
     }
 
-    if (entry.status === 'work') {
+    if (entry.status === "work") {
       if (isHoliday) {
         // Work on a holiday → counts as holiday only
         holidayMinutes += effectiveMinutes;
@@ -104,16 +107,17 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
         // Work on a regular day → counts as work
         workMinutes += effectiveMinutes;
       }
-    } else if (entry.status === 'sick') {
+    } else if (entry.status === "sick") {
       // Sick days: always 8h = 480 minutes per entry
       // Each entry represents one sick day
       sickMinutes += 480;
-    } else if (entry.status === 'vacation') {
+    } else if (entry.status === "vacation") {
       // Vacation days: always 8h = 480 minutes per entry
       // Each entry represents one vacation day
       vacationMinutes += 480;
-    } else if (entry.status === 'day_off') {
-      // Tagesbefreiung (day_off): respect the stored hours (can be full-day or partial)
+    } else if (entry.status === "day_off") {
+      // Day-off exemptions (Tagesbefreiung):
+      // Use the effective hours so partial-day exemptions contribute proportionally.
       dayOffMinutes += effectiveMinutes;
     }
   });
@@ -125,11 +129,7 @@ export function computeMonthlySummary(input: SummaryInput): SummaryOutput {
     holidayMinutes,
     dayOffMinutes,
     totalMinutes:
-      workMinutes +
-      sickMinutes +
-      vacationMinutes +
-      holidayMinutes +
-      dayOffMinutes,
+      workMinutes + sickMinutes + vacationMinutes + holidayMinutes + dayOffMinutes,
   });
 
   const totalMinutes =
