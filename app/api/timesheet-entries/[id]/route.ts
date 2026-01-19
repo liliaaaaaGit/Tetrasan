@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { calculateHours, isSunday, isBlockedDay } from "@/lib/date-utils";
 import { getHolidaysForMonth } from "@/lib/data/holidays";
 
@@ -244,12 +245,30 @@ export async function DELETE(
       );
     }
 
-    // Delete timesheet entry (RLS will ensure user can only delete their own entries)
-    const { error } = await supabase
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, active')
+      .eq('id', session.user.id)
+      .single();
+    
+    const isAdmin = profile?.role === 'admin' && profile?.active === true;
+    
+    // Use admin client for admins to bypass RLS; regular client for employees
+    const client = isAdmin ? getAdminClient() : supabase;
+    
+    // Build delete query
+    let deleteQuery = client
       .from('timesheet_entries')
       .delete()
-      .eq('id', params.id)
-      .eq('employee_id', session.user.id); // Ensure user can only delete their own entries
+      .eq('id', params.id);
+    
+    // Only restrict to own entries for non-admins
+    if (!isAdmin) {
+      deleteQuery = deleteQuery.eq('employee_id', session.user.id);
+    }
+
+    const { error } = await deleteQuery;
 
     if (error) {
       console.error("[TimesheetEntries] Error deleting entry:", error.message);
