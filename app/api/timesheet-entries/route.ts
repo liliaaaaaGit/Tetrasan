@@ -133,8 +133,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Block entries on blocked days (Sundays and weekday holidays)
-    // Fetch holidays for the date's month to check if it's a weekday holiday
+    // Block entries on blocked days (Sundays and all holidays, including Saturday holidays)
+    // Fetch holidays for the date's month to check if it's a holiday
     const dateObj = new Date(date + 'T00:00:00Z');
     const year = dateObj.getUTCFullYear();
     const month = dateObj.getUTCMonth();

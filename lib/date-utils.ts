@@ -250,11 +250,12 @@ export function isWeekdayHoliday(
 }
 
 /**
- * Check if a date is a blocked day (Sunday or weekday holiday)
+ * Check if a date is a blocked day (Sunday or any holiday)
  * Blocked days cannot have any entries created (Arbeit, Urlaub, Krank, Tagesbefreiung)
+ * All holidays are blocked, regardless of the day of week (including Saturday holidays)
  * @param date - Date string (YYYY-MM-DD) or Date object
  * @param holidays - Set/Map/Record of holiday dates
- * @returns true if the date is blocked (Sunday or weekday holiday)
+ * @returns true if the date is blocked (Sunday or any holiday)
  */
 export function isBlockedDay(
   date: string | Date,
@@ -265,8 +266,8 @@ export function isBlockedDay(
     return true;
   }
   
-  // Weekday holidays are also blocked
-  return isWeekdayHoliday(date, holidays);
+  // All holidays are blocked (including Saturday holidays)
+  return isHoliday(date, holidays);
 }
 
 /**
