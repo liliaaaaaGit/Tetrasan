@@ -12,13 +12,14 @@ import { getAdminClient } from "@/lib/supabase/admin";
 export async function GET(request: NextRequest) {
   try {
     // Manual admin check (avoid redirect() in API routes)
-    // Use admin client for write ops (later below), read here is fine with user client
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    // Use user client for session/auth, admin client for data access (bypasses RLS)
+    const userClient = createClient();
+    const admin = getAdminClient();
+    const { data: { session } } = await userClient.auth.getSession();
     if (!session) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
-    const { data: me } = await supabase
+    const { data: me } = await admin
       .from('profiles')
       .select('id, role, active')
       .eq('id', session.user.id)
@@ -27,8 +28,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
     }
 
-    // Load inbox events
-    const { data: events, error: eventsError } = await supabase
+    // Load inbox events (use admin client to bypass RLS)
+    const { data: events, error: eventsError } = await admin
       .from('inbox_events')
       .select('id, kind, payload, is_read, created_at')
       .order('created_at', { ascending: false });
@@ -47,10 +48,10 @@ export async function GET(request: NextRequest) {
       return p.employeeId || p.employee_id || null;
     }).filter(Boolean);
 
-    // Load related leave requests with full details
+    // Load related leave requests with full details (use admin client)
     let requestsById: Record<string, any> = {};
     if (reqIds.length > 0) {
-      const { data: requests, error: reqError } = await supabase
+      const { data: requests, error: reqError } = await admin
         .from('leave_requests')
         .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
         .in('id', reqIds as string[]);
@@ -62,13 +63,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Load related employee profiles (from events and from requests)
+    // Use admin client to bypass RLS and ensure all employee profiles are accessible
     let employeesById: Record<string, any> = {};
     let empIds = Array.from(new Set(empIdsFromEvents));
     // also include employee ids from related requests (covers events missing employeeId)
     empIds.push(...Object.values(requestsById).map((r: any) => r.employee_id));
     empIds = Array.from(new Set(empIds.filter(Boolean)));
+    
+    // Diagnostic logging (development only)
+    if (empIds.length === 0) {
+      console.warn('[InboxEvents] No employee IDs found in events or requests');
+    }
+    
     if (empIds.length > 0) {
-      const { data: employees, error: empError } = await supabase
+      const { data: employees, error: empError } = await admin
         .from('profiles')
         .select('id, full_name, email')
         .in('id', empIds as string[]);
@@ -76,6 +84,13 @@ export async function GET(request: NextRequest) {
         console.error('[InboxEvents] Error fetching profiles:', empError.message);
       } else {
         employeesById = Object.fromEntries((employees || []).map(p => [p.id, p]));
+        
+        // Diagnostic logging: identify missing employee profiles
+        const foundEmpIds = new Set((employees || []).map((p: any) => p.id));
+        const missingEmpIds = empIds.filter(id => !foundEmpIds.has(id));
+        if (missingEmpIds.length > 0) {
+          console.warn('[InboxEvents] Employee IDs without matching profiles:', missingEmpIds);
+        }
       }
     }
 
@@ -85,6 +100,14 @@ export async function GET(request: NextRequest) {
       const request = reqId ? requestsById[reqId] : undefined;
       const empId = e.payload?.employeeId || request?.employee_id;
       const employee = empId ? employeesById[empId] : undefined;
+      
+      // Diagnostic logging: track messages with missing employee IDs or unresolved employees
+      if (!empId) {
+        console.warn('[InboxEvents] Event missing employee ID:', { eventId: e.id, kind: e.kind, reqId });
+      } else if (!employee) {
+        console.warn('[InboxEvents] Event with unresolved employee:', { eventId: e.id, employeeId: empId, reqId });
+      }
+      
       // Skip soft-deleted events
       if (e.payload && e.payload.deleted === true) {
         return null;
@@ -108,15 +131,43 @@ export async function GET(request: NextRequest) {
     }).filter(Boolean);
 
     // Backfill: include submitted leave requests that have no inbox event (e.g., legacy rows)
+    // Use admin client to ensure all requests are accessible
     const existingReqSet = new Set(reqIds);
-    const { data: allRequests, error: subReqError } = await supabase
+    const { data: allRequests, error: subReqError } = await admin
       .from('leave_requests')
       .select('id, type, status, employee_id, period_start, period_end, comment, created_at')
       .order('created_at', { ascending: false });
     if (!subReqError && allRequests) {
+      // Collect employee IDs from backfilled requests that aren't already loaded
+      const backfillEmpIds = allRequests
+        .filter(r => !existingReqSet.has(r.id))
+        .map(r => r.employee_id)
+        .filter(Boolean);
+      const missingBackfillEmpIds = backfillEmpIds.filter(id => !employeesById[id]);
+      
+      // Fetch missing employee profiles for backfilled requests
+      if (missingBackfillEmpIds.length > 0) {
+        const uniqueMissingIds = Array.from(new Set(missingBackfillEmpIds));
+        const { data: backfillEmployees, error: backfillEmpError } = await admin
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', uniqueMissingIds);
+        if (!backfillEmpError && backfillEmployees) {
+          for (const emp of backfillEmployees) {
+            employeesById[emp.id] = emp;
+          }
+        }
+      }
+      
       for (const r of allRequests) {
         if (!existingReqSet.has(r.id)) {
           const emp = employeesById[r.employee_id];
+          
+          // Diagnostic logging for backfilled requests with missing employees
+          if (!emp && r.employee_id) {
+            console.warn('[InboxEvents] Backfilled request with unresolved employee:', { requestId: r.id, employeeId: r.employee_id });
+          }
+          
           data.push({
             id: r.id, // synthetic id
             // keep kind consistent with UI label logic
