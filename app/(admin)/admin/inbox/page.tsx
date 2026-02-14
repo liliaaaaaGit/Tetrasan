@@ -185,7 +185,11 @@ export default function AdminInboxPage() {
       }
 
       // Trigger layout refresh for badge count (DB-authoritative)
-      window.dispatchEvent(new CustomEvent('inbox-updated'));
+      // Add a small delay to ensure DB transaction has committed
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('inbox-updated'));
+        console.log('[Inbox] Dispatched inbox-updated event');
+      }, 150);
       
       // Optionally re-fetch to ensure DB truth (but optimistic update should be sufficient)
       // await loadInboxEvents();

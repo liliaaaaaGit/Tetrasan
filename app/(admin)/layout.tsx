@@ -2,7 +2,7 @@
 
 import { Users, Inbox, Key } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { User } from "@supabase/supabase-js";
 import { AppHeader } from "@/components/shared/AppHeader";
 import { useTranslations } from "next-intl";
@@ -42,27 +42,26 @@ export default function AdminLayout({
   }, []);
 
   // Fetch unread count for inbox badge
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
       return;
     }
 
-    let abortController: AbortController | null = null;
-
     const fetchUnreadCount = async () => {
       // Cancel any pending request
-      if (abortController) {
-        abortController.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
       
       // Create new abort controller for this request
-      abortController = new AbortController();
-      const signal = abortController.signal;
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
 
       try {
         // Use cache: 'no-store' to ensure we always get fresh data from DB
-        // Removed timestamp query param to avoid issues during page reloads
         const response = await fetch('/api/inbox-events/unread-count', {
           cache: 'no-store',
           signal,
@@ -75,10 +74,13 @@ export default function AdminLayout({
 
         if (response.ok) {
           const data = await response.json();
-          setUnreadCount(data.count || 0);
+          const newCount = data.count || 0;
+          console.log('[Layout] Unread count fetched:', newCount);
+          setUnreadCount(newCount);
         } else {
           // Silently fail - don't break nav if count fails
           // Keep previous count to avoid flicker
+          console.warn('[Layout] Failed to fetch unread count:', response.status);
         }
       } catch (error) {
         // Ignore AbortError (request cancelled) and network errors during reload
@@ -105,9 +107,19 @@ export default function AdminLayout({
 
     // Listen for custom event when inbox items are marked as read
     const handleInboxUpdate = () => {
-      fetchUnreadCount();
+      // Add a small delay to ensure DB update has completed
+      // This ensures the fetch gets the latest data
+      setTimeout(() => {
+        fetchUnreadCount();
+      }, 100);
     };
     window.addEventListener('inbox-updated', handleInboxUpdate);
+    
+    // Debug: Log when event is received (can be removed after testing)
+    const debugHandler = () => {
+      console.log('[Layout] inbox-updated event received');
+    };
+    window.addEventListener('inbox-updated', debugHandler);
 
     // Refresh count when navigating to/from inbox page
     // Also set up a periodic refresh (every 30 seconds) to catch updates
@@ -116,9 +128,10 @@ export default function AdminLayout({
     return () => {
       clearInterval(interval);
       window.removeEventListener('inbox-updated', handleInboxUpdate);
+      window.removeEventListener('inbox-updated', debugHandler);
       // Abort any pending request on cleanup
-      if (abortController) {
-        abortController.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, [user, pathname]);
