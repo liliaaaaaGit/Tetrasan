@@ -75,7 +75,11 @@ export default function AdminLayout({
         if (response.ok) {
           const data = await response.json();
           const newCount = data.count || 0;
-          console.log('[Layout] Unread count fetched:', newCount, 'Response data:', data);
+          console.log('[Layout] Unread count fetched:', newCount);
+          console.log('[Layout] Full response data:', JSON.stringify(data, null, 2));
+          if (data.debug) {
+            console.log('[Layout] Debug info:', data.debug);
+          }
           setUnreadCount(newCount);
         } else {
           // Silently fail - don't break nav if count fails

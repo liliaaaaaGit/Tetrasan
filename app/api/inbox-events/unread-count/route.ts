@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
     console.log('[UnreadCount] Debug info:', JSON.stringify(debugInfo, null, 2));
 
     // Return response with no-cache headers to ensure fresh data
-    // Include debug info in development to help diagnose issues
+    // Always include debug info to help diagnose issues (can be removed later)
     const response = NextResponse.json({ 
       count: totalUnread,
-      ...(process.env.NODE_ENV === 'development' ? { debug: debugInfo } : {})
+      debug: debugInfo
     });
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
