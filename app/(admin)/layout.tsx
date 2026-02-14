@@ -48,23 +48,56 @@ export default function AdminLayout({
       return;
     }
 
+    let abortController: AbortController | null = null;
+
     const fetchUnreadCount = async () => {
+      // Cancel any pending request
+      if (abortController) {
+        abortController.abort();
+      }
+      
+      // Create new abort controller for this request
+      abortController = new AbortController();
+      const signal = abortController.signal;
+
       try {
         // Use cache: 'no-store' to ensure we always get fresh data from DB
-        // Add timestamp query param as additional cache-busting
-        const response = await fetch(`/api/inbox-events/unread-count?t=${Date.now()}`, {
+        // Removed timestamp query param to avoid issues during page reloads
+        const response = await fetch('/api/inbox-events/unread-count', {
           cache: 'no-store',
+          signal,
         });
+        
+        // Check if request was aborted
+        if (signal.aborted) {
+          return;
+        }
+
         if (response.ok) {
           const data = await response.json();
           setUnreadCount(data.count || 0);
         } else {
           // Silently fail - don't break nav if count fails
-          setUnreadCount(0);
+          // Keep previous count to avoid flicker
         }
       } catch (error) {
+        // Ignore AbortError (request cancelled) and network errors during reload
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            // Request was cancelled (e.g., during page reload) - silently ignore
+            return;
+          }
+          // Check for network-related errors
+          if (error.message.includes('network') || 
+              error.message.includes('ERR_NETWORK') ||
+              error.message.includes('Failed to fetch')) {
+            // Network error during reload - silently ignore to avoid console spam
+            return;
+          }
+        }
+        // Only log unexpected errors
         console.error('Error fetching unread count:', error);
-        setUnreadCount(0);
+        // Don't reset to 0 on error - keep previous count to avoid flicker
       }
     };
 
@@ -83,6 +116,10 @@ export default function AdminLayout({
     return () => {
       clearInterval(interval);
       window.removeEventListener('inbox-updated', handleInboxUpdate);
+      // Abort any pending request on cleanup
+      if (abortController) {
+        abortController.abort();
+      }
     };
   }, [user, pathname]);
 
