@@ -50,7 +50,11 @@ export default function AdminLayout({
 
     const fetchUnreadCount = async () => {
       try {
-        const response = await fetch('/api/inbox-events/unread-count');
+        // Use cache: 'no-store' to ensure we always get fresh data from DB
+        // Add timestamp query param as additional cache-busting
+        const response = await fetch(`/api/inbox-events/unread-count?t=${Date.now()}`, {
+          cache: 'no-store',
+        });
         if (response.ok) {
           const data = await response.json();
           setUnreadCount(data.count || 0);
