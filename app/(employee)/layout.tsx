@@ -130,6 +130,7 @@ export default function EmployeeLayout({
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
+                const isUrlaubOrTagesbefreiung = item.href === "/employee/leave" || item.href === "/employee/dayoff";
 
                 return (
                   <Link
@@ -139,10 +140,12 @@ export default function EmployeeLayout({
                       "flex items-center gap-2 py-3 px-4 transition-colors",
                       isActive
                         ? "bg-muted text-brand rounded-lg"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
+                        : isUrlaubOrTagesbefreiung
+                          ? "text-red-600 hover:text-red-700 hover:bg-muted/50 rounded-lg"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
                     )}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className={cn("h-5 w-5", isUrlaubOrTagesbefreiung && !isActive && "text-red-600")} />
                     <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );
@@ -203,6 +206,7 @@ export default function EmployeeLayout({
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
+                const isUrlaubOrTagesbefreiung = item.href === "/employee/leave" || item.href === "/employee/dayoff";
                 return (
                   <Link
                     key={item.href}
@@ -210,10 +214,14 @@ export default function EmployeeLayout({
                     role="menuitem"
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 transition-colors",
-                      isActive ? "bg-muted text-brand" : "hover:bg-muted/50"
+                      isActive 
+                        ? "bg-muted text-brand" 
+                        : isUrlaubOrTagesbefreiung
+                          ? "text-red-600 hover:bg-muted/50"
+                          : "hover:bg-muted/50"
                     )}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className={cn("h-5 w-5", isUrlaubOrTagesbefreiung && !isActive && "text-red-600")} />
                     <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );
