@@ -239,7 +239,12 @@ export function CalendarView({
   // Load holidays for the current month
   const loadHolidays = async () => {
     try {
-      const response = await fetch(`/api/holidays?year=${year}&month=${month}`);
+      // Include employeeId if in admin mode viewing a specific employee
+      const url = isAdmin && employeeId
+        ? `/api/holidays?year=${year}&month=${month}&employeeId=${employeeId}`
+        : `/api/holidays?year=${year}&month=${month}`;
+      
+      const response = await fetch(url);
       if (!response.ok) {
         console.error('Failed to load holidays:', response.status, response.statusText);
         return;
@@ -301,12 +306,61 @@ export function CalendarView({
   // Handle day click
   const handleDayClick = (day: number) => {
     const dateStr = formatDateISO(year, month, day);
-    // Block clicks on blocked days (Sundays and weekday holidays)
     const holidaysSet = new Set(Object.keys(holidays));
+    const isHolidayDate = !!holidays[dateStr];
+    const isSundayDate = isSunday(dateStr);
+    
+    // For admins: allow clicking on holidays to delete them
+    if (isAdmin && isHolidayDate && !isSundayDate && employeeId) {
+      const holiday = holidays[dateStr];
+      if (confirm(`Möchten Sie den Feiertag "${holiday.name}" für diesen Mitarbeiter löschen?\n\nDer Feiertag wird nicht mehr im Kalender angezeigt und nicht in der Stundenübersicht gezählt.`)) {
+        handleDeleteHoliday(dateStr);
+      }
+      return;
+    }
+    
+    // Block clicks on blocked days (Sundays and weekday holidays) for non-admins
     if (isBlockedDay(dateStr, holidaysSet)) {
       return;
     }
     setSelectedDate(dateStr);
+  };
+
+  // Handle delete holiday for employee (admin only)
+  const handleDeleteHoliday = async (holidayDate: string) => {
+    if (!isAdmin || !employeeId) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await fetch('/api/employee-holiday-exclusions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId,
+          holidayDate,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Fehler beim Löschen des Feiertags');
+      }
+
+      setToast('Feiertag erfolgreich gelöscht');
+      
+      // Reload holidays to reflect the change
+      await loadHolidays();
+      
+      // Reload monthly summary to update counts
+      await loadMonthlySummary();
+    } catch (error) {
+      console.error('Error deleting holiday:', error);
+      setToast(error instanceof Error ? error.message : 'Fehler beim Löschen des Feiertags');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Handle save entry
@@ -617,20 +671,26 @@ export function CalendarView({
                   workEntry.hours > 0;
                 const workHoursValue = showWorkHours ? (workEntry?.hours as number) : null;
 
+                // For admins: allow clicking on holidays to delete them (except Sundays)
+                const isAdminHolidayClickable = isAdmin && isHoliday && !isSundayDate && employeeId;
+                const isActuallyBlocked = isBlocked && !isAdminHolidayClickable;
+
                 return (
                   <button
                     key={dayIdx}
                     id={`day-${dateStr}`}
                     onClick={() => handleDayClick(day)}
-                    disabled={isBlocked}
+                    disabled={isActuallyBlocked}
                     title={
-                      isBlocked
+                      isActuallyBlocked
                         ? isWeekdayHoliday
                           ? "An Feiertagen können keine Einträge erstellt werden."
                           : "Sonntage sind immer frei; Einträge sind nicht erlaubt."
-                        : isHoliday
-                          ? tHours("holidayTooltip", { name: holiday.name })
-                          : undefined
+                        : isAdminHolidayClickable
+                          ? `Feiertag "${holiday.name}" - Klicken zum Löschen für diesen Mitarbeiter`
+                          : isHoliday
+                            ? tHours("holidayTooltip", { name: holiday.name })
+                            : undefined
                     }
                     className={cn(
                       "aspect-square rounded-lg border-2 transition-all relative",
@@ -638,13 +698,14 @@ export function CalendarView({
                       isSundayDate && "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60",
                       // Holiday styling: ALWAYS show blue/purple for holidays (takes priority over all entries)
                       !isSundayDate && isHoliday && "!border-brand bg-holiday-fill",
-                      // Weekday holiday: also disabled (non-clickable)
-                      isWeekdayHoliday && "cursor-not-allowed",
+                      // Weekday holiday: disabled for non-admins, clickable for admins
+                      isWeekdayHoliday && !isAdminHolidayClickable && "cursor-not-allowed",
+                      isAdminHolidayClickable && "hover:border-red-500 hover:shadow-md cursor-pointer",
                       // Entry styling (only if NOT a holiday and not Sunday)
                       !isSundayDate && !isHoliday && hasEntry && statusClass,
                       // Non-blocked: normal interactions (only if not a holiday)
-                      !isBlocked && !isHoliday && "hover:border-brand hover:shadow-sm",
-                      !isBlocked && !isHoliday && "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
+                      !isActuallyBlocked && !isHoliday && "hover:border-brand hover:shadow-sm",
+                      !isActuallyBlocked && !isHoliday && "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
                       // Today styling (if not a holiday and no entry and not Sunday)
                       !isSundayDate && !isHoliday && isTodayDate && !hasEntry && "border-brand bg-brand/5 font-bold",
                       // Today + holiday: apply holiday fill (already handled above, but ensure font-bold)

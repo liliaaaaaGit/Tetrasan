@@ -14,12 +14,14 @@ export interface Holiday {
  * @param year - Year (e.g., 2026)
  * @param month - Month (0-indexed, e.g., 0 = January, 11 = December)
  * @param state - Optional state code (e.g., 'BY' for Bavaria)
+ * @param employeeId - Optional employee ID to exclude deleted holidays for that employee
  * @returns Array of holidays with dateISO and name
  */
 export async function getHolidaysForMonth(
   year: number,
   month: number,
-  state?: string
+  state?: string,
+  employeeId?: string
 ): Promise<Holiday[]> {
   const supabase = createClient();
 
@@ -93,11 +95,37 @@ export async function getHolidaysForMonth(
     dates: data.map((h) => h.holiday_date),
   });
 
-  // Transform to Holiday format
-  return data.map((h) => ({
-    dateISO: h.holiday_date,
-    name: h.name,
-  }));
+  // If employeeId is provided, exclude holidays that have been deleted for this employee
+  let excludedDates: Set<string> = new Set();
+  if (employeeId) {
+    try {
+      const { data: exclusions, error: exclusionsError } = await supabase
+        .from('employee_holiday_exclusions')
+        .select('holiday_date')
+        .eq('employee_id', employeeId)
+        .gte('holiday_date', firstDayISO)
+        .lte('holiday_date', lastDayISO);
+      
+      if (!exclusionsError && exclusions) {
+        excludedDates = new Set(exclusions.map((e: any) => e.holiday_date));
+        console.log('[getHolidaysForMonth] Excluded holidays for employee:', {
+          employeeId,
+          excludedDates: Array.from(excludedDates),
+        });
+      }
+    } catch (e) {
+      console.error('[getHolidaysForMonth] Error fetching exclusions:', e);
+      // Continue without exclusions if there's an error
+    }
+  }
+
+  // Transform to Holiday format and filter out excluded holidays
+  return data
+    .filter((h) => !excludedDates.has(h.holiday_date))
+    .map((h) => ({
+      dateISO: h.holiday_date,
+      name: h.name,
+    }));
 }
 
 /**
