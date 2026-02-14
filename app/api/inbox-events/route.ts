@@ -250,6 +250,11 @@ export async function PUT(request: NextRequest) {
     const existingIds = new Set((existingEvents || []).map((e: any) => e.id));
     const missingIds = eventIds.filter((id: string) => !existingIds.has(id));
 
+    console.log('[InboxEvents PUT] Event IDs to update:', eventIds);
+    console.log('[InboxEvents PUT] Existing in inbox_events:', Array.from(existingIds));
+    console.log('[InboxEvents PUT] Missing (backfilled):', missingIds);
+    console.log('[InboxEvents PUT] Target is_read state:', isRead);
+
     // Update existing events
     if (existingIds.size > 0) {
       const updateData: any = { is_read: isRead };
@@ -259,10 +264,11 @@ export async function PUT(request: NextRequest) {
         updateData.read_at = null;
       }
       
-      const { error: updateError } = await admin
+      const { error: updateError, data: updatedData } = await admin
         .from('inbox_events')
         .update(updateData)
-        .in('id', Array.from(existingIds));
+        .in('id', Array.from(existingIds))
+        .select('id, is_read');
 
       if (updateError) {
         console.error("[InboxEvents] Error updating events:", updateError.message);
@@ -271,6 +277,7 @@ export async function PUT(request: NextRequest) {
           { status: 500 }
         );
       }
+      console.log('[InboxEvents PUT] Updated events:', updatedData);
     }
 
     // For synthetic events (missing from inbox_events), try to create them from leave_requests
@@ -291,13 +298,33 @@ export async function PUT(request: NextRequest) {
           read_at: isRead ? new Date().toISOString() : null,
         }));
 
-        const { error: insertError } = await admin
+        const { error: insertError, data: insertedData } = await admin
           .from('inbox_events')
-          .insert(newEvents);
+          .insert(newEvents)
+          .select('id, is_read');
 
         if (insertError) {
           console.error("[InboxEvents] Error creating synthetic events:", insertError.message);
           // Don't fail the whole request if some events can't be created
+        } else {
+          console.log('[InboxEvents PUT] Created synthetic events:', insertedData);
+        }
+      }
+    }
+
+    // Verify the update was successful by querying the updated state
+    // This ensures the transaction is committed before we return
+    if (existingIds.size > 0) {
+      const { data: verifyData, error: verifyError } = await admin
+        .from('inbox_events')
+        .select('id, is_read')
+        .in('id', Array.from(existingIds));
+      
+      if (!verifyError && verifyData) {
+        console.log('[InboxEvents PUT] Verification - updated events state:', verifyData);
+        const allCorrect = verifyData.every((e: any) => e.is_read === isRead);
+        if (!allCorrect) {
+          console.warn('[InboxEvents PUT] Warning: Some events did not update correctly');
         }
       }
     }

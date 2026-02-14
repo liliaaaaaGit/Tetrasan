@@ -78,18 +78,26 @@ export async function GET(request: NextRequest) {
     const totalUnread = validUnreadEvents.length + backfilledUnreadCount;
     
     // Debug logging (can be removed after fixing)
-    console.log('[UnreadCount] Events in DB:', events?.length || 0);
-    console.log('[UnreadCount] Unread events (not deleted):', validUnreadEvents.length);
-    console.log('[UnreadCount] Backfilled unread:', backfilledUnreadCount);
-    console.log('[UnreadCount] Total unread:', totalUnread);
-    console.log('[UnreadCount] Event details:', events?.map((e: any) => ({ 
-      id: e.id, 
-      is_read: e.is_read, 
-      deleted: e.payload?.deleted 
-    })));
+    const debugInfo = {
+      totalEvents: events?.length || 0,
+      unreadEvents: validUnreadEvents.length,
+      backfilledUnread: backfilledUnreadCount,
+      totalUnread,
+      eventDetails: events?.map((e: any) => ({ 
+        id: e.id, 
+        is_read: e.is_read, 
+        deleted: e.payload?.deleted 
+      })) || []
+    };
+    
+    console.log('[UnreadCount] Debug info:', JSON.stringify(debugInfo, null, 2));
 
     // Return response with no-cache headers to ensure fresh data
-    const response = NextResponse.json({ count: totalUnread });
+    // Include debug info in development to help diagnose issues
+    const response = NextResponse.json({ 
+      count: totalUnread,
+      ...(process.env.NODE_ENV === 'development' ? { debug: debugInfo } : {})
+    });
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
