@@ -94,10 +94,12 @@ export async function GET(request: NextRequest) {
 
     // Return response with no-cache headers to ensure fresh data
     // Always include debug info to help diagnose issues (can be removed later)
-    const response = NextResponse.json({ 
+    const responseData = { 
       count: totalUnread,
       debug: debugInfo
-    });
+    };
+    console.log('[UnreadCount] Returning response:', JSON.stringify(responseData, null, 2));
+    const response = NextResponse.json(responseData);
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');

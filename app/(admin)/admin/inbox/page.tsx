@@ -155,6 +155,8 @@ export default function AdminInboxPage() {
   const handleToggleRead = async (eventId: string, currentReadState: boolean) => {
     const newReadState = !currentReadState;
     
+    console.log('[Inbox] Toggling read status:', { eventId, currentReadState, newReadState });
+    
     try {
       // Optimistic update: update UI immediately
       setEvents(prev => prev.map(e => 
@@ -171,6 +173,7 @@ export default function AdminInboxPage() {
       }
 
       // Call API to update in database
+      console.log('[Inbox] Sending PUT request with:', { eventIds: [eventId], isRead: newReadState });
       const response = await fetch('/api/inbox-events', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
