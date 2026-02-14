@@ -152,6 +152,62 @@ export default function AdminInboxPage() {
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
+  const handleToggleRead = async (eventId: string, currentReadState: boolean) => {
+    const newReadState = !currentReadState;
+    
+    try {
+      // Optimistic update: update UI immediately
+      setEvents(prev => prev.map(e => 
+        e.id === eventId ? { ...e, isRead: newReadState } : e
+      ));
+      
+      // Update unread count optimistically
+      if (newReadState) {
+        // Marking as read: decrease count
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } else {
+        // Marking as unread: increase count
+        setUnreadCount(prev => prev + 1);
+      }
+
+      // Call API to update in database
+      const response = await fetch('/api/inbox-events', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventIds: [eventId],
+          isRead: newReadState,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle read status');
+      }
+
+      // Trigger layout refresh for badge count (DB-authoritative)
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
+      
+      // Optionally re-fetch to ensure DB truth (but optimistic update should be sufficient)
+      // await loadInboxEvents();
+    } catch (error) {
+      console.error('Error toggling read status:', error);
+      
+      // Revert optimistic update on error
+      setEvents(prev => prev.map(e => 
+        e.id === eventId ? { ...e, isRead: currentReadState } : e
+      ));
+      
+      // Revert unread count
+      if (newReadState) {
+        setUnreadCount(prev => prev + 1);
+      } else {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      
+      alert('Fehler beim Ändern des Lesestatus.');
+    }
+  };
+
   const handleOpenRequest = async (event: UiInboxEvent) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
@@ -175,6 +231,8 @@ export default function AdminInboxPage() {
           ));
           // Update unread count
           setUnreadCount(prev => Math.max(0, prev - 1));
+          // Trigger layout refresh
+          window.dispatchEvent(new CustomEvent('inbox-updated'));
         }
       } catch (error) {
         console.error('Error marking event as read:', error);
@@ -284,14 +342,19 @@ export default function AdminInboxPage() {
         <InboxTable
           events={filteredEvents}
           onOpen={handleOpenRequest}
+          onToggleRead={handleToggleRead}
           onDelete={async (eventId) => {
             try {
               const res = await fetch(`/api/inbox-events/${eventId}`, { method: 'DELETE' });
               if (!res.ok) throw new Error('Delete failed');
               // Remove from UI and adjust unread counter
-              setEvents(prev => prev.filter(e => e.id !== eventId));
               const wasUnread = events.find(e => e.id === eventId)?.isRead === false;
-              if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+              setEvents(prev => prev.filter(e => e.id !== eventId));
+              if (wasUnread) {
+                setUnreadCount(prev => Math.max(0, prev - 1));
+              }
+              // Trigger layout refresh for badge count
+              window.dispatchEvent(new CustomEvent('inbox-updated'));
             } catch (err) {
               alert('Löschen nicht möglich.');
             }

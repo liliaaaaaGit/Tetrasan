@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 // InboxEvent interface and helper functions moved inline
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateTimeDe } from "@/lib/date-utils";
 
@@ -24,6 +24,7 @@ interface InboxTableProps {
   events: InboxEvent[];
   onOpen?: (event: InboxEvent) => void;
   onDelete?: (eventId: string) => void;
+  onToggleRead?: (eventId: string, currentReadState: boolean) => void;
 }
 
 function getEventTypeLabel(kind: string): string {
@@ -48,7 +49,7 @@ function getEventDeepLink(event: InboxEvent): string {
  * InboxTable Component
  * Displays inbox events with actions
  */
-export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
+export function InboxTable({ events, onOpen, onDelete, onToggleRead }: InboxTableProps) {
   const router = useRouter();
 
   const formatDate = (isoDate: string) => formatDateTimeDe(isoDate);
@@ -109,6 +110,25 @@ export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
+                    {onToggleRead && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleRead(event.id, event.isRead)}
+                        className={cn(
+                          "flex items-center justify-center p-1.5 rounded-md transition-colors",
+                          event.isRead
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        )}
+                        title={event.isRead ? "Als ungelesen markieren" : "Als gelesen markieren"}
+                      >
+                        {event.isRead ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
                     <button type="button"
                       onClick={() => handleOpen(event)}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
@@ -156,6 +176,25 @@ export function InboxTable({ events, onOpen, onDelete }: InboxTableProps) {
             </div>
 
             <div className="flex gap-2 justify-end">
+              {onToggleRead && (
+                <button
+                  type="button"
+                  onClick={() => onToggleRead(event.id, event.isRead)}
+                  className={cn(
+                    "flex items-center justify-center p-2 rounded-md transition-colors",
+                    event.isRead
+                      ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  )}
+                  title={event.isRead ? "Als ungelesen markieren" : "Als gelesen markieren"}
+                >
+                  {event.isRead ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              )}
               <button type="button"
                 onClick={() => handleOpen(event)}
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
