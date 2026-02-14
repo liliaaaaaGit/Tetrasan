@@ -91,8 +91,8 @@ export async function loadMonthlyData(
     }
   }
 
-  // Fetch holidays for the month, excluding deleted holidays for this employee
-  const holidaysArray = await getHolidaysForMonth(year, month, undefined, employeeId);
+  // Fetch holidays for the month
+  const holidaysArray = await getHolidaysForMonth(year, month);
   const holidays = new Set(holidaysArray.map((h) => h.dateISO));
 
   console.log('[loadMonthlyData] Holidays loaded:', {

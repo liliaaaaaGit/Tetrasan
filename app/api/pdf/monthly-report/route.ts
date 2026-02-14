@@ -158,8 +158,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch holidays for the month using shared function with fallback
-    // Exclude deleted holidays for this employee
-    const holidaysArray = await getHolidaysForMonth(year, month - 1, undefined, employeeId); // month is 1-indexed, function expects 0-indexed
+    const holidaysArray = await getHolidaysForMonth(year, month - 1); // month is 1-indexed, function expects 0-indexed
     const holidaysSet = new Set(holidaysArray.map((h) => h.dateISO));
     
     console.log(`[PDF] Loaded ${holidaysSet.size} holidays for ${year}-${month}:`, Array.from(holidaysSet).sort());

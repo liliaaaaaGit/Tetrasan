@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     const yearParam = searchParams.get('year');
     const monthParam = searchParams.get('month');
     const stateParam = searchParams.get('state') || undefined;
-    const employeeIdParam = searchParams.get('employeeId') || undefined;
 
     if (!yearParam || !monthParam) {
       return NextResponse.json(
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      const holidays = await getHolidaysForMonth(year, month, stateParam, employeeIdParam);
+      const holidays = await getHolidaysForMonth(year, month, stateParam);
       
       // If no holidays found and it's 2025 or 2026, use fallback
       if (holidays.length === 0 && (year === 2025 || year === 2026)) {
