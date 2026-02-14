@@ -184,12 +184,17 @@ export default function AdminInboxPage() {
         throw new Error('Failed to toggle read status');
       }
 
+      // Wait for response to be fully processed
+      const result = await response.json();
+      console.log('[Inbox] Toggle response:', result);
+
       // Trigger layout refresh for badge count (DB-authoritative)
-      // Add a small delay to ensure DB transaction has committed
+      // Wait a bit longer to ensure DB transaction has fully committed
+      // and is visible to subsequent queries
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('inbox-updated'));
-        console.log('[Inbox] Dispatched inbox-updated event');
-      }, 150);
+        console.log('[Inbox] Dispatched inbox-updated event after toggle');
+      }, 300);
       
       // Optionally re-fetch to ensure DB truth (but optimistic update should be sufficient)
       // await loadInboxEvents();

@@ -76,6 +76,17 @@ export async function GET(request: NextRequest) {
     }
 
     const totalUnread = validUnreadEvents.length + backfilledUnreadCount;
+    
+    // Debug logging (can be removed after fixing)
+    console.log('[UnreadCount] Events in DB:', events?.length || 0);
+    console.log('[UnreadCount] Unread events (not deleted):', validUnreadEvents.length);
+    console.log('[UnreadCount] Backfilled unread:', backfilledUnreadCount);
+    console.log('[UnreadCount] Total unread:', totalUnread);
+    console.log('[UnreadCount] Event details:', events?.map((e: any) => ({ 
+      id: e.id, 
+      is_read: e.is_read, 
+      deleted: e.payload?.deleted 
+    })));
 
     // Return response with no-cache headers to ensure fresh data
     const response = NextResponse.json({ count: totalUnread });
