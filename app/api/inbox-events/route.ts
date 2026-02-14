@@ -257,12 +257,7 @@ export async function PUT(request: NextRequest) {
 
     // Update existing events
     if (existingIds.size > 0) {
-      const updateData: any = { is_read: isRead };
-      if (isRead) {
-        updateData.read_at = new Date().toISOString();
-      } else {
-        updateData.read_at = null;
-      }
+      const updateData = { is_read: isRead };
       
       const { error: updateError, data: updatedData } = await admin
         .from('inbox_events')
@@ -295,7 +290,6 @@ export async function PUT(request: NextRequest) {
             employeeId: req.employee_id,
           },
           is_read: isRead,
-          read_at: isRead ? new Date().toISOString() : null,
         }));
 
         const { error: insertError, data: insertedData } = await admin
