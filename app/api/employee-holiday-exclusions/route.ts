@@ -41,8 +41,28 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[EmployeeHolidayExclusions] Error creating exclusion:", error.message);
-      return NextResponse.json({ error: "Fehler beim Hinzufügen der Feiertagsausnahme." }, { status: 500 });
+      console.error("[EmployeeHolidayExclusions] Error creating exclusion:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        employeeId,
+        holidayDate,
+      });
+      
+      // Provide more helpful error message
+      if (error.code === '42P01') {
+        // Table doesn't exist
+        return NextResponse.json({ 
+          error: "Die Datenbanktabelle existiert noch nicht. Bitte führen Sie die Migration aus.",
+          details: "Table 'employee_holiday_exclusions' does not exist. Please run the migration."
+        }, { status: 500 });
+      }
+      
+      return NextResponse.json({ 
+        error: "Fehler beim Hinzufügen der Feiertagsausnahme.",
+        details: error.message 
+      }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data });
@@ -85,8 +105,28 @@ export async function DELETE(request: NextRequest) {
       .eq('holiday_date', holidayDate);
 
     if (error) {
-      console.error("[EmployeeHolidayExclusions] Error deleting exclusion:", error.message);
-      return NextResponse.json({ error: "Fehler beim Entfernen der Feiertagsausnahme." }, { status: 500 });
+      console.error("[EmployeeHolidayExclusions] Error deleting exclusion:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        employeeId,
+        holidayDate,
+      });
+      
+      // Provide more helpful error message
+      if (error.code === '42P01') {
+        // Table doesn't exist
+        return NextResponse.json({ 
+          error: "Die Datenbanktabelle existiert noch nicht. Bitte führen Sie die Migration aus.",
+          details: "Table 'employee_holiday_exclusions' does not exist. Please run the migration."
+        }, { status: 500 });
+      }
+      
+      return NextResponse.json({ 
+        error: "Fehler beim Entfernen der Feiertagsausnahme.",
+        details: error.message 
+      }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
