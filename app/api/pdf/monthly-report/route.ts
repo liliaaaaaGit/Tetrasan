@@ -6,7 +6,7 @@ import React from "react";
 import { diffCorrections } from "@/lib/utils/correctionDiff";
 import { computeMonthlySummary } from "@/lib/logic/monthlySummary";
 import { isSunday, isWeekend, isHoliday, holidayPaidHours, getDayOfWeek } from "@/lib/date-utils";
-import { getHolidaysForMonth } from "@/lib/data/holidays";
+import { getHolidaysForMonth, getExcludedHolidayDates, filterExcludedHolidays } from "@/lib/data/holidays";
 
 // Ensure Node.js runtime for PDFKit
 export const runtime = "nodejs";
@@ -157,9 +157,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch holidays for the month using shared function with fallback
+    // Fetch holidays for the month using shared function with fallback (unchanged core logic)
     const holidaysArray = await getHolidaysForMonth(year, month - 1); // month is 1-indexed, function expects 0-indexed
-    const holidaysSet = new Set(holidaysArray.map((h) => h.dateISO));
+    
+    // Filter out excluded holidays for this employee (separate step, doesn't change core logic)
+    const excludedDates = await getExcludedHolidayDates(employeeId, year, month - 1);
+    const filteredHolidays = filterExcludedHolidays(holidaysArray, excludedDates);
+    
+    const holidaysSet = new Set<string>(filteredHolidays.map((h: { dateISO: string }) => h.dateISO));
     
     console.log(`[PDF] Loaded ${holidaysSet.size} holidays for ${year}-${month}:`, Array.from(holidaysSet).sort());
     const daysInMonth = lastDay.getDate();

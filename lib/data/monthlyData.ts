@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { getHolidaysForMonth } from '@/lib/data/holidays';
+import { getHolidaysForMonth, getExcludedHolidayDates, filterExcludedHolidays } from '@/lib/data/holidays';
 
 export interface MonthlyData {
   entries: Array<{
@@ -91,9 +91,14 @@ export async function loadMonthlyData(
     }
   }
 
-  // Fetch holidays for the month
+  // Fetch holidays for the month (unchanged logic)
   const holidaysArray = await getHolidaysForMonth(year, month);
-  const holidays = new Set(holidaysArray.map((h) => h.dateISO));
+  
+  // Filter out excluded holidays for this employee (separate step, doesn't change core logic)
+  const excludedDates = await getExcludedHolidayDates(employeeId, year, month);
+  const filteredHolidays = filterExcludedHolidays(holidaysArray, excludedDates);
+  
+  const holidays = new Set<string>(filteredHolidays.map((h: { dateISO: string }) => h.dateISO));
 
   console.log('[loadMonthlyData] Holidays loaded:', {
     year,

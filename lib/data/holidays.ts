@@ -128,3 +128,56 @@ export const FALLBACK_HOLIDAYS_2025: Holiday[] = [
   { dateISO: '2025-12-26', name: '2. Weihnachtstag' },
 ];
 
+/**
+ * Get excluded holiday dates for a specific employee in a month
+ * This is a separate function that does NOT modify getHolidaysForMonth
+ * @param employeeId - Employee profile ID
+ * @param year - Year (e.g., 2026)
+ * @param month - Month (0-indexed, e.g., 0 = January, 11 = December)
+ * @returns Set of excluded holiday dates (YYYY-MM-DD format)
+ */
+export async function getExcludedHolidayDates(
+  employeeId: string,
+  year: number,
+  month: number
+): Promise<Set<string>> {
+  const supabase = createClient();
+
+  // Calculate first and last day of the month
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const firstDayISO = firstDay.toISOString().split('T')[0];
+  const lastDayISO = lastDay.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('employee_holiday_exclusions')
+    .select('holiday_date')
+    .eq('employee_id', employeeId)
+    .gte('holiday_date', firstDayISO)
+    .lte('holiday_date', lastDayISO);
+
+  if (error) {
+    console.error('[getExcludedHolidayDates] Error fetching exclusions:', error);
+    // Return empty set on error (fail gracefully)
+    return new Set();
+  }
+
+  return new Set((data || []).map((e) => e.holiday_date));
+}
+
+/**
+ * Filter holidays to exclude deleted holidays for a specific employee
+ * This function does NOT modify the original holidays array - it returns a new filtered array
+ * @param holidays - Array of holidays to filter
+ * @param excludedDates - Set of excluded holiday dates (from getExcludedHolidayDates)
+ * @returns Filtered array of holidays (excluding deleted ones)
+ */
+export function filterExcludedHolidays(
+  holidays: Holiday[],
+  excludedDates: Set<string>
+): Holiday[] {
+  if (excludedDates.size === 0) {
+    return holidays; // No exclusions, return as-is
+  }
+  return holidays.filter((h) => !excludedDates.has(h.dateISO));
+}
