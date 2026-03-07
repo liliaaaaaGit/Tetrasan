@@ -600,6 +600,7 @@ function HoursPageContent() {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                       )}
                       {/* No "Feiertag" text in holiday cells - only show hours if present */}
+                      {/* Hours text uses same font-size (text-sm) as date number above */}
                       {showWorkHours && workHoursValue !== null && (
                         <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-sm font-medium text-muted-foreground">
                           {formatHours(workHoursValue)}h
