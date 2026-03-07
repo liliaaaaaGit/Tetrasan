@@ -601,7 +601,7 @@ function HoursPageContent() {
                       )}
                       {/* No "Feiertag" text in holiday cells - only show hours if present */}
                       {showWorkHours && workHoursValue !== null && (
-                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-muted-foreground">
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-sm font-medium text-muted-foreground">
                           {formatHours(workHoursValue)}h
                         </span>
                       )}
