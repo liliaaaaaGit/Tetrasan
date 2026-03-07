@@ -595,14 +595,14 @@ function HoursPageContent() {
 
                     {/* Desktop layout: keep absolute positioning */}
                     <div className="hidden md:block">
-                      <span className="text-sm font-medium text-black">{day}</span>
+                      <span className="text-base font-medium text-black">{day}</span>
                       {isTodayDate && (
                         <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                       )}
                       {/* No "Feiertag" text in holiday cells - only show hours if present */}
-                      {/* Hours text uses same font-size (text-sm) as date number above */}
+                      {/* Hours text uses same font-size (text-base) as date number above */}
                       {showWorkHours && workHoursValue !== null && (
-                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-sm font-medium text-muted-foreground">
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-base font-medium text-muted-foreground">
                           {formatHours(workHoursValue)}h
                         </span>
                       )}
