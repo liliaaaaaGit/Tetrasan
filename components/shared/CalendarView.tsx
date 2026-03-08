@@ -708,7 +708,8 @@ export function CalendarView({
                       !isSundayDate && !isTodayDate && !hasEntry && !isHoliday && "border-border hover:bg-muted/50"
                     )}
                   >
-                    <span className="text-sm">{day}</span>
+                    {/* Date number: text-base for admin desktop, text-sm otherwise */}
+                    <span className={cn("text-sm", isAdmin && "md:text-base")}>{day}</span>
                     {isTodayDate && (
                       <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full" />
                     )}
@@ -723,8 +724,12 @@ export function CalendarView({
                         {tLegend("holiday")}
                       </span>
                     )}
+                    {/* Hours text: text-base for admin desktop, text-[10px] otherwise */}
                     {showWorkHours && workHoursValue !== null && (
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium">
+                      <span className={cn(
+                        "absolute bottom-1 left-1/2 -translate-x-1/2 font-medium",
+                        isAdmin ? "text-[10px] md:text-base" : "text-[10px]"
+                      )}>
                         {formatHours(workHoursValue)}h
                       </span>
                     )}
