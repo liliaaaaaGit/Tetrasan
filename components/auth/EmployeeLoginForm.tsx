@@ -56,6 +56,11 @@ export function EmployeeLoginForm() {
 
       const internalEmail = profile.email; // stored when employee created
 
+      // Clear any leftover session from a previous user on this (possibly shared)
+      // device before creating the new one. This guarantees the new login fully
+      // replaces the old session and prevents wrong-account carry-over.
+      await supabase.auth.signOut();
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: internalEmail,
         password,
@@ -67,8 +72,10 @@ export function EmployeeLoginForm() {
         return;
       }
 
-      // Redirect employee to hours
+      // Redirect employee to hours and refresh so server components pick up
+      // the freshly created session immediately.
       router.push("/employee/hours");
+      router.refresh();
     } catch (err) {
       console.error("[EmployeeLogin]", err);
       setError(t("errors.generic"));
