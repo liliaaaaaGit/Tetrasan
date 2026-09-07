@@ -166,11 +166,6 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
           newErrors.vacationDateRange = "Keine gültigen Tage im Zeitraum. Sonntage und Feiertage sind immer frei und können nicht als Urlaub markiert werden.";
         }
       }
-    } else if (status === "krank") {
-      // Sick day: comment required
-      if (!kommentar.trim()) {
-        newErrors.kommentar = t("errors.commentRequired");
-      }
     } else if (status === "tagesbefreiung") {
       // Day-off exemption:
       // - full-day allowed (no end time)
@@ -577,7 +572,7 @@ export function DayEntryForm({ initialData, date, onSave, onCancel, isLoading = 
       {status === "krank" && (
         <div>
           <label htmlFor="kommentar" className="block text-sm font-medium mb-1">
-            {t("labels.comment")} *
+            {t("labels.comment")}
           </label>
           <textarea
             id="kommentar"

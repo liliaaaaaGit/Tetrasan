@@ -124,13 +124,6 @@ export async function PUT(
       }
     }
 
-    if (status === "sick" && !trimmedComment) {
-      return NextResponse.json(
-        { error: "Für Krank-Tage ist ein Kommentar erforderlich." },
-        { status: 400 }
-      );
-    }
-
     let computedHours = 0;
     if (status === "work" && hasEndTime) {
       const hoursResult = calculateHours(normalizedFrom, normalizedTo, breakMinutesValue);
@@ -183,7 +176,7 @@ export async function PUT(
         : {
             date,
             status,
-            comment: trimmedComment,
+            comment: trimmedComment || null,
             time_from: "00:00",
             time_to: "00:01",
             break_minutes: 0,
