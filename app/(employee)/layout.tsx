@@ -56,13 +56,20 @@ export default function EmployeeLayout({
 
     supabase
       .from('profiles')
-      .select('must_change_password')
+      .select('must_change_password, active')
       .eq('id', user.id)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!isMounted) return;
         if (error) {
           console.error('[EmployeeLayout] Fehler beim Laden von must_change_password:', error.message);
+          return;
+        }
+
+        // Archived employees lose all app access immediately
+        if (data?.active === false) {
+          await supabase.auth.signOut();
+          router.replace('/login');
           return;
         }
 

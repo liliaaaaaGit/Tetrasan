@@ -44,9 +44,16 @@ export async function GET(
     // Check access: employee can only access their own requests, admin can access any
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, role')
+      .select('id, role, active')
       .eq('id', session.user.id)
       .single();
+
+    if (!profile || profile.active === false) {
+      return NextResponse.json(
+        { error: "Zugriff gesperrt." },
+        { status: 403 }
+      );
+    }
 
     const isAdmin = profile?.role === 'admin';
     const isOwner = leaveRequest.employee_id === session.user.id;

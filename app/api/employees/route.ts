@@ -14,12 +14,11 @@ export async function GET(request: NextRequest) {
     const { session } = await requireRole('admin');
     const supabase = createClient();
 
-    // Get all active employees
+    // Get all employees (active and inactive / archived)
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('role', 'employee')
-      .eq('active', true)
       .order('full_name', { ascending: true });
 
     if (error) {

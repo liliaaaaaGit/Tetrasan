@@ -33,6 +33,7 @@ export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [archiveEmployee, setArchiveEmployee] = useState<Employee | null>(null);
   const [deleteEmployee, setDeleteEmployee] = useState<Employee | null>(null);
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
   const [resettingEmployeeId, setResettingEmployeeId] = useState<string | null>(null);
@@ -76,7 +77,7 @@ export default function AdminEmployeesPage() {
     }
   };
 
-  // Filter employees based on search term
+  // Filter employees based on search term, then split into main list vs archive
   const filteredEmployees = employees.filter((emp) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -84,15 +85,62 @@ export default function AdminEmployeesPage() {
       (emp.personalNumber || '').toLowerCase().includes(term)
     );
   });
+  const activeEmployees = employees.filter((emp) => emp.status === "aktiv");
+  const inactiveEmployees = employees.filter((emp) => emp.status === "inaktiv");
+  const filteredActiveEmployees = filteredEmployees.filter((emp) => emp.status === "aktiv");
+  const filteredInactiveEmployees = filteredEmployees.filter((emp) => emp.status === "inaktiv");
 
   // Handle editing an employee
   const handleEdit = (employee: Employee) => {
     setEditEmployee(employee);
   };
 
-  // Handle deleting an employee
+  // Move an active employee to the archive (same as unchecking "Aktiv")
+  const handleArchive = (employee: Employee) => {
+    setArchiveEmployee(employee);
+  };
+
+  // Permanently delete an archived employee
   const handleDelete = (employee: Employee) => {
     setDeleteEmployee(employee);
+  };
+
+  const confirmArchive = async () => {
+    if (!archiveEmployee) return;
+
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/employees/${archiveEmployee.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: archiveEmployee.name,
+          phone: archiveEmployee.phone,
+          active: false,
+        }),
+      });
+
+      if (!response.ok) {
+        let errMsg = "Fehler beim Verschieben ins Archiv";
+        try {
+          const j = await response.json();
+          if (j?.error) errMsg = j.error;
+        } catch {}
+        alert(errMsg);
+        throw new Error(errMsg);
+      }
+
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.id === archiveEmployee.id ? { ...emp, status: "inaktiv" } : emp
+        )
+      );
+      setArchiveEmployee(null);
+    } catch (error) {
+      console.error("Error archiving employee:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const confirmDelete = async () => {
@@ -100,7 +148,7 @@ export default function AdminEmployeesPage() {
 
     try {
       setIsSaving(true);
-      const response = await fetch(`/api/employees/${deleteEmployee.id}`, {
+      const response = await fetch(`/api/employees/${deleteEmployee.id}?permanent=true`, {
         method: 'DELETE',
       });
 
@@ -278,8 +326,8 @@ export default function AdminEmployeesPage() {
 
       {/* Employee count */}
       <div className="mb-4 text-sm text-muted-foreground">
-        {filteredEmployees.length} {filteredEmployees.length === 1 ? 'Mitarbeiter' : 'Mitarbeiter'}
-        {searchTerm && ` (gefiltert von ${employees.length})`}
+        {filteredActiveEmployees.length} {filteredActiveEmployees.length === 1 ? 'Mitarbeiter' : 'Mitarbeiter'}
+        {searchTerm && ` (gefiltert von ${activeEmployees.length})`}
       </div>
 
       {/* Employee table */}
@@ -288,19 +336,44 @@ export default function AdminEmployeesPage() {
           <Loader2 className="h-6 w-6 animate-spin" />
           <span className="ml-2">Lade Mitarbeiter...</span>
         </div>
-      ) : filteredEmployees.length > 0 ? (
-        <EmployeesTable
-          employees={filteredEmployees}
-          onRowClick={(employee) => router.push(`/admin/employees/${employee.id}`)}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onResetPassword={handleResetPassword}
-          resettingEmployeeId={resettingEmployeeId}
-        />
       ) : (
-        <div className="border border-border rounded-lg">
-          <EmptyState message="Keine Mitarbeiter gefunden" />
-        </div>
+        <>
+          {filteredActiveEmployees.length > 0 ? (
+            <EmployeesTable
+              employees={filteredActiveEmployees}
+              onRowClick={(employee) => router.push(`/admin/employees/${employee.id}`)}
+              onEdit={handleEdit}
+              onArchive={handleArchive}
+              onResetPassword={handleResetPassword}
+              resettingEmployeeId={resettingEmployeeId}
+            />
+          ) : (
+            <div className="border border-border rounded-lg">
+              <EmptyState message="Keine Mitarbeiter gefunden" />
+            </div>
+          )}
+
+          {/* Archive: inactive employees stay visible for admins */}
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Archiv</h2>
+            <div className="mb-4 text-sm text-muted-foreground">
+              {filteredInactiveEmployees.length} {filteredInactiveEmployees.length === 1 ? 'Mitarbeiter' : 'Mitarbeiter'}
+              {searchTerm && ` (gefiltert von ${inactiveEmployees.length})`}
+            </div>
+            {filteredInactiveEmployees.length > 0 ? (
+              <EmployeesTable
+                employees={filteredInactiveEmployees}
+                onRowClick={(employee) => router.push(`/admin/employees/${employee.id}`)}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ) : (
+              <div className="border border-border rounded-lg">
+                <EmptyState message="Keine inaktiven Mitarbeiter" />
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {resetError && (
@@ -330,12 +403,22 @@ export default function AdminEmployeesPage() {
         isLoading={isSaving}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Archive Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!archiveEmployee}
+        onOpenChange={(open) => !open && setArchiveEmployee(null)}
+        title="Ins Archiv verschieben"
+        description={`Möchten Sie "${archiveEmployee?.name}" ins Archiv verschieben? Der Mitarbeiter wird inaktiv und erscheint nicht mehr in der Hauptliste.`}
+        onConfirm={confirmArchive}
+        onCancel={() => setArchiveEmployee(null)}
+      />
+
+      {/* Permanent delete confirmation (archive only) */}
       <ConfirmDialog
         open={!!deleteEmployee}
         onOpenChange={(open) => !open && setDeleteEmployee(null)}
         title="Mitarbeiter löschen"
-        description={`Möchten Sie "${deleteEmployee?.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+        description={`Bist du dir sicher? "${deleteEmployee?.name}" wird endgültig gelöscht. Stunden und alle zugehörigen Daten werden entfernt. Diese Aktion kann nicht rückgängig gemacht werden.`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteEmployee(null)}
       />

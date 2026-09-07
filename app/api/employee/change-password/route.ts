@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/auth/session";
+import { requireSession, getProfile } from "@/lib/auth/session";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +8,10 @@ export const runtime = "nodejs";
 export async function POST() {
   try {
     const session = await requireSession();
+    const profile = await getProfile(session.user.id);
+    if (!profile) {
+      return NextResponse.json({ error: "Zugriff gesperrt." }, { status: 403 });
+    }
     const adminClient = getAdminClient();
     const nowIso = new Date().toISOString();
 

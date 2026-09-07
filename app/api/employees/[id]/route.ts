@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/session";
+import { restoreArchivedEmployeeAccess, revokeArchivedEmployeeAccess } from "@/lib/auth/employee-access";
 
 /**
  * API Routes for Individual Employee Management (Admin only)
  * GET: Fetch employee details with timesheet entries and leave requests
  * PUT: Update employee profile
- * DELETE: Deactivate employee
+ * DELETE: Deactivate employee, or permanently delete with ?permanent=true
  */
 
 export async function GET(
@@ -110,6 +112,12 @@ export async function PUT(
       );
     }
 
+    if (data.active === false) {
+      await revokeArchivedEmployeeAccess(params.id);
+    } else {
+      await restoreArchivedEmployeeAccess(params.id);
+    }
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error("[Employees] Unexpected error:", error);
@@ -127,35 +135,89 @@ export async function DELETE(
   try {
     const { session } = await requireRole('admin');
     const supabase = createClient();
+    const permanent = request.nextUrl.searchParams.get("permanent") === "true";
 
-    // Deactivate employee (soft delete)
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        active: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', params.id)
-      .eq('role', 'employee')
-      .select()
-      .single();
+    if (!permanent) {
+      // Deactivate employee (soft delete / move to archive)
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', params.id)
+        .eq('role', 'employee')
+        .select()
+        .single();
 
-    if (error) {
-      console.error("[Employees] Error deactivating employee:", error.message);
+      if (error) {
+        console.error("[Employees] Error deactivating employee:", error.message);
+        return NextResponse.json(
+          { error: "Fehler beim Deaktivieren des Mitarbeiters." },
+          { status: 500 }
+        );
+      }
+
+      if (!data) {
+        return NextResponse.json(
+          { error: "Mitarbeiter nicht gefunden." },
+          { status: 404 }
+        );
+      }
+
+      await revokeArchivedEmployeeAccess(params.id);
+      return NextResponse.json({ data });
+    }
+
+    // Permanent delete from archive: profile row + related data + login account
+    const admin = getAdminClient();
+
+    const { data: profile, error: profileError } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("id", params.id)
+      .eq("role", "employee")
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("[Employees] Error loading employee for delete:", profileError.message);
       return NextResponse.json(
-        { error: "Fehler beim Deaktivieren des Mitarbeiters." },
+        { error: "Fehler beim Löschen des Mitarbeiters." },
         { status: 500 }
       );
     }
 
-    if (!data) {
+    if (!profile) {
       return NextResponse.json(
         { error: "Mitarbeiter nicht gefunden." },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ data });
+    // Clear optional FKs that would otherwise block the profile delete
+    await admin.from("timesheet_months").update({ approved_by: null }).eq("approved_by", params.id);
+    await admin.from("leave_requests").update({ approved_by: null }).eq("approved_by", params.id);
+
+    const { error: deleteError } = await admin
+      .from("profiles")
+      .delete()
+      .eq("id", params.id)
+      .eq("role", "employee");
+
+    if (deleteError) {
+      console.error("[Employees] Error deleting employee:", deleteError.message);
+      return NextResponse.json(
+        { error: "Fehler beim Löschen des Mitarbeiters." },
+        { status: 500 }
+      );
+    }
+
+    const { error: authDeleteError } = await admin.auth.admin.deleteUser(params.id);
+    if (authDeleteError && authDeleteError.message && !/user not found/i.test(authDeleteError.message)) {
+      console.error("[Employees] Error deleting auth user:", authDeleteError.message);
+    }
+
+    return NextResponse.json({ data: { id: params.id, deleted: true } });
   } catch (error) {
     console.error("[Employees] Unexpected error:", error);
     return NextResponse.json(

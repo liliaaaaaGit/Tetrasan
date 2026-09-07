@@ -6,8 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
-import { getSession } from '@/lib/auth/session';
-import { requireRole } from '@/lib/auth/session';
+import { getSession, getProfile, requireRole } from '@/lib/auth/session';
 import { loadMonthlyData } from '@/lib/data/monthlyData';
 import { computeMonthlySummary } from '@/lib/logic/monthlySummary';
 
@@ -16,6 +15,11 @@ export async function GET(request: NextRequest) {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const caller = await getProfile(session.user.id);
+    if (!caller) {
+      return NextResponse.json({ error: "Zugriff gesperrt." }, { status: 403 });
     }
 
     const searchParams = request.nextUrl.searchParams;

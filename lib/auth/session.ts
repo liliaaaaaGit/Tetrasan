@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -87,5 +88,35 @@ export async function requireRole(role: UserRole | UserRole[]) {
   }
 
   return { session, profile };
+}
+
+/**
+ * API-route guard: caller must be logged in and still active.
+ * Archived (inactive) employees get 403 instead of a page redirect.
+ */
+export async function requireActiveApiUser() {
+  const session = await getSession();
+  if (!session) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: "Nicht authentifiziert." },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const profile = await getProfile(session.user.id);
+  if (!profile) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: "Zugriff gesperrt." },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { ok: true as const, session, profile };
 }
 

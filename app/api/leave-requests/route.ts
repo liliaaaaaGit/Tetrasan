@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireSession, requireRole } from "@/lib/auth/session";
+import { requireActiveApiUser, requireRole } from "@/lib/auth/session";
 import { createTimesheetEntriesFromLeaveRequest, generateDateRange } from "./[id]/approve/route";
 import { getHolidaysForMonth } from "@/lib/data/holidays";
 
@@ -12,15 +12,10 @@ import { getHolidaysForMonth } from "@/lib/data/holidays";
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireActiveApiUser();
+    if (!auth.ok) return auth.response;
+    const { session } = auth;
     const supabase = createClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: "Nicht authentifiziert." },
-        { status: 401 }
-      );
-    }
 
     // Check if admin is requesting requests for a specific employee
     const searchParams = request.nextUrl.searchParams;
@@ -67,15 +62,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireActiveApiUser();
+    if (!auth.ok) return auth.response;
+    const { session } = auth;
     const supabase = createClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: "Nicht authentifiziert." },
-        { status: 401 }
-      );
-    }
     const body = await request.json();
 
     const { type, period_start, period_end, comment, employee_id } = body;

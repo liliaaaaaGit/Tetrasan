@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { MoreVertical, Edit, Trash2, KeyRound, Loader2 } from "lucide-react";
+import { MoreVertical, Edit, Trash2, KeyRound, Loader2, Archive } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -17,6 +17,7 @@ interface EmployeesTableProps {
   employees: Employee[];
   onRowClick: (employee: Employee) => void;
   onEdit?: (employee: Employee) => void;
+  onArchive?: (employee: Employee) => void;
   onDelete?: (employee: Employee) => void;
   onResetPassword?: (employee: Employee) => void;
   resettingEmployeeId?: string | null;
@@ -31,6 +32,7 @@ export function EmployeesTable({
   employees,
   onRowClick,
   onEdit,
+  onArchive,
   onDelete,
   onResetPassword,
   resettingEmployeeId,
@@ -64,6 +66,12 @@ export function EmployeesTable({
     e.stopPropagation();
     setOpenMenuId(null);
     onEdit?.(employee);
+  };
+
+  const handleArchive = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    onArchive?.(employee);
   };
 
   const handleDelete = (e: React.MouseEvent, employee: Employee) => {
@@ -162,6 +170,15 @@ export function EmployeesTable({
                         >
                           <Edit className="h-4 w-4" />
                           <span>Bearbeiten</span>
+                        </button>
+                      )}
+                      {onArchive && (
+                        <button
+                          onClick={(e) => handleArchive(e, employee)}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-black hover:bg-muted transition-colors text-left"
+                        >
+                          <Archive className="h-4 w-4" />
+                          <span>Archiv</span>
                         </button>
                       )}
                       {onDelete && (

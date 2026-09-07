@@ -22,6 +22,12 @@ export async function PUT(
       .select('role, active')
       .eq('id', session.user.id)
       .single();
+    if (!me || me.active === false) {
+      return NextResponse.json(
+        { error: "Zugriff gesperrt." },
+        { status: 403 }
+      );
+    }
     const userRole = me?.role === 'admin' ? 'admin' : 'employee';
     // Use admin client for admins to bypass RLS; fallback to regular client for employees
     const supabase = userRole === "admin" ? getAdminClient() : createClient();
@@ -98,6 +104,12 @@ export async function DELETE(
       .select('role, active')
       .eq('id', session.user.id)
       .single();
+    if (!me || me.active === false) {
+      return NextResponse.json(
+        { error: "Zugriff gesperrt." },
+        { status: 403 }
+      );
+    }
     const userRole = me?.role === 'admin' ? 'admin' : 'employee';
     const supabase = userRole === "admin" ? getAdminClient() : createClient();
 
